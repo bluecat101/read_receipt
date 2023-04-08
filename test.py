@@ -119,11 +119,13 @@ txt=tool.image_to_string(Image.fromarray(img),lang=langs[1],builder=pyocr.builde
 
 date=2023
 item_name=["フルグラ","たまご"]
-item_amount=1
+item_amount=len(item_name)-1
+
 item_count=0
-match_count=0
-confidence=0.0
-item_price={}
+match_count=0 # item_nameの要素との一致率を数える
+confidence=0.0 # item_nameの要素との一致率
+item_price_dic={} # 金額辞書
+item_discount_dic={} # 割引辞書
 one_line=""
 
 start_posision=txt.find('\n\n',txt.find(str(date)))
@@ -132,23 +134,27 @@ if start_posision==-1:
 
 
 for i,c in enumerate(txt):
-  if i > start_posision and c=='\n':
-    match_count=0
-    one_line=txt[i+1:txt.find('\n',i+1)]
-    for j in item_name[item_count]:
+  if i > start_posision and c=='\n': # 次の行を検索する
+    match_count=0 # item_nameの要素との一致率を数える
+    one_line=txt[i+1:txt.find('\n',i+1)] # 次の行を取得
+    for j in item_name[item_count]: # item_nameの要素とどのくらい一致するかを調べる
       regular=re.escape(j)  ## 正規表現オブジェクト
       if re.search(regular,one_line):
         match_count+=1
-      # print (txt[i+1:txt.find('\n',i+1)],i+1,txt.find('\n',i+1))
-    # if re.search("割引",one_line):
-    confidence=match_count/len(item_name[item_count])
-    if confidence>0.5:
-      item_price[item_name[item_count]]=re.search("[0-9](?!.*[a-z]).*$",one_line).group()
+    if confidence<0.5 and re.search("割引",one_line): # 割引があったら別で保存しておく
+      if item_count>0:
+        item_discount_dic[item_name[item_count-1]]=int(re.search("[0-9](?!.*([a-z]|%)).*$",one_line).group())
+    confidence=match_count/len(item_name[item_count]) # item_nameの要素との一致率
+    
+    if confidence>0.5: # 一致率が0.5を超えていたら、一致している扱い
+      item_price_str=re.search("[0-9](?!.*([a-z]|%)).*$",one_line).group() # 金額を取得(この際、※や.が含まれる)
+      item_price=0
+      for k in item_price_str: # item_price_strから数字のみを取得する
+        if re.match("[0-9]",k):
+          item_price=item_price*10+int(k)
+      item_price_dic[item_name[item_count]]=item_price # 商品名と関連付けて金額を格納する
       item_count+=1
     print (confidence,item_count)
-    # print("")
-    if item_count>item_amount:
+    if item_count>item_amount: # 全てのitemを数え終わったら終了。
       break
-print(item_price)
-## \nの次からスタート
-## 何行分あるのかは計算する。
+print(item_price_dic)
