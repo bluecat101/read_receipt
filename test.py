@@ -3,10 +3,11 @@ import regex
 from pykakasi import kakasi
 import mojimoji
 # ----- #
-s="2023/3/28(火)"
+s="2023/3/28"
 result=re.search('20[0-9]{2}(/|年)(1[0-2]|[1-9])(/|月)([1-3][0-9]|[1-9])',s)
 date=re.search('20[0-9]{2}(/|年)(1[0-2]|[1-9])(/|月)([1-3][0-9]|[1-9])',s).group() ## 日付の取得
-day_of_week=re.search('\((日|月|火|水|木|金|土)\)',s).group() ## 曜日の取得
+# day_of_week=re.search('\((日|月|火|水|木|金|土)\)',s).group() ## 曜日の取得
+print(date)
 # ----- #
 
 # # date=result.group()
@@ -40,8 +41,7 @@ day_of_week=re.search('\((日|月|火|水|木|金|土)\)',s).group() ## 曜日�
 
 
 # ----- #日付の取得から小計までループ
-"""
-dairy_products=["牛乳","卵","チーズ"]
+"""dairy_products=["牛乳","卵","チーズ"]
 meat=["鶏","豚","牛"]
 snack=["チョコ","アーモンド","ケーキ"]
 
@@ -49,7 +49,7 @@ item_db={"乳製品": dairy_products,"肉類": meat,"お菓子": snack}
 # オブジェクトをインスタンス化
 kakasi = kakasi()
 
-word="ケーキ"
+word="にわとり"
 item_name="" ## 商品の名前
 item_genre="" ## 商品のジャンル
 
@@ -72,7 +72,7 @@ if item_name == "":
       while item_status != 0:
         # print("item_status",item_status,"[]",item_convert)
         regular=re.escape(item_convert)  ## 正規表現オブジェクト
-        if re.search(regular,item_convert):
+        if re.search(regular,word):
           item_genre=k ## 商品のジャンルを確定する
           item_name=item ## 商品の名前を確定する
           item_status=1
@@ -85,8 +85,7 @@ if item_name == "":
         elif item_status ==1:
           item_convert=mojimoji.zen_to_han(item_convert)
 
-"""
-# print(item_name,item_genre)
+print(item_name,item_genre)"""
 # ----- #
 # new_item_db=[]
 # if item_name=="":
@@ -97,7 +96,7 @@ if item_name == "":
 
 # matplotlib inline
 
-
+""" # いらないかも opencvとtesseractによる画像認識の際のpriceを認識するコード
 from PIL import Image 
 import sys
 import pyocr
@@ -158,3 +157,32 @@ for i,c in enumerate(txt):
     if item_count>item_amount: # 全てのitemを数え終わったら終了。
       break
 print(item_price_dic)
+"""
+
+
+# --- #
+"""
+傾きを考える
+文字の左上のy座標-文字の右上のy座標
+
+"""
+
+# x_1=381
+# y_1=401
+# x_2=443
+# y_2=404
+# x_3=442
+# y_3=417
+# x_4=380
+# y_4=414
+# get_item=[["フルグラ","食品"],["卵","乳製品"]]
+# # slope=1 # レシートが右肩上がりなら1,右下がりなら-1
+# hight=2*(y_3-y_2)/3
+
+# if (text_annotation.bounding_poly.vertices[0].x >y_1-hight or text_annotation.bounding_poly.vertices[0].x <y_1+hight) and re.search("[0-9](?!.*([a-z]|%)).*$",text_annotation.description):
+#   item_price=int(text_annotation.description.replace(",","")) # 金額を取得(この際、,が含まれるのを消しています)
+#   get_item[0].append(item_price)
+
+print(int(1/2))
+print(int(3/2))
+print(int(4/2))
