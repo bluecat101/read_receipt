@@ -58,9 +58,6 @@ def find_item(text):
     if item_inf!=[]:
         break
   return item_inf
-# -----#
-
-
 
 # -----#
 
@@ -142,7 +139,6 @@ for item_inf in item_list:
       break
   del item_inf[0]
 print(item_list)
-
 
 """
 textsの中身は自在に操れる。
