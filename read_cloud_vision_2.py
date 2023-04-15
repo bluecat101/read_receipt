@@ -50,7 +50,11 @@ class Read:
             if re.match('[0-9]',text):
               price=re.match('[0-9]*',text)
               text=text[price.end():]+price.group()
-            item_inf.append(text[:re.search("[0-9]+",text).start()])
+            try:
+              item_inf.append(text[:re.search("[0-9]+.?$",text).start()])
+            except:
+              item_inf.append(text)
+            # item_inf.append(text[:re.search("[0-9]+.?$",text).start()])
             item_inf.append(db_item)
             item_inf.append(item_genre)
             break
@@ -65,8 +69,12 @@ class Read:
           break
       if item_inf!=[]:
           break
-    if item_inf==[]:
-      item_inf.append("can't find item")
+    else:
+      # item_inf.append(text[:re.search("[0-9]+",text).start()])
+      try:
+        item_inf.append(text[:re.search("[0-9]+.?$",text).start()])
+      except:
+        item_inf.append(text)
       item_inf.append("can't find item_db")
       item_inf.append("can't find genre")
     return item_inf
@@ -80,32 +88,47 @@ class Read:
         return False
     return False
 
+  # def insert(self,):
+
 
   def combine(self,text,line_array):# 初めに一番後ろの値を確認する,違うなら最初から探す
     data_array=[]
     if line_array==[]:
       data_array.append(text.description)
+      data_array.append(text.bounding_poly.vertices[1].x)
       data_array.append(text.bounding_poly.vertices[1].y)
       data_array.append((text.bounding_poly.vertices[2].y-text.bounding_poly.vertices[1].y)*2/3)
       data_array.append(texts.index(text))
       line_array.append(data_array)
     else:
-      if(text.bounding_poly.vertices[0].y >line_array[-1][1]-line_array[-1][2] and text.bounding_poly.vertices[0].y <line_array[-1][1]+line_array[-1][2]):
-        line_array[-1][0]+=text.description
-        line_array[-1][1]=text.bounding_poly.vertices[1].y
+      if(text.bounding_poly.vertices[0].y >line_array[-1][2]-line_array[-1][3] and text.bounding_poly.vertices[0].y <line_array[-1][2]+line_array[-1][3]):
+        if line_array[-1][1]<text.bounding_poly.vertices[1].x:
+          line_array[-1][0]+=text.description
+        else:
+          line_array[-1][0]=text.description+line_array[-1][0]
+        line_array[-1][2]=text.bounding_poly.vertices[1].y
+
       else:
         for line in reversed(line_array):
-          if(text.bounding_poly.vertices[0].y >line[1]-line[2] and text.bounding_poly.vertices[0].y <line[1]+line[2]):
-            line[0]+=text.description
-            line[1]=text.bounding_poly.vertices[1].y
+          if(text.bounding_poly.vertices[0].y >line[2]-line[3] and text.bounding_poly.vertices[0].y <line[2]+line[3]):
+            if line[1]<text.bounding_poly.vertices[1].x:
+              # line_array[-1][0]+=text.description
+              line[0]+=text.description
+            else:
+              # line_array[-1][0]=text.description+line_array[-1][0]
+              line[0]=text.description+line[0]
+            # line_array[-1][2]=text.bounding_poly.vertices[2].y
+            line[2]=text.bounding_poly.vertices[1].y
             break
         else:
           data_array.append(text.description)
+          data_array.append(text.bounding_poly.vertices[1].x)
           data_array.append(text.bounding_poly.vertices[1].y)
           data_array.append((text.bounding_poly.vertices[2].y-text.bounding_poly.vertices[1].y)*2/3)
           data_array.append(texts.index(text))
           line_array.append(data_array)
   # -----#
+
   def sort(self,data):
     def find_pivot(data,left,right):
       return data[int((left+right)/2)]
@@ -116,9 +139,9 @@ class Read:
       i=left
       j=right
       while(1):
-        while(data[i][1]<pivot[1]):
+        while(data[i][2]<pivot[2]):
           i+=1
-        while(data[j][1]>pivot[1]):
+        while(data[j][2]>pivot[2]):
           j-=1
         if i>=j:
           break
@@ -131,7 +154,9 @@ class Read:
       quick_sort(data,j+1,right)
       return 0
     quick_sort(data,0,len(data)-1)
+
 read=Read()
+# path =os.path.abspath('sebun.jpg') 
 path =os.path.abspath('ion_long.png') 
 """Detects text in the file."""
 from google.cloud import vision
@@ -170,8 +195,8 @@ texts_only_num=[]
 finish_flag=0
 for text in line_texts:
   if date=="":
-    if re.search('20[0-9]{2}(/|年)(1[0-2]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]): 
-      date=re.search('20[0-9]{2}(/|年)(1[0-2]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]).group() ## 日付の取得
+    if re.search('20[0-9]{2}(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]): 
+      date=re.search('20[0-9]{2}(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]).group() ## 日付の取得
   else:
     if re.match("小計",text[0]):
       finish_flag=1
@@ -218,7 +243,7 @@ for text in line_texts:
     elif finish_flag==0:
       item_inf=read.find_item(text[0])
       if item_inf !=[]:
-        if re.match('(\D)',text[0][-1]):
+        while re.match('(\D)',text[0][-1]):
           text[0]=text[0][:-1]
         try:
           item_inf.append(re.search('[0-9]+$',text[0]).group())
@@ -241,3 +266,4 @@ noitem=0
 for item in item_list:
   print(item)
 print(total_inf)
+print(date)
