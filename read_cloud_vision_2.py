@@ -1,3 +1,4 @@
+# class read:
 import sys
 import io
 import os
@@ -68,45 +69,21 @@ def find_item(text):
         break
     if item_inf!=[]:
         break
+  if item_inf==[]:
+    item_inf.append("can't find item")
+    item_inf.append("can't find item_db")
+    item_inf.append("can't find genre")
+
   return item_inf
 
 # def same_last_item():
 def same_last_item(item_list_last_name,line_texts,position):
-  # import re
-  # print("---------",sys.stderr)
   regular=re.escape(item_list_last_name)  ## 正規表現オブジェクト
-  # print("----d----",file=sys.stderr)
-  # print(len(texts),file=sys.stderr)
-  # # exit(1)
-  # print("aaa")
-
-  # for i in range(10):
-  #   print("aaa")
-  #   # exit(1)
-  # for i in texts:
-  #   exit(1)
-  # print(test,file=sys.stderr)
-  # print("---------------",file=sys.stderr)
-  # print(texts,file=sys.stderr)
-  # for text in texts:
-  #   print("test")
   for i,text in enumerate(line_texts):
-    # enumerate
-    # exit(1)
-    # print("aaa")
-    # print(i,len(text),file=sys.stderr)
-    # print(i,position,text,file=sys.stderr)
-
-    # exit(1)
     if(i>position-3 and i<position and re.search(regular,text[0])): 
-      # print("true",file=sys.stderr)
       return True
     elif i==position:
-      # print("i==position",file=sys.stderr)
       return False
-  # else:
-    # print(len(texts),file=sys.stderr)
-    # print("aaa",file=sys.stderr)
   return False
 # 
 # -----#
@@ -163,6 +140,7 @@ for text in texts:
 for line in line_texts:
   print(line[0])
 
+noitem=0
 item_list=[]
 total_inf=[]
 error=[]
@@ -188,29 +166,16 @@ for text in line_texts:
         price= re.search('[0-9]+$',text[0])
         item_list[len(item_list)-1].append(price.group()) if price else item_inf.append("can't find discount")
     elif re.search('[0-9]個',text[0]):
-      # if re.match('%',text[0][-1]):
-      # text[0]=text[0][:-1]
-      # price= re.search('[0-9]+$',text[0])
-      # print("aaaa",text,file=sys.stderr)
       try:
-        # print(item_list[len(item_list)-1][0],file=sys.stderr)
-        # exit(1)
-        if same_last_item(item_list[len(item_list)-1][0],line_texts,line_texts.index(text)):
-        # if same_last_item():
-          # print("true",file=sys.stderr)
+        if noitem==0:
           item_list[len(item_list)-1][4]=re.search('([0-9]+)個',text[0]).group()[:-1]
-          # print(text,item_list[len(item_list)-1][0],item_list[len(item_list)-1][3],file=sys.stderr)
           item_list[len(item_list)-1][3]=int(int(item_list[len(item_list)-1][3])/int(item_list[len(item_list)-1][4]))
-          # print(text,item_list[len(item_list)-1][0],item_list[len(item_list)-1][3],file=sys.stderr)
         else:
           error_inf=[]
           error_inf.append(item_list[len(item_list)-1][0])
           error_inf.append("個数")
           error.append(error_inf)
           print("error",sys.stderr)
-
-        # print(item_list[len(item_list)-1][0],item_list[len(item_list)-1][3],file=sys.stderr)
-        # print(item_list[len(item_list)-1][3])
 
       except TypeError:
         error_inf=[]
@@ -224,11 +189,6 @@ for text in line_texts:
         error_inf.append("個数")
         error.append(error_inf)
         print("error",sys.stderr)
-      # except :
-      #   print("error")
-      # else:
-      #   price= re.search('[0-9]+$',text[0])
-      #   item_list[len(item_list)-1].append(price.group()) if price else item_inf.append("can't find discount")  
     else:
       item_inf=find_item(text[0])
       if item_inf !=[]:
@@ -237,14 +197,21 @@ for text in line_texts:
         try:
           item_inf.append(re.search('[0-9]+$',text[0]).group())
           item_inf.append(1)
+          noitem=0
         except AttributeError:
           item_inf.append("can't find price")
           item_inf.append(0)
+          noitem=1
 
         item_list.append(item_inf)
-
+noitem=0
 for item in item_list:
-  print(item)
+  if noitem==0 or item[0]!="can't find item":
+    print(item)
+    noitem=0
+  if(item[0]=="can't find item"):
+    noitem=1
+  
 
 """
 item_list=[]
