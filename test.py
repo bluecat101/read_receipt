@@ -186,15 +186,15 @@ print(item_price_dic)
 # print(int(1/2))
 # print(int(3/2))
 # print(int(4/2))
-import sys
-def same_last_item(aaa):
-  import re
-  print("---------",sys.stderr)
-  print("---------",aaa)
-try:
-  same_last_item()
-except:
-  print("error")
+# import sys
+# def same_last_item(aaa):
+#   import re
+#   print("---------",sys.stderr)
+#   print("---------",aaa)
+# try:
+#   same_last_item()
+# except:
+#   print("error")
 # s="123ああ"
 # # print(re.match('a',s).group())
 # print(s)
@@ -207,3 +207,38 @@ except:
 #   # print(price.start())
 #   s=s[price.end():]+price.group()
 # print(s)
+
+data=[0,2,1,34,2,1,574,3,5,7,3]
+def sort(data):
+  def find_pivot(data,left,right):
+    return data[int((left+right)/2)]
+  def quick_sort(data,left,right):
+    if left>=right:
+      # exit()
+      return 0
+    pivot=find_pivot(data,left,right)
+    i=left
+    j=right
+    while(1):
+      while(data[i]<pivot):
+        i+=1
+        # jikkou_i+=1
+      while(data[j]>pivot):
+        j-=1
+        # jikkou_j-=1
+      if i>=j:
+        break
+      tmp=data[i]
+      data[i]=data[j]
+      data[j]=tmp
+      i+=1
+      j-=1
+    quick_sort(data,left,i-1)
+    quick_sort(data,j+1,right)
+    return 0
+
+  quick_sort(data,0,len(data)-1)
+
+print(data)
+sort(data)
+print(data)
