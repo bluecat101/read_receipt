@@ -1,3 +1,4 @@
+import sys
 import io
 import os
 import re
@@ -40,6 +41,16 @@ def find_item(text):
         # print("item_status",item_status,"[]",item_convert)
         regular=re.escape(item_convert)  ## 正規表現オブジェクト
         if re.search(regular,text):
+          ##データ加工
+          if re.match('[0-9]',text):
+            price=re.match('[0-9]*',text)
+            text=text[price.end():]+price.group()
+          # print(re.search("[0-9]+",text))
+          # print(text)
+          # print(re.search("[0-9]+",text).start())
+          # exit(1)
+          # if(re.search("[0-9]+",text).start())>0:
+          item_inf.append(text[:re.search("[0-9]+",text).start()])
           item_inf.append(db_item)
           item_inf.append(item_genre)
           # item_genre=k ## 商品のジャンルを確定する
@@ -59,7 +70,71 @@ def find_item(text):
         break
   return item_inf
 
+# def same_last_item():
+def same_last_item(item_list_last_name,line_texts,position):
+  # import re
+  # print("---------",sys.stderr)
+  regular=re.escape(item_list_last_name)  ## 正規表現オブジェクト
+  # print("----d----",file=sys.stderr)
+  # print(len(texts),file=sys.stderr)
+  # # exit(1)
+  # print("aaa")
+
+  # for i in range(10):
+  #   print("aaa")
+  #   # exit(1)
+  # for i in texts:
+  #   exit(1)
+  # print(test,file=sys.stderr)
+  # print("---------------",file=sys.stderr)
+  # print(texts,file=sys.stderr)
+  # for text in texts:
+  #   print("test")
+  for i,text in enumerate(line_texts):
+    # enumerate
+    # exit(1)
+    # print("aaa")
+    # print(i,len(text),file=sys.stderr)
+    # print(i,position,text,file=sys.stderr)
+
+    # exit(1)
+    if(i>position-3 and i<position and re.search(regular,text[0])): 
+      # print("true",file=sys.stderr)
+      return True
+    elif i==position:
+      # print("i==position",file=sys.stderr)
+      return False
+  # else:
+    # print(len(texts),file=sys.stderr)
+    # print("aaa",file=sys.stderr)
+  return False
+# 
 # -----#
+def combine(text,line_array):# 初めに一番後ろの値を確認する,違うなら最初から探す
+  data_array=[]
+  if line_array==[]:
+    data_array.append(text.description)
+    data_array.append(text.bounding_poly.vertices[1].y)
+    data_array.append((text.bounding_poly.vertices[2].y-text.bounding_poly.vertices[1].y)*2/3)
+    data_array.append(texts.index(text))
+    line_array.append(data_array)
+  else:
+    if(text.bounding_poly.vertices[0].y >line_array[-1][1]-line_array[-1][2] and text.bounding_poly.vertices[0].y <line_array[-1][1]+line_array[-1][2]):
+      line_array[-1][0]+=text.description
+    else:
+      for line in reversed(line_array):
+        if(text.bounding_poly.vertices[0].y >line[1]-line[2] and text.bounding_poly.vertices[0].y <line[1]+line[2]):
+          line[0]+=text.description
+          break
+      else:
+        data_array.append(text.description)
+        data_array.append(text.bounding_poly.vertices[1].y)
+        data_array.append((text.bounding_poly.vertices[2].y-text.bounding_poly.vertices[1].y)*2/3)
+        data_array.append(texts.index(text))
+        line_array.append(data_array)
+# -----#
+
+
 
 path =os.path.abspath('ion_long.png') 
 """Detects text in the file."""
@@ -71,13 +146,107 @@ with io.open(path, 'rb') as image_file:
 image = vision.Image(content=content)
 response = client.text_detection(image=image)
 texts = response.text_annotations
-# print('Texts:')
+print(texts)
 date=""
 if texts==[]:
   print("ERROR can not read")
   exit(1)
 
+
+print("----")
+
 del texts[0]
+line_texts=[]
+for text in texts:
+  combine(text,line_texts)
+
+for line in line_texts:
+  print(line[0])
+
+item_list=[]
+total_inf=[]
+error=[]
+texts_only_num=[]
+for text in line_texts:
+  if date=="":
+    if re.search('20[0-9]{2}(/|年)(1[0-2]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]): 
+      date=re.search('20[0-9]{2}(/|年)(1[0-2]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]).group() ## 日付の取得
+  else:
+    if re.match("合計",text[0]):
+      total_inf=["合計","金額",text]
+    elif re.search('割引',text[0]):
+      if re.match('%',text[0][-1]):
+        text[0]=text[0][:-1]
+        price= re.search('[0-9]+$',text[0])
+        try:
+          item_list[len(item_list)-1].append(int(item_list[len(item_list)-1][-1])*(1-(int(price.group())/100))) 
+        except TypeError:
+          item_list[len(item_list)-1].append("can't calcurlate discount")
+        except AttributeError:
+          item_list[len(item_list)-1].append("can't find discount")
+      else:
+        price= re.search('[0-9]+$',text[0])
+        item_list[len(item_list)-1].append(price.group()) if price else item_inf.append("can't find discount")
+    elif re.search('[0-9]個',text[0]):
+      # if re.match('%',text[0][-1]):
+      # text[0]=text[0][:-1]
+      # price= re.search('[0-9]+$',text[0])
+      # print("aaaa",text,file=sys.stderr)
+      try:
+        # print(item_list[len(item_list)-1][0],file=sys.stderr)
+        # exit(1)
+        if same_last_item(item_list[len(item_list)-1][0],line_texts,line_texts.index(text)):
+        # if same_last_item():
+          # print("true",file=sys.stderr)
+          item_list[len(item_list)-1][4]=re.search('([0-9]+)個',text[0]).group()[:-1]
+          # print(text,item_list[len(item_list)-1][0],item_list[len(item_list)-1][3],file=sys.stderr)
+          item_list[len(item_list)-1][3]=int(int(item_list[len(item_list)-1][3])/int(item_list[len(item_list)-1][4]))
+          # print(text,item_list[len(item_list)-1][0],item_list[len(item_list)-1][3],file=sys.stderr)
+        else:
+          error_inf=[]
+          error_inf.append(item_list[len(item_list)-1][0])
+          error_inf.append("個数")
+          error.append(error_inf)
+          print("error",sys.stderr)
+
+        # print(item_list[len(item_list)-1][0],item_list[len(item_list)-1][3],file=sys.stderr)
+        # print(item_list[len(item_list)-1][3])
+
+      except TypeError:
+        error_inf=[]
+        error_inf.append(item_list[len(item_list)-1][0])
+        error_inf.append("個数")
+        error.append(error_inf)
+        print("error",sys.stderr)
+      except AttributeError:
+        error_inf=[]
+        error_inf.append(item_list[len(item_list)-1][0])
+        error_inf.append("個数")
+        error.append(error_inf)
+        print("error",sys.stderr)
+      # except :
+      #   print("error")
+      # else:
+      #   price= re.search('[0-9]+$',text[0])
+      #   item_list[len(item_list)-1].append(price.group()) if price else item_inf.append("can't find discount")  
+    else:
+      item_inf=find_item(text[0])
+      if item_inf !=[]:
+        if re.match('(\D)',text[0][-1]):
+          text[0]=text[0][:-1]
+        try:
+          item_inf.append(re.search('[0-9]+$',text[0]).group())
+          item_inf.append(1)
+        except AttributeError:
+          item_inf.append("can't find price")
+          item_inf.append(0)
+
+        item_list.append(item_inf)
+
+for item in item_list:
+  print(item)
+
+"""
 item_list=[]
 total_inf=[]
 texts_only_num=[]
@@ -89,18 +258,21 @@ for text in texts:
     if re.search('([^0-9a-zA-Z]{2,})',text.description):
       if text.description == "合計":
         total_inf=["合計","金額",text.bounding_poly.vertices[1].y,(text.bounding_poly.vertices[2].y-text.bounding_poly.vertices[1].y)*2/3]
-      item_inf=find_item(text.description)
-      if item_inf !=[]:
-        item_inf.append(text.bounding_poly.vertices[1].y)
-        item_inf.append((text.bounding_poly.vertices[2].y-text.bounding_poly.vertices[1].y)*2/3)
-        item_list.append(item_inf)
-    elif re.match('[割]',text.description):
-      if len(item_list)>0:
-        item_list[len(item_list)-1].append(text.bounding_poly.vertices[1].y)
-        item_list[len(item_list)-1].append((text.bounding_poly.vertices[2].y-text.bounding_poly.vertices[1].y)*2/3)
+      elif re.match('[割]',text.description):
+        if len(item_list)>0:
+          item_list[len(item_list)-1].append("割引")
+          item_list[len(item_list)-1].append(text.bounding_poly.vertices[1].y)
+          item_list[len(item_list)-1].append((text.bounding_poly.vertices[2].y-text.bounding_poly.vertices[1].y)*2/3)
+        else:
+          print("missing reading") # error
       else:
-        print("missing reading") # error
-    if re.search("[0-9](?!.*([a-z]|%)).*$",text.description):# 金額を取得(この際、※や.が含まれる)
+        item_inf=find_item(text.description)
+        if item_inf !=[]:
+          item_inf.append("商品")
+          item_inf.append(text.bounding_poly.vertices[1].y)
+          item_inf.append((text.bounding_poly.vertices[2].y-text.bounding_poly.vertices[1].y)*2/3)
+          item_list.append(item_inf)
+    if re.search("[0-9](?!.*([a-z])).*$",text.description):# 数字のみのリストを作る
       texts_only_num.append(text)
 
       # delete_index.append(texts.index(text))
@@ -126,19 +298,61 @@ for text in texts:
 
 # -----#
 print(item_list)
-
-item_list.append(total_inf)
+# exit(1)
+# item_list.append(total_inf)
 for item_inf in item_list:
-  item_inf.insert(0,len(item_inf)/2-1)
+  item_inf.insert(0,len(item_inf)/3-1)
+  
   for text in texts_only_num:
-    if (text.bounding_poly.vertices[0].y >item_inf[3]-item_inf[4] and text.bounding_poly.vertices[0].y <item_inf[3]+item_inf[4]) and re.search("[0-9](?!.*([a-z]|%)).*$",text.description):
-      del item_inf[3:5]
+    if (text.bounding_poly.vertices[0].y >item_inf[5]-item_inf[6] and text.bounding_poly.vertices[0].y <item_inf[5]+item_inf[6]) and re.search("[0-9](?!.*([a-z])).*$",text.description):
+      # print("----")
+      # print(text)
+      # print(item_list)
+      # exit(1)
+      if(item_inf[4]=="割引"):
+        max_discount=text
+        for i,discount in enumerate(texts_only_num):
+          if i> texts_only_num.index(text) and max_discount.bounding_poly.vertices[1].x<discount.bounding_poly.vertices[1].x and(discount.bounding_poly.vertices[0].y >item_inf[5]-item_inf[6] and discount.bounding_poly.vertices[0].y <item_inf[5]+item_inf[6]) and re.search("[0-9](?!.*([a-z])).*$",discount.description):
+            # print(i,discount)
+            max_discount=discount
+        # print(max_discount)
+        # exit(1)
+        text=max_discount
+      print("----")
+      print(text)
+      # print(item_list)
+
+      print(texts_only_num[texts_only_num.index(text)+1])
+      # exit(1)
+      # if(text.deescription=="割引" or text.deescription=="割"):
+      # if (texts_only_num[texts_only_num.index(text)+1].bounding_poly.vertices[0].y >item_inf[3]-item_inf[4] and texts_only_num[texts_only_num.index(text)+1].bounding_poly.vertices[0].y <item_inf[3]+item_inf[4]) and re.match('%',texts_only_num[texts_only_num.index(text)+1].description):
+        # print(text)
+        # print(texts_only_num[texts_only_num.index(text)+1])
+        # continue
+        
+        
+        #文字列の追加（商品名：価格：割引）
+        #　割引があったらfor文(現在値からで)でmax_xをゲットする。
+        # 現在値からできないならif文で飛ばすかも(速度見る)
+        
+        
+        #データを変更する必要がありそう
+        # 一列で見るようにデータを変更する。
+        #一番後ろが数字になるまで加工する
+        #その後、一番後ろの値を取得する。->金額
+
+
+
+      del item_inf[4:7]
       item_inf.append(re.sub(r"\D", "", text.description))
       item_inf[0]-=1
     if item_inf[0]==0:
       break
   del item_inf[0]
-print(item_list)
+
+for i in item_list:
+  print(i)
+"""
 
 """
 textsの中身は自在に操れる。
@@ -158,3 +372,4 @@ for i,text in enumerate(texts):
 
 print("test",test)
 """
+  

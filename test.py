@@ -73,7 +73,7 @@ if item_name == "":
         # print("item_status",item_status,"[]",item_convert)
         regular=re.escape(item_convert)  ## 正規表現オブジェクト
         if re.search(regular,word):
-          item_genre=k ## 商品のジャンルを確定する
+item_genre=k ## 商品のジャンルを確定する
           item_name=item ## 商品の名前を確定する
           item_status=1
         item_status-=1
@@ -183,6 +183,27 @@ print(item_price_dic)
 #   item_price=int(text_annotation.description.replace(",","")) # 金額を取得(この際、,が含まれるのを消しています)
 #   get_item[0].append(item_price)
 
-print(int(1/2))
-print(int(3/2))
-print(int(4/2))
+# print(int(1/2))
+# print(int(3/2))
+# print(int(4/2))
+import sys
+def same_last_item(aaa):
+  import re
+  print("---------",sys.stderr)
+  print("---------",aaa)
+try:
+  same_last_item()
+except:
+  print("error")
+# s="123ああ"
+# # print(re.match('a',s).group())
+# print(s)
+# # result=re.match('(\D)',s[-1])
+# # print(result)
+# # t=s[0]+2
+# if re.match('[0-9]',s):
+#   price=re.match('[0-9]*',s)
+#   # print(price.start)
+#   # print(price.start())
+#   s=s[price.end():]+price.group()
+# print(s)
