@@ -240,3 +240,11 @@ if __name__ == '__main__':
     root = tk.Tk()
     app = Application(master=root)
     app.mainloop()
+
+
+# styleNormal=ttk.Style()
+# self.styleError=ttk.Style()
+# style.configure(bd=-2)
+# styleNormal.theme_use('default')
+# styleNormal.configure("label.TEntry",foreground="blue")
+# self.styleError.configure("error",backgraound="red")
