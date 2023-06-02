@@ -112,18 +112,24 @@ class ComfirmReciept(tk.Frame):
     # print(row)
 
   def decideItem(self):
+    isOk=True
     elements=self.tableFrame.winfo_children()
     for element in elements:
       if type(element) == ttk.Combobox:
         if "---" in element.get():
+          isOk=False
           element.configure(foreground="red")
         else:
           element.configure(foreground="white")
       elif type(element) == tk.Entry:
         if not(element.get().isdecimal()):
+          isOk=False
           element.configure(highlightbackground="red")
         else:
           element.configure(highlightbackground="#565656")
+    if isOk==True:
+      for element in elements:
+        print(element.get())
 
 
 if __name__=="__main__":
