@@ -70,7 +70,7 @@ class ComfirmReciept(tk.Frame):
       discountLabel.insert(0,item[4])
       discountLabel.grid(row=i+1,column=4)
 
-      totalLabel=ttk.Entry(self.tableFrame,width=len(str(item[5])),bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
+      totalLabel=tk.Entry(self.tableFrame,width=len(str(item[5])),bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
       totalLabel.insert(0,item[5])
       totalLabel.grid(row=i+1,column=5)
       
@@ -92,27 +92,17 @@ class ComfirmReciept(tk.Frame):
 
   def decide(self):
     elements=self.tableFrame.winfo_children()
-    result=[]
-
-    # print("bbb")
-
-    for i,element in enumerate(elements):###
-      # print(element)
-      if i>=7 and i%7!=6 and not(element.get().isdecimal()):
-        element.configure(foreground="red")
-      elif i>=7 and i%7!=6:
-        element.configure(foreground="white")
-      # if i>=6 and 12>i:
-        # element.destroy()
-      # print(i,type(element))
-      # print(element.keys())
-      # if and int(element.get())< 10:
-
-      # print(element.keys())
-      # for j in element.keys():
-      #   print(j,"[",element.cget(j),"]")
-
-
+    for element in elements:
+      if type(element) == ttk.Combobox:
+        if "---" in element.get():
+          element.configure(foreground="red")
+        else:
+          element.configure(foreground="white")
+      elif type(element) == tk.Entry:
+        if not(element.get().isdecimal()):
+          element.configure(highlightbackground="red")
+        else:
+          element.configure(highlightbackground="#565656")
 
 
 if __name__=="__main__":
