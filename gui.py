@@ -19,11 +19,12 @@ class ComfirmReciept(tk.Frame):
 
     parent.title("comfirm detail")
     parent.geometry("400x600")
-    tableFrame=ttk.LabelFrame(parent)
+    self.tableFrame=ttk.LabelFrame(parent)
     parent.columns=["商品","登録名","金額","数量","割引","合計"]# 合計000(-500)で割引金額表してもいいかも
     for i,column in enumerate(parent.columns): 
-      columnLabel=ttk.Label(tableFrame,text=column)
+      columnLabel=ttk.Label(self.tableFrame,text=column)
       columnLabel.grid(row=0,column=i)
+    ttk.Label(self.tableFrame).grid(row=0,column=6)
     items=[["fff",2,3,4,5,6],[1+1,2+1,3+1,4+1,5+1,6+1]]
     
     dairyProducts=["牛乳","卵","チーズ"]
@@ -39,29 +40,56 @@ class ComfirmReciept(tk.Frame):
       itemList+=["---"+primary_item_key+"---"]
       for item_name in primary_item_value:
         itemList+=[item_name]
+
+    styleNormal=ttk.Style()
+    self.styleError=ttk.Style()
+    # styleNormal.theme_use('default')
+
+    styleNormal.configure("label.TEntry",foreground="blue")
+    self.styleError.configure("error",backgraound="red")
+        #     element.bd=3
+        # element.relief="solid"
+        # element.bg="green"
     for i,item in enumerate(items):
-      productNameLabel=ttk.Entry(tableFrame,width=len(str(item[0])))
-      productNameLabel.insert(0,item[0])  
+      # globals()["item"+str(i)]=tk.StringVar()
+      productNameLabel=ttk.Entry(self.tableFrame, width=len(str(item[0])),style="label.TEntry")
+      productNameLabel.insert(0,item[0])
       productNameLabel.grid(row=i+1,column=0)
-      
-      itemLabel=ttk.Combobox(tableFrame,value=itemList,width=7)
+      # print(item0)
+      itemLabel=ttk.Combobox(self.tableFrame,value=itemList,width=7)
       itemLabel.set(item[1])
       itemLabel.grid(row=i+1,column=1)
 
-      priceLabel=ttk.Label(tableFrame,text=item[2])
+      priceLabel=ttk.Entry(self.tableFrame,width=len(str(item[2])))
+      priceLabel.insert(0,item[2])
       priceLabel.grid(row=i+1,column=2)
 
-      amountLabel=ttk.Label(tableFrame,text=item[3])
+      amountLabel=ttk.Entry(self.tableFrame,width=len(str(item[3])))
+      amountLabel.insert(0,item[3])
       amountLabel.grid(row=i+1,column=3)
 
-      discountLabel=ttk.Label(tableFrame,text=item[4])
+      discountLabel=ttk.Entry(self.tableFrame,width=len(str(item[4])))
+      discountLabel.insert(0,item[4])
       discountLabel.grid(row=i+1,column=4)
 
-      totalLabel=ttk.Label(tableFrame,text=item[5])
+      totalLabel=ttk.Entry(self.tableFrame,width=len(str(item[5])))
+      totalLabel.insert(0,item[5])
       totalLabel.grid(row=i+1,column=5)
-        
-    tableFrame.pack(pady=10)
-    
+      
+      deleteButton=ttk.Button(self.tableFrame,text="delete")
+      deleteButton.bind("<ButtonPress>",self.delete)
+      deleteButton.grid(row=i+1,column=6)
+
+
+    self.tableFrame.pack(pady=10)
+    children = self.tableFrame.winfo_children()
+    # for child in children:
+    #   print(child)
+    # print(children[7].get())
+    # decideFrame=ttk.LabelFrame(parent)
+    decideButton=ttk.Button(parent,text="決定",command=self.decide)
+    decideButton.pack()
+    # print(itemLabel.get()[1])
     # combobox.grid(column=1,row=1)
     
     
@@ -87,6 +115,32 @@ class ComfirmReciept(tk.Frame):
     # # name.grid(column=1,row=1)
     
     # list_frame.pack(pady=10)
+
+  def delete(self,event):
+    elements=self.tableFrame.winfo_children()
+    row=event.widget.grid_info()["row"]
+    for i in range(7):
+      elements[row*7+i].grid_remove()
+
+
+  def decide(self):
+    elements=self.tableFrame.winfo_children()
+    result=[]
+
+    # print("bbb")
+
+    #### for i,element in enumerate(elements):###
+      # if i%6!=4 or type(element)==ttk.Combobox and element.get():
+      # if i>=6 and 12>i:
+        # element.destroy()
+      # print(i,type(element))
+      # print(element.keys())
+      # if element.get().isdecimal()and int(element.get())< 10:
+      # element.configure(foreground="red")
+      # print(element.keys())
+      # for j in element.keys():
+      #   print(j,"[",element.cget(j),"]")
+
 
   def test(self):
     # print("11")
