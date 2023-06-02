@@ -41,18 +41,16 @@ class ComfirmReciept(tk.Frame):
       for item_name in primary_item_value:
         itemList+=[item_name]
 
-    styleNormal=ttk.Style()
-    self.styleError=ttk.Style()
+    # styleNormal=ttk.Style()
+    # self.styleError=ttk.Style()
+    # style.configure(bd=-2)
     # styleNormal.theme_use('default')
 
-    styleNormal.configure("label.TEntry",foreground="blue")
-    self.styleError.configure("error",backgraound="red")
-        #     element.bd=3
-        # element.relief="solid"
-        # element.bg="green"
+    # styleNormal.configure("label.TEntry",foreground="blue")
+    # self.styleError.configure("error",backgraound="red")
     for i,item in enumerate(items):
       # globals()["item"+str(i)]=tk.StringVar()
-      productNameLabel=ttk.Entry(self.tableFrame, width=len(str(item[0])),style="label.TEntry")
+      productNameLabel=tk.Entry(self.tableFrame, width=len(str(item[0])),bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
       productNameLabel.insert(0,item[0])
       productNameLabel.grid(row=i+1,column=0)
       # print(item0)
@@ -60,19 +58,19 @@ class ComfirmReciept(tk.Frame):
       itemLabel.set(item[1])
       itemLabel.grid(row=i+1,column=1)
 
-      priceLabel=ttk.Entry(self.tableFrame,width=len(str(item[2])))
+      priceLabel=tk.Entry(self.tableFrame,width=len(str(item[2])),bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
       priceLabel.insert(0,item[2])
       priceLabel.grid(row=i+1,column=2)
 
-      amountLabel=ttk.Entry(self.tableFrame,width=len(str(item[3])))
+      amountLabel=tk.Entry(self.tableFrame,width=len(str(item[3])),bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
       amountLabel.insert(0,item[3])
       amountLabel.grid(row=i+1,column=3)
 
-      discountLabel=ttk.Entry(self.tableFrame,width=len(str(item[4])))
+      discountLabel=tk.Entry(self.tableFrame,width=len(str(item[4])),bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
       discountLabel.insert(0,item[4])
       discountLabel.grid(row=i+1,column=4)
 
-      totalLabel=ttk.Entry(self.tableFrame,width=len(str(item[5])))
+      totalLabel=ttk.Entry(self.tableFrame,width=len(str(item[5])),bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
       totalLabel.insert(0,item[5])
       totalLabel.grid(row=i+1,column=5)
       
@@ -80,41 +78,10 @@ class ComfirmReciept(tk.Frame):
       deleteButton.bind("<ButtonPress>",self.delete)
       deleteButton.grid(row=i+1,column=6)
 
-
     self.tableFrame.pack(pady=10)
-    children = self.tableFrame.winfo_children()
-    # for child in children:
-    #   print(child)
-    # print(children[7].get())
-    # decideFrame=ttk.LabelFrame(parent)
+    # children = self.tableFrame.winfo_children()
     decideButton=ttk.Button(parent,text="決定",command=self.decide)
     decideButton.pack()
-    # print(itemLabel.get()[1])
-    # combobox.grid(column=1,row=1)
-    
-    
-    # table_btn=tk.Frame(self.tree)
-    # table_btn.pack(pady=10)
-    # tk.Button(table_btn,text="button",command=self.test).pack(side="top")
-    # self.tree.insert(parent="",index=0, iid=0, values=(1,11,111))
-
-    # combo_frame.pack(pady=10)
-    # list_frame= ttk.LabelFrame(self,text="list_frame")
-    # idPathLabel=ttk.Label(list_frame,text="idPathLabel")
-    # idPathLabel.grid(column=0,row=0)
-
-    # namePathLabel=ttk.Label(list_frame,text="namePathLabel")
-    # namePathLabel.grid(column=1,row=0)
-
-    # id=ttk.Label(list_frame,text="id")
-    # id.grid(column=0,row=1)
-
-    # combobox = ttk.Combobox(list_frame,width=7 ,height=3,value=('a','b','c'))
-    # combobox.grid(column=1,row=1)
-    # # name=ttk.Label(list_frame,text="name")
-    # # name.grid(column=1,row=1)
-    
-    # list_frame.pack(pady=10)
 
   def delete(self,event):
     elements=self.tableFrame.winfo_children()
@@ -129,41 +96,21 @@ class ComfirmReciept(tk.Frame):
 
     # print("bbb")
 
-    #### for i,element in enumerate(elements):###
-      # if i%6!=4 or type(element)==ttk.Combobox and element.get():
+    for i,element in enumerate(elements):###
+      # print(element)
+      if i>=7 and i%7!=6 and not(element.get().isdecimal()):
+        element.configure(foreground="red")
+      elif i>=7 and i%7!=6:
+        element.configure(foreground="white")
       # if i>=6 and 12>i:
         # element.destroy()
       # print(i,type(element))
       # print(element.keys())
-      # if element.get().isdecimal()and int(element.get())< 10:
-      # element.configure(foreground="red")
+      # if and int(element.get())< 10:
+
       # print(element.keys())
       # for j in element.keys():
       #   print(j,"[",element.cget(j),"]")
-
-
-  def test(self):
-    # print("11")
-    selected = self.tree.focus()
-    item = self.tree.item(0)
-    # print(item)
-    # print(selected)
-
-    # tmp=self.tree.item(selected,'values')
-    tmp=self.tree.item("0",'values')
-    self.tree.insert(parent="",index=0,value=(tmp[1],tmp[2],tmp[0]))
-
-  def add_task(self):
-    task=self.task_entry.get()
-    if task:
-      self.tasks.append(task)
-      self.task_list.insert("end",task)
-      self.task_entry.delete(0,"end")
-  def delete_task(self):
-    selected_indices=self.task_list.curselection()
-    for index in selected_indices[::-1]:
-      self.task_list.delete(index)
-      self.tasks.pop(index)
 
 
 
