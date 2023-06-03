@@ -8,15 +8,15 @@ from pykakasi import kakasi
 import mojimoji
 from google.cloud import vision
 import io
-# Data Base as product
-dairy_products=["牛乳","卵","チーズ"]
+""" Data Base as item """
+dairyProducts=["牛乳","卵","チーズ"]
 meat=["鶏","豚","牛","ししゃも"]
 snack=["クッキー","パイ","揚げせん","チョコ","アーモンド","ケーキ","フルグラ","コーンフレーク","ポテト"]
 staple=["パン","ブレッド","うどん","ご飯","パスタ"]
 drink=["珈琲","緑茶"]
 vegetable=["じゃがいも","レタス","水菜","舞茸","榎茸","小松菜","ほうれん草","野菜","ブロッコリー","人参","ピーマン","きゅうり"]
 processed_goods=["ちくわ","納豆","西京漬","厚揚げ","かに風","ウインナー"] 
-item_db={"乳製品": dairy_products,"肉類": meat,"お菓子": snack,"主食": staple,"飲み物":drink ,"野菜":vegetable ,"加工品":processed_goods}
+itemDB={"乳製品": dairyProducts,"肉類": meat,"お菓子": snack,"主食": staple,"飲み物":drink ,"野菜":vegetable ,"加工品":processed_goods}
 
 class Receipt:
   """ read receipt, analyse and devide with each item. """
@@ -48,162 +48,130 @@ class Receipt:
     del self.textsInfo[0]
     lineTexts = self.combine(self.textsInfo) # disassembe content for each line and save it for lineTexts
   
-    self.sort(lineTexts) # sort from top to bottom because, sometime disassmbe is mistake order.
+    self.sort(lineTexts) # sort from top to bottom because sometimes disassembling is mistake order.
     
-    noItem=0
-    item_list=[]
-    total_inf=[]
-    error=[]
+    hasPrice=True
+    itemList=[]
+    totalInf=[]
     date=""
-    # texts_only_num=[]
-    finish_flag=0
+    isFinish=False
     for text in lineTexts:
-      if date=="":
+      if date=="": # until find date in receipt
         if re.search('20[0-9]{2}(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]): 
-          date=re.search('20[0-9]{2}(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]).group() ## 日付の取得
-      else:
-        if re.match("小計",text[0]):
-          finish_flag=1
-          # total_inf=["合計","金額",text]
-        elif re.match("合計",text[0]):
-          total_inf=["合計","金額",text]
+          date=re.search('20[0-9]{2}(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]).group() ## get date
+      else: # After find date
+        if re.match("小計",text[0]): # quit to read item in receipt
+          isFinish = True
+          # totalInf=["合計","金額",text]
+        elif re.match("合計",text[0]): # get total price and exit roop
+          totalInf = ["合計","金額",text]
           break
-        elif re.search('割引',text[0])and finish_flag==0:
-          if re.match('%',text[0][-1]):
-            text[0]=text[0][:-1]
-            price= re.search('[0-9]+$',text[0])
+        elif re.search('割引',text[0]) and not(isFinish): # find discount 
+          if re.match('%',text[0][-1]): # whether last character is "%" in word
+            text[0]=text[0][:-1] # delete "%"
+            price= re.search('[0-9]+$',text[0]) # get price
             try:
-              item_list[len(item_list)-1].append(int(item_list[len(item_list)-1][-1])*(1-(int(price.group())/100))) 
-            except TypeError:
-              item_list[len(item_list)-1].append("can't calcurlate discount")
-            except AttributeError:
-              item_list[len(item_list)-1].append("can't find discount")
-          else:
+              # calcurate discount price because noe price is  "%"
+              itemList[len(itemList)-1].append(int(itemList[len(itemList)-1][-1])*(1-(int(price.group())/100))) 
+            except TypeError: # can't find price with number
+              itemList[len(itemList)-1].append("can't calcurlate discount")
+            except AttributeError: # can't get discount
+              itemList[len(itemList)-1].append("can't find discount")
+          else: # last character is not "%"
             price= re.search('[0-9]+$',text[0])
-            item_list[len(item_list)-1].append(price.group()) if price else item_inf.append("can't find discount")
-        elif re.search('[0-9]個',text[0])and finish_flag==0:
+            itemList[len(itemList)-1].append(price.group()) if price else itemInfo.append("can't find discount") # store discount price or not find it
+        elif re.search('[0-9]個',text[0])and not(isFinish): # word is not discount and it is quantity
           try:
-            if noItem==0:
-              item_list[len(item_list)-1][4]=re.search('([0-9]+)個',text[0]).group()[:-1]
-              item_list[len(item_list)-1][3]=int(int(item_list[len(item_list)-1][3])/int(item_list[len(item_list)-1][4]))
-            else:
-              error_inf=[]
-              error_inf.append(item_list[len(item_list)-1][0])
-              error_inf.append("個数")
-              error.append(error_inf)
-              print("error",sys.stderr)
+            if hasPrice: # have item and need to get quantity
+              itemList[len(itemList)-1][4]=re.search('([0-9]+)個',text[0]).group()[:-1] # get quantity
+              itemList[len(itemList)-1][3]=int(int(itemList[len(itemList)-1][3])/int(itemList[len(itemList)-1][4])) # add price per one item
+            else: # don't have item yet but find quantity
+              print("can't find item",sys.stderr)
           except TypeError:
-            error_inf=[]
-            error_inf.append(item_list[len(item_list)-1][0])
-            error_inf.append("個数")
-            error.append(error_inf)
-            print("error",sys.stderr)
+            print("TypeError in finding quantity",sys.stderr)
           except AttributeError:
-            error_inf=[]
-            error_inf.append(item_list[len(item_list)-1][0])
-            error_inf.append("個数")
-            error.append(error_inf)
-            print("error",sys.stderr)
-        elif finish_flag==0:
-          item_inf=self.find_item(text[0])
-          if item_inf !=[]:
-            while re.match('(\D)',text[0][-1]):
+            print("AttributeError in finding quantity",sys.stderr)
+        elif not(isFinish): # find item name
+          itemInfo=self.findItem(text[0]) # get itemInfo
+          if itemInfo !=[]: # match word in DataBase
+            while re.match('(\D)',text[0][-1]): # delete first character except number
               text[0]=text[0][:-1]
             try:
-              item_inf.append(re.search('[0-9]+$',text[0]).group())
-              item_inf.append(1)
-              noItem=0
-            except AttributeError:
-              item_inf.append("can't find price")
-              item_inf.append(0)
-              noItem=1
-            item_list.append(item_inf)
-    noItem=0
-
-    # for item in item_list:
-    #   if noItem==0 or item[0]!="can't find item":
-    #     print(item)
-    #     noItem=0
-    #   if(item[0]=="can't find item"):
-    #     noItem=1
-
-    for item in item_list:
+              itemInfo.append(re.search('[0-9]+$',text[0]).group()) # get price
+              itemInfo.append(1) # number of item
+              hasPrice = True # find item flag
+            except AttributeError: # can't get price
+              itemInfo.append("can't find price") 
+              itemInfo.append(0)
+              hasPrice=False
+            itemList.append(itemInfo)
+    for item in itemList:
       print(item)
-    print(total_inf)
+    print(totalInf)
     print(date)
 
 
 
+  def findItem(self,text):
+    """ find item name from DataBase. 2nd argument is word maybe it become item name. """
+    itemInfo=[]
+    for itemGenre,itemValue in itemDB.items(): # roop from DB
+      for dbItem in itemValue: # roop in each item name
+        itemConvert=dbItem # get DB item name to change Kanji, Hiragana, Katakana and Half Katakana.
+        # check type of item name in DB whether Kanji, Hiragana, Katakana and Half Katakana and change status.
+        if regex.match('^\p{Script=Han}+$', itemConvert): # Kanji
+          itemTypeStatus = 4
+        elif re.match('[あ-ん]+', itemConvert): # Hiragana
+          itemTypeStatus = 3
+        elif re.match('[ア-ン]+', itemConvert): # Katakana
+          itemTypeStatus = 2
+        elif re.match('[ｱ-ﾝ]+', itemConvert): # Half Katakana
+          itemTypeStatus = 1
+        else: # English or Other language
+          itemTypeStatus=0
 
-
-  def find_item(self,text):
-    item_inf=[]
-    # if item_name == "":
-    for item_genre,item_value in item_db.items(): ## 辞書内ループ
-      for db_item in item_value:
-        item_convert=db_item
-        if regex.match('^\p{Script=Han}+$', item_convert):
-          item_status=4
-        elif re.match('[あ-ん]+', item_convert):
-          item_status=3
-        elif re.match('[ア-ン]+', item_convert):
-          item_status=2
-        elif re.match('[ｱ-ﾝ]+', item_convert):
-          item_status=1
-        else:
-          item_status=0
-        while item_status != 0:
-          regular=re.escape(item_convert)  ## 正規表現オブジェクト
-          if re.search(regular,text):
-            ##データ加工
-            if re.match('[0-9]',text):
-              price=re.match('[0-9]*',text)
-              text=text[price.end():]+price.group()
+        while itemTypeStatus != 0:
+          regular=re.escape(itemConvert)  # make regular expression object.
+          if re.search(regular,text): # if itemConvert is included in text
+            if re.match('[0-9]',text): # if first character is number
+              price=re.match('[0-9]*',text) # get price from first character
+              text=text[price.end():]+price.group() # change the order 
             try:
-              item_inf.append(text[:re.search("[0-9]+.?$",text).start()])
+              itemInfo.append(text[:re.search("[0-9]+.?$",text).start()]) # append text from first to previous
             except:
-              item_inf.append(text)
-            # item_inf.append(text[:re.search("[0-9]+.?$",text).start()])
-            item_inf.append(db_item)
-            item_inf.append(item_genre)
+              itemInfo.append(text)
+            # itemInfo.append(text[:re.search("[0-9]+.?$",text).start()])
+            itemInfo.append(dbItem)
+            itemInfo.append(itemGenre)
             break
-          item_status-=1
-          if item_status ==3:
-            item_convert = self.kakasi.convert(item_convert)[0]['hira']
-          elif item_status ==2:
-            item_convert = self.kakasi.convert(item_convert)[0]['kana']
-          elif item_status ==1:
-            item_convert=mojimoji.zen_to_han(item_convert)
-        if item_inf!=[]:
+          itemTypeStatus -= 1 # change type
+          if itemTypeStatus ==3:
+            itemConvert = self.kakasi.convert(itemConvert)[0]['hira'] # change type of word for Hiragana
+          elif itemTypeStatus ==2:
+            itemConvert = self.kakasi.convert(itemConvert)[0]['kana'] # change type of word for Katakana
+          elif itemTypeStatus ==1:
+            itemConvert=mojimoji.zen_to_han(itemConvert) # change type of word for Half Katakana
+        if itemInfo!=[]: # find name from DataBase
           break
-      if item_inf!=[]:
+      if itemInfo!=[]: # find name from DataBase
           break
-    else:
-      # item_inf.append(text[:re.search("[0-9]+",text).start()])
-      try:
-        item_inf.append(text[:re.search("[0-9]+.?$",text).start()])
+    else: # can't find name from DataBase
+      try: # get item name
+        itemInfo.append(text[:re.search("[0-9]+.?$",text).start()])
       except:
-        item_inf.append(text)
-      item_inf.append("can't find item_db")
-      item_inf.append("can't find genre")
-    return item_inf
-
-  # def same_last_item(item_list_last_name,lineTexts,position):
-  #   regular=re.escape(item_list_last_name)  ## 正規表現オブジェクト
-  #   for i,text in enumerate(lineTexts):
-  #     if(i>position-3 and i<position and re.search(regular,text[0])): 
-  #       return True
-  #     elif i==position:
-  #       return False
-  #   return False
+        itemInfo.append(text)
+      itemInfo.append("can't find itemDB")
+      itemInfo.append("can't find genre")
+    return itemInfo # itemInfo[0]: item name, itemInfo[1]: item DB name, itemInfo[2]: genre
 
   def combine(self,textsInfo):
-    """ search each text in textsInfo. Get and Combine word. Return words by each line """
+    """ search each text in textsInfo. Get and Combine word. Return words by each line. 2nd argument is all text infomation in reciept. """
     def addNewLine(text):
+      """ 1st argument is one line text infomation. """
       data_array=[] # store word info
       data_array.append(text.description) # stored one word
       data_array.append(text.bounding_poly.vertices[1].x) # get word position about x
-      data_array.append(text.bounding_poly.vertices[1].y) # get word posigion about y
+      data_array.append(text.bounding_poly.vertices[1].y) # get word position about y
       data_array.append((text.bounding_poly.vertices[2].y-text.bounding_poly.vertices[1].y)*2/3) # save range that is need to combine other words
       data_array.append(textsInfo.index(text)) # save index to sort
       return data_array
@@ -224,24 +192,26 @@ class Receipt:
           for line in reversed(lineInfo): # search word form last word
             if(text.bounding_poly.vertices[0].y >line[2]-line[3] and text.bounding_poly.vertices[0].y <line[2]+line[3]):
               """ Whethrer this text is included preve word's range """
-              if line[1]<text.bounding_poly.vertices[1].x:
-                line[0]+=text.description
+              if line[1]<text.bounding_poly.vertices[1].x: # Whther position of this text is after prev word.
+                line[0]+=text.description # connect prev word and this word
               else:
-                line[0]=text.description+line[0]
-              line[2]=text.bounding_poly.vertices[1].y
+                line[0]=text.description+line[0] # connect prev word and this word
+              line[2]=text.bounding_poly.vertices[1].y # update position y
               break
           else: # can't find some position word in lineInfo
             lineInfo.append(addNewLine(text)) # save for lineInfo array
     return lineInfo
   
+
   def sort(self,data):
-    def find_pivot(data,left,right):
+    """ quickSort by index as textsInfo. 2nd infomation is infomationo"""
+    def findPivot(data,left,right):
       return data[int((left+right)/2)]
     
-    def quick_sort(data,left,right):
+    def quickSort(data,left,right):
       if left>=right:
         return 0
-      pivot=find_pivot(data,left,right)
+      pivot=findPivot(data,left,right)
       i=left
       j=right
       while(1):
@@ -256,10 +226,10 @@ class Receipt:
         data[j]=tmp
         i+=1
         j-=1
-      quick_sort(data,left,i-1)
-      quick_sort(data,j+1,right)
+      quickSort(data,left,i-1)
+      quickSort(data,j+1,right)
       return 0
-    quick_sort(data,0,len(data)-1)
+    quickSort(data,0,len(data)-1)
 
 
 if __name__ == '__main__':
