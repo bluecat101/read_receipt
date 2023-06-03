@@ -19,9 +19,7 @@ processed_goods=["ちくわ","納豆","西京漬","厚揚げ","かに風","ウ�
 item_db={"乳製品": dairy_products,"肉類": meat,"お菓子": snack,"主食": staple,"飲み物":drink ,"野菜":vegetable ,"加工品":processed_goods}
 
 class Receipt:
-  """
-  read receipt, analyse and devide with each item.
-  """
+  """ read receipt, analyse and devide with each item. """
   def __init__(self,receiptName):
     self.kakasi = kakasi()
     self.path =os.path.abspath(receiptName) # set image path
@@ -29,10 +27,7 @@ class Receipt:
     self.textsInfo # to save all content in receipt
   
   def readReceipt(self):
-    """
-    Detects text in the file. 
-    Call analyse function.
-    """
+    """ Detects text in the file. Call analyse function. """
     client = vision.ImageAnnotatorClient()
     with io.open(self.path, 'rb') as image_file:
         content = image_file.read()
@@ -40,7 +35,6 @@ class Receipt:
     image = vision.Image(content=content)
     response = client.text_detection(image=image)
     self.textsInfo = response.text_annotations # save content
-    # print(self.textsInfo)
     
     if self.textsInfo==[]: # can't read receipt
       print("ERROR can not read")
@@ -50,26 +44,20 @@ class Receipt:
 
 
   def analyse(self): 
-    """
-    Disassemble content for each line.
-    """
+    """ Disassemble content for each line. """
     del self.textsInfo[0]
-    line_texts=[]
-    for text in self.textsInfo: # disassembe content for each line and save it for line_texts
-      self.combine(text,line_texts)
+    lineTexts = self.combine(self.textsInfo) # disassembe content for each line and save it for lineTexts
   
-    self.sort(line_texts) # sort from top to bottom because, sometime disassmbe is mistake order.
-    # for line in line_texts:
-    #   print(line[1])
+    self.sort(lineTexts) # sort from top to bottom because, sometime disassmbe is mistake order.
     
-    noitem=0
+    noItem=0
     item_list=[]
     total_inf=[]
     error=[]
     date=""
     # texts_only_num=[]
     finish_flag=0
-    for text in line_texts:
+    for text in lineTexts:
       if date=="":
         if re.search('20[0-9]{2}(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]): 
           date=re.search('20[0-9]{2}(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]).group() ## 日付の取得
@@ -95,7 +83,7 @@ class Receipt:
             item_list[len(item_list)-1].append(price.group()) if price else item_inf.append("can't find discount")
         elif re.search('[0-9]個',text[0])and finish_flag==0:
           try:
-            if noitem==0:
+            if noItem==0:
               item_list[len(item_list)-1][4]=re.search('([0-9]+)個',text[0]).group()[:-1]
               item_list[len(item_list)-1][3]=int(int(item_list[len(item_list)-1][3])/int(item_list[len(item_list)-1][4]))
             else:
@@ -124,20 +112,20 @@ class Receipt:
             try:
               item_inf.append(re.search('[0-9]+$',text[0]).group())
               item_inf.append(1)
-              noitem=0
+              noItem=0
             except AttributeError:
               item_inf.append("can't find price")
               item_inf.append(0)
-              noitem=1
+              noItem=1
             item_list.append(item_inf)
-    noitem=0
+    noItem=0
 
     # for item in item_list:
-    #   if noitem==0 or item[0]!="can't find item":
+    #   if noItem==0 or item[0]!="can't find item":
     #     print(item)
-    #     noitem=0
+    #     noItem=0
     #   if(item[0]=="can't find item"):
-    #     noitem=1
+    #     noItem=1
 
     for item in item_list:
       print(item)
@@ -200,49 +188,52 @@ class Receipt:
       item_inf.append("can't find genre")
     return item_inf
 
-  # def same_last_item(item_list_last_name,line_texts,position):
+  # def same_last_item(item_list_last_name,lineTexts,position):
   #   regular=re.escape(item_list_last_name)  ## 正規表現オブジェクト
-  #   for i,text in enumerate(line_texts):
+  #   for i,text in enumerate(lineTexts):
   #     if(i>position-3 and i<position and re.search(regular,text[0])): 
   #       return True
   #     elif i==position:
   #       return False
   #   return False
 
-  def combine(self,text,line_array): # 初めに一番後ろの値を確認する,違うなら最初から探す
-    data_array=[]
-    if line_array==[]: # first time
-      data_array.append(text.description)
-      data_array.append(text.bounding_poly.vertices[1].x)
-      data_array.append(text.bounding_poly.vertices[1].y)
-      data_array.append((text.bounding_poly.vertices[2].y-text.bounding_poly.vertices[1].y)*2/3)
-      data_array.append(self.textsInfo.index(text))
-      line_array.append(data_array)
-    else:
-      if(text.bounding_poly.vertices[0].y >line_array[-1][2]-line_array[-1][3] and text.bounding_poly.vertices[0].y <line_array[-1][2]+line_array[-1][3]):
-        if line_array[-1][1]<text.bounding_poly.vertices[1].x:
-          line_array[-1][0]+=text.description
-        else:
-          line_array[-1][0]=text.description+line_array[-1][0]
-        line_array[-1][2]=text.bounding_poly.vertices[1].y
+  def combine(self,textsInfo):
+    """ search each text in textsInfo. Get and Combine word. Return words by each line """
+    def addNewLine(text):
+      data_array=[] # store word info
+      data_array.append(text.description) # stored one word
+      data_array.append(text.bounding_poly.vertices[1].x) # get word position about x
+      data_array.append(text.bounding_poly.vertices[1].y) # get word posigion about y
+      data_array.append((text.bounding_poly.vertices[2].y-text.bounding_poly.vertices[1].y)*2/3) # save range that is need to combine other words
+      data_array.append(textsInfo.index(text)) # save index to sort
+      return data_array
 
-      else:
-        for line in reversed(line_array):
-          if(text.bounding_poly.vertices[0].y >line[2]-line[3] and text.bounding_poly.vertices[0].y <line[2]+line[3]):
-            if line[1]<text.bounding_poly.vertices[1].x:
-              line[0]+=text.description
-            else:
-              line[0]=text.description+line[0]
-            line[2]=text.bounding_poly.vertices[1].y
-            break
+    lineInfo=[]
+    for text in textsInfo:
+      if lineInfo==[]: # first roop
+        lineInfo.append(addNewLine(text)) # save for lineInfo array
+      else: # secound time onwards roop 
+        if(text.bounding_poly.vertices[0].y >lineInfo[-1][2]-lineInfo[-1][3] and text.bounding_poly.vertices[0].y <lineInfo[-1][2]+lineInfo[-1][3]):
+          """ Whethrer this text is included preve word's range """
+          if lineInfo[-1][1]<text.bounding_poly.vertices[1].x: # Whther position of this text is after prev word.
+            lineInfo[-1][0]+=text.description # connect prev word and this word
+          else:
+            lineInfo[-1][0]=text.description+lineInfo[-1][0] # connect prev word and this word
+          lineInfo[-1][2]=text.bounding_poly.vertices[1].y # update position y
         else:
-          data_array.append(text.description)
-          data_array.append(text.bounding_poly.vertices[1].x)
-          data_array.append(text.bounding_poly.vertices[1].y)
-          data_array.append((text.bounding_poly.vertices[2].y-text.bounding_poly.vertices[1].y)*2/3)
-          data_array.append(self.textsInfo.index(text))
-          line_array.append(data_array)
-
+          for line in reversed(lineInfo): # search word form last word
+            if(text.bounding_poly.vertices[0].y >line[2]-line[3] and text.bounding_poly.vertices[0].y <line[2]+line[3]):
+              """ Whethrer this text is included preve word's range """
+              if line[1]<text.bounding_poly.vertices[1].x:
+                line[0]+=text.description
+              else:
+                line[0]=text.description+line[0]
+              line[2]=text.bounding_poly.vertices[1].y
+              break
+          else: # can't find some position word in lineInfo
+            lineInfo.append(addNewLine(text)) # save for lineInfo array
+    return lineInfo
+  
   def sort(self,data):
     def find_pivot(data,left,right):
       return data[int((left+right)/2)]
