@@ -1,3 +1,11 @@
+################################################
+# ------------------ README ------------------ #
+# do character recognition with Google Coloud  #
+# read receipt and alaryse                     #
+# get name, genre, price, descount and qunattiy#
+#                                              #
+################################################
+
 import sys
 import io
 import os
