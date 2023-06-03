@@ -204,32 +204,33 @@ class Receipt:
   
 
   def sort(self,data):
-    """ quickSort by index as textsInfo. 2nd infomation is infomationo"""
-    def findPivot(data,left,right):
+    """ quickSort by index as textsInfo. 2nd infomation is infomation """
+    def findPivot(data,left,right): # get Pivot
       return data[int((left+right)/2)]
     
     def quickSort(data,left,right):
       if left>=right:
         return 0
-      pivot=findPivot(data,left,right)
+      pivot=findPivot(data,left,right) # get pivot
       i=left
       j=right
       while(1):
-        while(data[i][2]<pivot[2]):
+        while(data[i][2]<pivot[2]): # find position i
           i+=1
-        while(data[j][2]>pivot[2]):
+        while(data[j][2]>pivot[2]): # find position j
           j-=1
         if i>=j:
           break
+        # swap
         tmp=data[i]
         data[i]=data[j]
         data[j]=tmp
         i+=1
         j-=1
-      quickSort(data,left,i-1)
-      quickSort(data,j+1,right)
+      quickSort(data,left,i-1) # recursing
+      quickSort(data,j+1,right) # recursing
       return 0
-    quickSort(data,0,len(data)-1)
+    quickSort(data,0,len(data)-1) # exec when called sort()
 
 
 if __name__ == '__main__':
