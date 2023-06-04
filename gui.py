@@ -104,15 +104,28 @@ class ComfirmReciept(tk.Frame):
 
   def deleteItem(self,event):
     elements=self.tableFrame.winfo_children()
-    row=event.widget.grid_info()["row"]
-    print(event.widget.grid_info())
-    print(event.widget)
+    # for element in elements:
+    # if element == event.widget:
+    print("Delete",event.widget)
     for i in range(8):
-      elements[row*8+i].grid_remove()
+      elements[elements.index(event.widget)-i].destroy()
+    # print("correct")
+    # print(element)
+    # row=event.widget.grid_info()["row"]
+    # print(str(event.widget)[-1],event.widget)
+    # print(event.widget.grid_info()["row"])
+    # print("row",event.widget.grid_info()["row"])
+
+    # for i in range(8):
+    #   elements[row*8+i].destroy()
+    #for element in elements:
+    #  if type(element) == ttk.Button:
+    #    print(element)
+    #print(elements)
 
   def addItem(self):
-    row=int(len(self.tableFrame.winfo_children())/8)-1
-
+    row=(self.tableFrame.winfo_children())[-1].grid_info()["row"]
+    
     productNameEntry=tk.Entry(self.tableFrame,width=7,bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
     productNameEntry.grid(row=row+1,column=0)
 
@@ -134,7 +147,6 @@ class ComfirmReciept(tk.Frame):
     totalEntry=tk.Entry(self.tableFrame,width=7,bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
     totalEntry.grid(row=row+1,column=6)
 
-    
     deleteButton=ttk.Button(self.tableFrame,text="delete")
     deleteButton.bind("<ButtonPress>",self.deleteItem)
     deleteButton.grid(row=row+1,column=7)
@@ -184,7 +196,9 @@ class ComfirmReciept(tk.Frame):
 # self.root = tk.Tk()
 if __name__=="__main__":
 #   self.root = tk.Tk()
-  items=[["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]]
+  items=[["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
+        #  ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
+         ]
   app=ComfirmReciept(items)
   app.mainloop()
     
