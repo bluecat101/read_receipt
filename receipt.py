@@ -16,15 +16,7 @@ from pykakasi import kakasi
 import mojimoji
 from google.cloud import vision
 import io
-""" Data Base as item """
-dairyProducts=["牛乳","卵","チーズ"]
-meat=["鶏","豚","牛","ししゃも"]
-snack=["クッキー","パイ","揚げせん","チョコ","アーモンド","ケーキ","フルグラ","コーンフレーク","ポテト"]
-staple=["パン","ブレッド","うどん","ご飯","パスタ"]
-drink=["珈琲","緑茶"]
-vegetable=["じゃがいも","レタス","水菜","舞茸","榎茸","小松菜","ほうれん草","野菜","ブロッコリー","人参","ピーマン","きゅうり"]
-processed_goods=["ちくわ","納豆","西京漬","厚揚げ","かに風","ウインナー"] 
-itemDB={"乳製品": dairyProducts,"肉類": meat,"お菓子": snack,"主食": staple,"飲み物":drink ,"野菜":vegetable ,"加工品":processed_goods}
+import item_db as db
 
 class Receipt:
   """ read receipt, analyse and devide with each item. """
@@ -59,20 +51,20 @@ class Receipt:
     self.sort(lineTexts) # sort from top to bottom because sometimes disassembling is mistake order.
     
     hasPrice=True
-    itemList=[]
-    totalInf=[]
-    date=""
+    self.itemList=[]
+    self.totalInf=[]
+    self.date=""
     isFinish=False
     for text in lineTexts:
-      if date=="": # until find date in receipt
+      if self.date=="": # until find date in receipt
         if re.search('20[0-9]{2}(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]): 
-          date=re.search('20[0-9]{2}(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]).group() ## get date
-      else: # After find date
+          self.date=re.search('20[0-9]{2}(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]).group() ## get self.date
+      else: # After find self.date
         if re.match("小計",text[0]): # quit to read item in receipt
           isFinish = True
-          # totalInf=["合計","金額",text]
+          # self.totalInf=["合計","金額",text]
         elif re.match("合計",text[0]): # get total price and exit roop
-          totalInf = ["合計","金額",text]
+          self.totalInf = ["合計","金額",text]
           break
         elif re.search('割引',text[0]) and not(isFinish): # find discount 
           if re.match('%',text[0][-1]): # whether last character is "%" in word
@@ -80,19 +72,19 @@ class Receipt:
             price= re.search('[0-9]+$',text[0]) # get price
             try:
               # calcurate discount price because noe price is  "%"
-              itemList[len(itemList)-1].append(int(itemList[len(itemList)-1][-1])*(1-(int(price.group())/100))) 
+              self.itemList[len(self.itemList)-1].append(int(self.itemList[len(self.itemList)-1][-1])*(1-(int(price.group())/100))) 
             except TypeError: # can't find price with number
-              itemList[len(itemList)-1].append("can't calcurlate discount")
+              self.itemList[len(self.itemList)-1].append("---") # can't calcurlate discount
             except AttributeError: # can't get discount
-              itemList[len(itemList)-1].append("can't find discount")
+              self.itemList[len(self.itemList)-1].append("---") # can't find discount
           else: # last character is not "%"
             price= re.search('[0-9]+$',text[0])
-            itemList[len(itemList)-1].append(price.group()) if price else itemInfo.append("can't find discount") # store discount price or not find it
+            self.itemList[len(self.itemList)-1].append(price.group()) if price else itemInfo.append("---") # store discount price or not find it then put "can't find discount"
         elif re.search('[0-9]個',text[0])and not(isFinish): # word is not discount and it is quantity
           try:
             if hasPrice: # have item and need to get quantity
-              itemList[len(itemList)-1][4]=re.search('([0-9]+)個',text[0]).group()[:-1] # get quantity
-              itemList[len(itemList)-1][3]=int(int(itemList[len(itemList)-1][3])/int(itemList[len(itemList)-1][4])) # add price per one item
+              self.itemList[len(self.itemList)-1][4]=re.search('([0-9]+)個',text[0]).group()[:-1] # get quantity
+              self.itemList[len(self.itemList)-1][3]=int(int(self.itemList[len(self.itemList)-1][3])/int(self.itemList[len(self.itemList)-1][4])) # add price per one item
             else: # don't have item yet but find quantity
               print("can't find item",sys.stderr)
           except TypeError:
@@ -109,21 +101,20 @@ class Receipt:
               itemInfo.append(1) # number of item
               hasPrice = True # find item flag
             except AttributeError: # can't get price
-              itemInfo.append("can't find price") 
+              itemInfo.append("---")
               itemInfo.append(0)
               hasPrice=False
-            itemList.append(itemInfo)
-    for item in itemList:
-      print(item)
-    print(totalInf)
-    print(date)
-
-
+            self.itemList.append(itemInfo)
+    # self.texts=self.itemList
+    # for item in self.itemList:
+    #   print(item)
+    # print(self.totalInf)
+    # print(self.date)
 
   def findItem(self,text):
     """ find item name from DataBase. 2nd argument is word maybe it become item name. """
     itemInfo=[]
-    for itemGenre,itemValue in itemDB.items(): # roop from DB
+    for itemGenre,itemValue in db.itemDB.items(): # roop from DB
       for dbItem in itemValue: # roop in each item name
         itemConvert=dbItem # get DB item name to change Kanji, Hiragana, Katakana and Half Katakana.
         # check type of item name in DB whether Kanji, Hiragana, Katakana and Half Katakana and change status.
@@ -168,8 +159,8 @@ class Receipt:
         itemInfo.append(text[:re.search("[0-9]+.?$",text).start()])
       except:
         itemInfo.append(text)
-      itemInfo.append("can't find itemDB")
-      itemInfo.append("can't find genre")
+      itemInfo.append("---") # can't find itemDB
+      itemInfo.append("---") # can't find genre
     return itemInfo # itemInfo[0]: item name, itemInfo[1]: item DB name, itemInfo[2]: genre
 
   def combine(self,textsInfo):
@@ -240,8 +231,14 @@ class Receipt:
       return 0
     quickSort(data,0,len(data)-1) # exec when called sort()
 
+  def getItemLine(self):
+    return self.itemList
+  def getTotal(self):
+    return self.totalInf
+  def getDate(self):
+    return self.date
 
-if __name__ == '__main__':
-  readReceipt=Receipt("ion_long.png")  
+# if __name__ == '__main__':
+#   readReceipt=Receipt("ion_long.png")  
 
 

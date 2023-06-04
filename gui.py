@@ -1,49 +1,59 @@
-# ウィンドウ立ち上げ
-#--------------------------------
-# Tkinterモジュールのインポート
-# import tkinter
 import tkinter as tk
 from  tkinter import ttk
-# import tkinter.ttk as ttk
-# # ウィンドウ（フレーム）の作成
-# root = tk.Tk()
-
-# root.title("comfirm detail")
-# # ウィンドウの大きさを設定
-# root.geometry("400x400")
-# class init():
-
+import item_db as db
 class ComfirmReciept(tk.Frame):
-  def __init__(self,parent=None):
-    super().__init__(parent)
+  root = tk.Tk()
+  def __init__(self,items):
+    super().__init__(self.root)
+    # items=[["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]]
+    # app=ComfirmReciept(items,self.root=self.root)
+    
+    self.root.title("comfirm detail")
+    self.root.geometry("800x1000")
+    # print(self.root.winfo_height())
+    # self.root.update_idletasks()
+    # print(self.root.winfo_height())
+    # self.tableFrame=tk.Canvas(self.root ,width=self.root.winfo_width()/2 ,height=50,scrollregion=(0,0,0,600))
+    # canvas=tk.Canvas(self.root ,self.root.winfo_width() ,self.root.winfo_height())
+    self.tableFrame=ttk.LabelFrame(self.root)
+    # self.tableFrame.grid(row=0, column=0)
 
-    parent.title("comfirm detail")
-    parent.geometry("600x600")
-    self.tableFrame=ttk.LabelFrame(parent)
-    parent.columns=["商品","登録名","金額","数量","割引","合計"]# 合計000(-500)で割引金額表してもいいかも
-    for i,column in enumerate(parent.columns): 
+    # ybar = tk.Scrollbar(
+    # self.root,  # 親ウィジェット
+    # orient=tk.VERTICAL,  # バーの方向
+    # )
+    
+    # # キャンバスの右に垂直方向のスクロールバーを配置
+    # ybar.grid(
+    #     row=0, column=1,  # キャンバスの右の位置を指定
+    #     sticky=tk.N + tk.S  # 上下いっぱいに引き伸ばす
+    # )
+    
+    # ybar.config(
+    #     command=self.tableFrame.yview
+    # )
+    
+    # self.tableFrame.config(
+    #     yscrollcommand=ybar.set
+    # )
+
+
+
+
+    columns=["商品","登録名","カテゴリー","金額","数量","割引","合計"] # 合計000(-500)で割引金額表してもいいかも
+    for i,column in enumerate(columns): 
       columnLabel=tk.Label(self.tableFrame,text=column,width=7,padx=3,anchor="center",bg="#3A3A3A")
       columnLabel.grid(row=0,column=i)
-    ttk.Label(self.tableFrame).grid(row=0,column=6)
-    items=[["fff",2,3,4,5,6],[1+1,2+1,3+1,4+1,5+1,6+1]]
+    ttk.Label(self.tableFrame).grid(row=0,column=7)
     
-    dairyProducts=["牛乳","卵","チーズ"]
-    meat=["鶏","豚","牛","ししゃも"]
-    snack=["クッキー","パイ","揚げせん","チョコ","アーモンド","ケーキ","フルグラ","コーンフレーク","ポテト"]
-    staple=["パン","ブレッド","うどん","ご飯","パスタ"]
-    drink=["珈琲","緑茶"]
-    vegetable=["じゃがいも","レタス","水菜","舞茸","榎茸","小松菜","ほうれん草","野菜","ブロッコリー","人参","ピーマン","きゅうり"]
-    processed_goods=["ちくわ","納豆","西京漬","厚揚げ","かに風","ウインナー"] 
-    itemDb={"乳製品": dairyProducts,"肉類": meat,"お菓子": snack,"主食": staple,"飲み物":drink ,"野菜":vegetable ,"加工品":processed_goods}
     self.itemList=[]
-    for primary_item_key,primary_item_value in itemDb.items():
+    for primary_item_key,primary_item_value in db.itemDB.items():
       self.itemList+=["---"+primary_item_key+"---"]
       for item_name in primary_item_value:
         self.itemList+=[item_name]
 
-    # styleNormal=ttk.Style()
-    # styleNormal.configure("label.TEntry",justify="center")
     for i,item in enumerate(items):
+      hasDiscount= len(item)>5
       productNameLabel=tk.Entry(self.tableFrame, width=7,justify="center",bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
       productNameLabel.insert(0,item[0])
       productNameLabel.grid(row=i+1,column=0)
@@ -65,28 +75,40 @@ class ComfirmReciept(tk.Frame):
       discountLabel.grid(row=i+1,column=4)
 
       totalLabel=tk.Entry(self.tableFrame,width=7,justify="center",bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
-      totalLabel.insert(0,item[5])
+      if hasDiscount:
+        totalLabel.insert(0,item[5])
+      else:
+        totalLabel.insert(0,"---")
       totalLabel.grid(row=i+1,column=5)
+
+      totalLabel=tk.Entry(self.tableFrame,width=7,justify="center",bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
+      if hasDiscount:
+        totalLabel.insert(0,int(item[3])*int(item[4])-int(item[5]))
+      else:
+        totalLabel.insert(0,int(item[3])*int(item[4]))
+      totalLabel.grid(row=i+1,column=6)
       
       deleteButton=ttk.Button(self.tableFrame,text="delete")
       deleteButton.bind("<ButtonPress>",self.deleteItem)
-      deleteButton.grid(row=i+1,column=6)
+      deleteButton.grid(row=i+1,column=7)
 
     self.tableFrame.pack(pady=10)
-    decideButton=ttk.Button(parent,text="決定",command=self.decideItem)
-    decideButton.pack()
+    
+    decideButton=ttk.Button(self.root,text="決定",command=self.decideItem)
+    decideButton.pack(pady=10)
 
-    decideButton=ttk.Button(parent,text="+",command=self.addItem)
-    decideButton.pack()
+    decideButton=ttk.Button(self.root,text="+",command=self.addItem)
+    decideButton.pack(pady=10)
 
   def deleteItem(self,event):
     elements=self.tableFrame.winfo_children()
     row=event.widget.grid_info()["row"]
-    for i in range(7):
-      elements[row*7+i].grid_remove()
+    for i in range(8):
+      elements[row*8+i].grid_remove()
 
   def addItem(self):
-    row=self.tableFrame.winfo_children()[-1].grid_info()["row"]
+    row=int(len(self.tableFrame.winfo_children())/8)-1
+
     productNameLabel=tk.Entry(self.tableFrame,width=7,bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
     productNameLabel.grid(row=row+1,column=0)
 
@@ -105,16 +127,18 @@ class ComfirmReciept(tk.Frame):
     totalLabel=tk.Entry(self.tableFrame,width=7,bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
     totalLabel.grid(row=row+1,column=5)
 
+    totalLabel=tk.Entry(self.tableFrame,width=7,bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
+    totalLabel.grid(row=row+1,column=6)
+
     
     deleteButton=ttk.Button(self.tableFrame,text="delete")
     deleteButton.bind("<ButtonPress>",self.deleteItem)
-    deleteButton.grid(row=row+1,column=6)
-    # print(row)
+    deleteButton.grid(row=row+1,column=7)
 
   def decideItem(self):
     isOk=True
     elements=self.tableFrame.winfo_children()
-    for element in elements:
+    for i,element in enumerate(elements):
       if type(element) == ttk.Combobox:
         if "---" in element.get():
           isOk=False
@@ -122,22 +146,24 @@ class ComfirmReciept(tk.Frame):
         else:
           element.configure(foreground="white")
       elif type(element) == tk.Entry:
-        if not(element.get().isdecimal()):
+        if ((i%8 >= 3 and not(element.get().isdecimal())) and (i%8 != 5)) or (("---" in element.get()) and (i%8 != 5)):
           isOk=False
           element.configure(highlightbackground="red")
         else:
           element.configure(highlightbackground="#565656")
     if isOk==True:
-      for element in elements:
-        print(element.get())
+      print("submit")
+      # for element in elements:
+        # print(element.get())
 
-
-if __name__=="__main__":
-  root = tk.Tk()
-  app=ComfirmReciept(parent=root)
-  app.mainloop()
+# self.root = tk.Tk()
+# if __name__=="__main__":
+# #   self.root = tk.Tk()
+#   items=[["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]]
+#   app=ComfirmReciept(items)
+#   app.mainloop()
     
 
 
 
-# root.mainloop()
+# self.root.mainloop()
