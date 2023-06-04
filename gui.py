@@ -104,28 +104,12 @@ class ComfirmReciept(tk.Frame):
 
   def deleteItem(self,event):
     elements=self.tableFrame.winfo_children()
-    # for element in elements:
-    # if element == event.widget:
-    print("Delete",event.widget)
     for i in range(8):
       elements[elements.index(event.widget)-i].destroy()
-    # print("correct")
-    # print(element)
-    # row=event.widget.grid_info()["row"]
-    # print(str(event.widget)[-1],event.widget)
-    # print(event.widget.grid_info()["row"])
-    # print("row",event.widget.grid_info()["row"])
-
-    # for i in range(8):
-    #   elements[row*8+i].destroy()
-    #for element in elements:
-    #  if type(element) == ttk.Button:
-    #    print(element)
-    #print(elements)
 
   def addItem(self):
     row=(self.tableFrame.winfo_children())[-1].grid_info()["row"]
-    
+
     productNameEntry=tk.Entry(self.tableFrame,width=7,bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
     productNameEntry.grid(row=row+1,column=0)
 
@@ -157,23 +141,19 @@ class ComfirmReciept(tk.Frame):
     for i,element in enumerate(elements):
       if type(element) == ttk.Combobox:
         if "---" in element.get():
-          print("error0",element.get(),i%8,elements[i-1].get())
           isOk=False
           element.configure(foreground="red")
         else:
           element.configure(foreground="white")
       elif type(element) == tk.Entry:
         if i%8 < 3 and (("---" in element.get()) or element.get()==""):
-          print("error1",element.get(),i%8,elements[i-2].get())
           isOk=False
           element.configure(highlightbackground="red")
         elif i%8 >= 3 and not(element.get().isdecimal()) and i%8 != 5:
-          print("error2",element.get(),i%8,elements[i-1].get())
           isOk=False
           element.configure(highlightbackground="red")
         else:
           element.configure(highlightbackground="#565656")
-    print("status",isOk)
     if isOk==True:
       path = 'output.csv'
       f = open(path, mode='a')
@@ -194,13 +174,13 @@ class ComfirmReciept(tk.Frame):
       f.close()
       print("write for file")
 # self.root = tk.Tk()
-if __name__=="__main__":
-#   self.root = tk.Tk()
-  items=[["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
-        #  ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
-         ]
-  app=ComfirmReciept(items)
-  app.mainloop()
+# if __name__=="__main__":
+# #   self.root = tk.Tk()
+#   items=[["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
+#         #  ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
+#          ]
+#   app=ComfirmReciept(items)
+#   app.mainloop()
     
 
 
