@@ -47,7 +47,6 @@ class ComfirmReciept(tk.Frame):
       columnLabel=tk.Label(self.tableFrame,text=column,width=7,padx=3,anchor="center",bg="#3A3A3A")
       columnLabel.grid(row=0,column=i)
     tk.Frame(self.tableFrame).grid(row=0,column=7)
-    # columnLabel.grid(row=0,column=7)
     
     self.itemList=[]
     for primary_item_key,primary_item_value in db.itemDB.items():
@@ -106,6 +105,8 @@ class ComfirmReciept(tk.Frame):
   def deleteItem(self,event):
     elements=self.tableFrame.winfo_children()
     row=event.widget.grid_info()["row"]
+    print(event.widget.grid_info())
+    print(event.widget)
     for i in range(8):
       elements[row*8+i].grid_remove()
 
@@ -144,19 +145,23 @@ class ComfirmReciept(tk.Frame):
     for i,element in enumerate(elements):
       if type(element) == ttk.Combobox:
         if "---" in element.get():
+          print("error0",element.get(),i%8,elements[i-1].get())
           isOk=False
           element.configure(foreground="red")
         else:
           element.configure(foreground="white")
       elif type(element) == tk.Entry:
         if i%8 < 3 and (("---" in element.get()) or element.get()==""):
+          print("error1",element.get(),i%8,elements[i-2].get())
           isOk=False
           element.configure(highlightbackground="red")
         elif i%8 >= 3 and not(element.get().isdecimal()) and i%8 != 5:
+          print("error2",element.get(),i%8,elements[i-1].get())
           isOk=False
           element.configure(highlightbackground="red")
         else:
           element.configure(highlightbackground="#565656")
+    print("status",isOk)
     if isOk==True:
       path = 'output.csv'
       f = open(path, mode='a')
@@ -168,8 +173,11 @@ class ComfirmReciept(tk.Frame):
           if i%8==6:
             allItem.append(cp.copy(oneLine))
             oneLine.clear()
+      for i,element in enumerate(elements):
+        if i >= 8:
+          elements[i].grid_remove()
       writer = csv.writer(f)
-      for lineItem in allItem :
+      for lineItem in allItem:
         writer.writerow(lineItem)
       f.close()
       print("write for file")
