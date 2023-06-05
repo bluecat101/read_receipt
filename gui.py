@@ -1,5 +1,4 @@
 import copy as cp
-import csv
 import tkinter as tk
 from  tkinter import ttk
 import item_db as db
@@ -195,6 +194,7 @@ class ComfirmReciept(tk.Frame):
     elements=self.tableFrame.winfo_children()
     for i in range(8):
       elements[elements.index(event.widget)-i].destroy()
+    self.calculate()
     self.updateRegion()
 
   def addItem(self):
@@ -260,43 +260,41 @@ class ComfirmReciept(tk.Frame):
         else:
           element.configure(highlightbackground="#565656")
     if isOk==True:
-      path = 'output.csv'
-      f = open(path, mode='a')
       oneLine=[]
-      allItem=[]
+      self.allItem=[]
       for i,element in enumerate(elements):
         if type(element) == tk.Entry or type(element) == ttk.Combobox:
-          oneLine.append(element.get())
-          if i%8==6:
-            allItem.append(cp.copy(oneLine))
+          if i%8 < 5 :
+            oneLine.append(element.get())
+          elif i%8 == 5:
+            if element.get().isdecimal():
+              oneLine.append(element.get())
+            else:
+              oneLine.append("0")
+          elif i%8 == 6:
+            oneLine.append(element.get())
+            self.allItem.append(cp.copy(oneLine))
             oneLine.clear()
       for i,element in enumerate(elements):
           elements[i].destroy()
-      writer = csv.writer(f)
-      for lineItem in allItem:
-        writer.writerow(lineItem)
-      f.close()
-      print("write for file")
-      self.updateRegion()
-      self.addItem()
-      for element in self.tableFrame.winfo_children():
-        element.destroy()
+      self.root.destroy()
 
+
+  def getAllItem(self):
+    return self.allItem
 
 if __name__=="__main__":
-#   self.root = tk.Tk()
   items=[["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
-        #  ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
-        #  ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
-        #  ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
-        #  ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
-        #  ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
-        #  ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
+         ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
+         ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
+         ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
+         ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
+         ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
+         ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
 
          ]
   app=ComfirmReciept(items)
   app.mainloop()
-    
 
 
 

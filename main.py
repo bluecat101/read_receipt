@@ -1,11 +1,12 @@
-import receipt
+import read_receipt as readre
 import item_db as db
 import tkinter as tk
-import gui
+import gui as ui
+import record_receipt as recordre
 
 
 def main():
-  receiptInfo=receipt.Receipt("ion_long.png")
+  receiptInfo=readre.ReadReceipt("ion_long.png")
   Itemline=receiptInfo.getItemLine()
   total=receiptInfo.getTotal()
   date=receiptInfo.getDate()
@@ -15,8 +16,11 @@ def main():
   print(date)
   # root = tk.Tk()
   # app=gui.ComfirmReciept(Itemline,parent=root)
-  app=gui.ComfirmReciept(Itemline)
-  app.mainloop()
+  gui=ui.ComfirmReciept(Itemline)
+  gui.mainloop()
+  recordOb=recordre.RecordReceipt(gui.getAllItem())
+  
+  print("aaa")
 
 if __name__ == "__main__":
   main()

@@ -10,7 +10,6 @@ import sys
 import io
 import os
 import re
-import re
 import regex
 from pykakasi import kakasi
 import mojimoji
@@ -18,7 +17,7 @@ from google.cloud import vision
 import io
 import item_db as db
 
-class Receipt:
+class ReadReceipt:
   """ read receipt, analyse and devide with each item. """
   def __init__(self,receiptName):
     self.kakasi = kakasi()

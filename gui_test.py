@@ -261,8 +261,6 @@ class ComfirmReciept(tk.Frame):
         else:
           element.configure(highlightbackground="#565656")
     if isOk==True:
-      path = 'output.csv'
-      f = open(path, mode='a')
       oneLine=[]
       allItem=[]
       for i,element in enumerate(elements):
@@ -276,10 +274,12 @@ class ComfirmReciept(tk.Frame):
       for element in elements:
           element.destroy()
           # self.updateRegion()
-      writer = csv.writer(f)
-      for lineItem in allItem:
-        writer.writerow(lineItem)
-      f.close()
+      # path = 'output.csv'
+      # f = open(path, mode='a')
+      # writer = csv.writer(f)
+      # for lineItem in allItem:
+        # writer.writerow(lineItem)
+      # f.close()
       print("write for file")
       self.updateRegion()
       self.addItem()
