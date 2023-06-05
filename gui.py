@@ -119,13 +119,24 @@ class ComfirmReciept(tk.Frame):
       deleteButton.bind("<ButtonPress>",self.deleteItem)
       deleteButton.grid(row=i+1,column=7)
 
-    buttonFrame=tk.Frame(self.root)
-    buttonFrame.pack(padx=0)
-    decideButton=ttk.Button(buttonFrame,text="決定",command=self.decideItem)
-    decideButton.grid(row=0,column=0)
+    parentFrame.update_idletasks()
+    functionFrame=tk.Frame(self.root)
+    functionFrame.propagate(False)
+    functionFrame.configure(width=parentFrame.winfo_width(),height=30)
+    functionFrame.pack()
 
-    decideButton=ttk.Button(buttonFrame,text="+",command=self.addItem)
-    decideButton.grid(row=0,column=1)
+    
+    totalLabel=tk.Label(functionFrame,text="合計")
+    totalLabel.place(relx=0.8)
+    totalNumLabel=tk.Label(functionFrame,text=0000)
+    totalNumLabel.place(relx=0.9)
+
+    decideButton=ttk.Button(functionFrame,text="決定",command=self.decideItem)
+    decideButton.place(relx=0.35)
+
+    decideButton=ttk.Button(functionFrame,text="+",command=self.addItem)
+    decideButton.place(relx=0.5)
+
 
     self.updateRegion()
     self.root.config(width=self.tableFrame.winfo_width())
@@ -236,3 +247,23 @@ class ComfirmReciept(tk.Frame):
       self.addItem()
       for element in self.tableFrame.winfo_children():
         element.destroy()
+
+
+if __name__=="__main__":
+#   self.root = tk.Tk()
+  items=[["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
+        #  ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
+        #  ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
+        #  ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
+        #  ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
+        #  ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
+        #  ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
+
+         ]
+  app=ComfirmReciept(items)
+  app.mainloop()
+    
+
+
+
+# self.root.mainloop()        
