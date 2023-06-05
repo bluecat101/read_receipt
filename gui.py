@@ -23,15 +23,8 @@ class ComfirmReciept(tk.Frame):
     listFrame.pack(pady=1)
 
     self.canvas=tk.Canvas(listFrame,width=100,height=10,scrollregion=(0,0,0,0), bg='white')
-    # self.canvas.config(scrollregion=(0, 0, size[0], size[1]))
-    # 
-    # canvas=tk.Canvas(self.root ,width=self.root.winfo_width()/2 ,height=50,scrollregion=(0,0,0,600), bg='white')
-    # self.tableFrame=ttk.LabelFrame(canvas)
-    # self.tableFrame=tk.Frame(canvas,bg="#3A3A3A",borderwidth=-0.5,highlightbackground="#535353",relief="solid")
     self.tableFrame=tk.Frame(self.canvas,bg="#3A3A3A",borderwidth=20,highlightbackground="red",relief="flat")
     self.canvas.create_window(0,0, window=self.tableFrame,anchor="nw")
-    # self.tableFrame.
-    # print(self.tableFrame.winfo_width(),self.tableFrame.winfo_height())
     self.canvas.grid(row=0,column=0)
 
     ybar = tk.Scrollbar(
@@ -72,40 +65,6 @@ class ComfirmReciept(tk.Frame):
 
     columnLabel=tk.Label(columnHaedFrame,width=8,padx=3,bg="#3A3A3A")
     columnLabel.grid(row=0,column=7,ipadx=17)
-    # columnLabel=tk.Label(columnHaedFrame,text="column",width=7,padx=2,anchor="center",bg="#000000")
-    # columnLabel.grid(row=0,column=0)
-    # columnLabel=tk.Label(columnHaedFrame,text="column",width=7,padx=5,anchor="center",bg="#00FF00")
-    # columnLabel.grid(row=0,column=1,ipadx=5)
-    # columnLabel=tk.Label(columnHaedFrame,text="column",width=7,padx=2,anchor="center",bg="#0000FF")
-    # columnLabel.grid(row=0,column=2)
-    # columnLabel=tk.Label(columnHaedFrame,text="column",width=7,padx=2,anchor="center",bg="#FF0000")
-    # columnLabel.grid(row=0,column=3)
-    # columnLabel=tk.Label(columnHaedFrame,text="column",width=7,padx=2,anchor="center",bg="#FFFF00")
-    # columnLabel.grid(row=0,column=4)
-    # columnLabel=tk.Label(columnHaedFrame,text="column",width=7,padx=2,anchor="center",bg="#00FFFF")
-    # columnLabel.grid(row=0,column=5)
-    # columnLabel=tk.Label(columnHaedFrame,text="column",width=7,padx=2,anchor="center",bg="#FF00FF")
-    # columnLabel.grid(row=0,column=6)
-    # columnLabel=tk.Label(columnHaedFrame,width=8,padx=3,anchor="center",bg="#FFFFFF")
-    # columnLabel.grid(row=0,column=7,ipadx=17)
-    # tk.Frame(columnHaedFrame).grid(row=0,column=7)
-    # columnLabel=tk.Label(self.tableFrame,text="column",width=7,padx=2,anchor="center",bg="#000000")
-    # columnLabel.grid(row=0,column=0)
-    # columnLabel=tk.Label(self.tableFrame,text="column",width=7,padx=2,anchor="center",bg="#00FF00")
-    # columnLabel.grid(row=0,column=1)
-    # columnLabel=tk.Label(self.tableFrame,text="column",width=7,padx=2,anchor="center",bg="#0000FF")
-    # columnLabel.grid(row=0,column=2)
-    # columnLabel=tk.Label(self.tableFrame,text="column",width=7,padx=2,anchor="center",bg="#FF0000")
-    # columnLabel.grid(row=0,column=3)
-    # columnLabel=tk.Label(self.tableFrame,text="column",width=7,padx=2,anchor="center",bg="#FFFF00")
-    # columnLabel.grid(row=0,column=4)
-    # columnLabel=tk.Label(self.tableFrame,text="column",width=7,padx=2,anchor="center",bg="#00FFFF")
-    # columnLabel.grid(row=0,column=5)
-    # columnLabel=tk.Label(self.tableFrame,text="column",width=7,padx=2,anchor="center",bg="#FF00FF")
-    # columnLabel.grid(row=0,column=6)
-    # columnLabel=tk.Label(self.tableFrame,width=8,padx=3,anchor="center",bg="#FFFFFF")
-    # columnLabel.grid(row=0,column=7)
-    # for i,column in enumerate(columns): 
 
     self.itemList=[]
     for primary_item_key,primary_item_value in db.itemDB.items():
@@ -177,7 +136,7 @@ class ComfirmReciept(tk.Frame):
     if canvas_height>self.tableFrame.winfo_height():
       canvas_height=self.tableFrame.winfo_height()
     self.canvas.config(width=self.tableFrame.winfo_width(), height=canvas_height,scrollregion=(0,0,0,self.tableFrame.winfo_height()))
-    
+
   def setStyle(self,widget):
     if type(widget) == tk.Entry:
       widget.configure(width=7,justify="center",bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
@@ -194,7 +153,6 @@ class ComfirmReciept(tk.Frame):
     self.updateRegion()
 
   def addItem(self):
-    # print(self.tableFrame.winfo_children())
     if self.tableFrame.winfo_children() != []:
       row=(self.tableFrame.winfo_children())[-1].grid_info()["row"] 
     else:
@@ -275,3 +233,6 @@ class ComfirmReciept(tk.Frame):
       f.close()
       print("write for file")
       self.updateRegion()
+      self.addItem()
+      for element in self.tableFrame.winfo_children():
+        element.destroy()

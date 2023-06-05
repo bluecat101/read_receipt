@@ -22,7 +22,7 @@ class ComfirmReciept(tk.Frame):
     listFrame=tk.Frame(parentFrame)
     listFrame.pack(pady=1)
 
-    self.canvas=tk.Canvas(listFrame,width=100,height=10,scrollregion=(0,0,0,0), bg='white')
+    self.canvas=tk.Canvas(listFrame,width=100,height=10,scrollregion=(0,0,0,0), bg='red')
     # self.canvas.config(scrollregion=(0, 0, size[0], size[1]))
     # 
     # canvas=tk.Canvas(self.root ,width=self.root.winfo_width()/2 ,height=50,scrollregion=(0,0,0,600), bg='white')
@@ -169,6 +169,7 @@ class ComfirmReciept(tk.Frame):
     decideButton.grid(row=0,column=1)
 
     self.updateRegion()
+    # self.canvas.config(width=self.tableFrame.winfo_width())
     self.root.config(width=self.tableFrame.winfo_width())
     
   def updateRegion(self):
@@ -176,8 +177,11 @@ class ComfirmReciept(tk.Frame):
     canvas_height=500
     if canvas_height>self.tableFrame.winfo_height():
       canvas_height=self.tableFrame.winfo_height()
-    self.canvas.config(width=self.tableFrame.winfo_width(), height=canvas_height,scrollregion=(0,0,0,self.tableFrame.winfo_height()))
-    
+    print("beforeset[",canvas_height,self.tableFrame.winfo_height())
+    self.canvas.config(width=self.tableFrame.winfo_width(),height=canvas_height,scrollregion=(0,0,0,self.tableFrame.winfo_height()))
+    print("aftersetset[",self.canvas.winfo_height(),self.tableFrame.winfo_height())
+    print(self.tableFrame.winfo_children())
+
   def setStyle(self,widget):
     if type(widget) == tk.Entry:
       widget.configure(width=7,justify="center",bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
@@ -267,14 +271,21 @@ class ComfirmReciept(tk.Frame):
           if i%8==6:
             allItem.append(cp.copy(oneLine))
             oneLine.clear()
-      for i,element in enumerate(elements):
-          elements[i].destroy()
+      # for i in range(len(elements),0,-1):
+      #   elements[len(elements)-1-i].destroy()
+      for element in elements:
+          element.destroy()
+          # self.updateRegion()
       writer = csv.writer(f)
       for lineItem in allItem:
         writer.writerow(lineItem)
       f.close()
       print("write for file")
       self.updateRegion()
+      self.addItem()
+      for element in self.tableFrame.winfo_children():
+        element.destroy()
+
 
 
 if __name__=="__main__":
