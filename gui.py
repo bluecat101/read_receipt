@@ -128,8 +128,8 @@ class ComfirmReciept(tk.Frame):
     
     totalLabel=tk.Label(functionFrame,text="合計")
     totalLabel.place(relx=0.8)
-    totalNumLabel=tk.Label(functionFrame,text=0000)
-    totalNumLabel.place(relx=0.9)
+    self.totalNumLabel=tk.Label(functionFrame,text=0)
+    self.totalNumLabel.place(relx=0.9)
 
     decideButton=ttk.Button(functionFrame,text="決定",command=self.decideItem)
     decideButton.place(relx=0.35)
@@ -140,13 +140,47 @@ class ComfirmReciept(tk.Frame):
 
     self.updateRegion()
     self.root.config(width=self.tableFrame.winfo_width())
+    self.calculate()
     
+    self.root.bind_class("Entry", "<FocusOut>", self.calculateEvent)
+
+  def calculateEvent(self,event):
+    self.calculate()
+
+  def calculate(self):
+    elements=self.tableFrame.winfo_children()
+    eachTotal=0
+    total=0
+    isInt=True
+    for i,element in enumerate(elements):
+      if i%8 == 3 or i%8 == 4:
+        if not(element.get().isdecimal()):
+          element.configure(highlightbackground="red")
+          isInt=False
+        else:
+          element.configure(highlightbackground="#565656")
+      elif i%8 == 5 and isInt:
+        eachTotal=int(elements[i-2].get())*int(elements[i-1].get())
+        if element.get().isdecimal():
+          eachTotal-=int(element.get())
+      elif i%8 == 6:
+        if isInt:
+          element.delete(0,tk.END)
+          element.insert(0,eachTotal)
+          total+=eachTotal
+        eachTotal=0
+        isInt=True
+    self.totalNumLabel.configure(text=str(total)+"円")
+          
+
   def updateRegion(self):
     self.tableFrame.update_idletasks() 
     canvas_height=500
     if canvas_height>self.tableFrame.winfo_height():
       canvas_height=self.tableFrame.winfo_height()
     self.canvas.config(width=self.tableFrame.winfo_width(), height=canvas_height,scrollregion=(0,0,0,self.tableFrame.winfo_height()))
+    # """"""
+    # self.calculate()
 
   def setStyle(self,widget):
     if type(widget) == tk.Entry:
