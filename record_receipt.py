@@ -40,11 +40,11 @@ class RecordReceipt:
 
     for key,val in self.itemDB.items():
       if key in newCategory:
-        replaceContent += newCategoryEn[key] +" = "+str(val)+'\n'
+        replaceContent += self.newCategoryEn[key] +" = "+str(val)+'\n'
       else:
         replaceContent += self.categoryDB[key] + " = " +str(val)+'\n'
 
-    for key,value in newCategoryEn.items():
+    for key,value in self.newCategoryEn.items():
       self.categoryDB[key]=value 
     
     replaceContent+= "itemDB = {"

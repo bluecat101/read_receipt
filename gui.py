@@ -3,14 +3,19 @@ import tkinter as tk
 from  tkinter import ttk
 import item_db as db
 import re
+import sys
+
+
+hasIssue = False
 class ComfirmReciept(tk.Frame):
-  # root = tk.Tk()
+  root = tk.Tk()
   def __init__(self,items):
     super().__init__(self.root)
     
     self.root.title("comfirm detail")
     self.root.geometry("800x1000")
     self.root.update_idletasks()
+
 
     parentFrame=ttk.LabelFrame(self.root)
     parentFrame.pack(pady=0)
@@ -84,7 +89,7 @@ class ComfirmReciept(tk.Frame):
       registerNameCombobox.set(item[1])
       registerNameCombobox.grid(row=i+1,column=1)
 
-      categoryCombobox=ttk.Combobox(self.tableFrame,value=db.itemDB.keys())
+      categoryCombobox=ttk.Combobox(self.tableFrame,value=[value for value in db.itemDB.keys()])
       self.setStyle(categoryCombobox)
       categoryCombobox.set(item[2])
       categoryCombobox.grid(row=i+1,column=2)
@@ -171,7 +176,7 @@ class ComfirmReciept(tk.Frame):
         eachTotal=0
         isInt=True
     self.totalNumLabel.configure(text=str(total)+"円")
-          
+  
 
   def updateRegion(self):
     self.tableFrame.update_idletasks() 
@@ -260,6 +265,7 @@ class ComfirmReciept(tk.Frame):
           element.configure(highlightbackground="red")
         else:
           element.configure(highlightbackground="#565656")
+          
     if isOk==True:
       oneLine=[]
       self.allItem=[]
@@ -278,29 +284,43 @@ class ComfirmReciept(tk.Frame):
             oneLine.clear()
       # for i,element in enumerate(elements):
       #     elements[i].destroy()
-      self.root.destroy()
-      print(self.allItem)
+      # print(self.allItem)
+      self.newCategory = NewCategory(self.allItem,self.root)
+
+      # self.root.destroy()
+
       # for i in self.addItem:
       #   print(i)
       # self.checkNewCategory()
 
   def getAllItem(self):
     return self.allItem
-
+  
+  def getNewCategory(self):
+    return self.newCategory.getNewCategory()
+  def getHasIssue(self):
+    return hasIssue
 
 
 
 class NewCategory(tk.Frame):
-  rootNewCategory = tk.Tk()
   newCategory={}
-  def __init__(self,allItem):
+  def __init__(self,allItem,root):
+    self.rootNewCategory = tk.Tk()
     super().__init__(self.rootNewCategory)
     self.rootNewCategory.title("カテゴリー名の追加")
     self.allItem=allItem
+    self.root=root
+
     for item in self.allItem:
       if not(item[2] in db.itemDB):
         self.newCategory[item[2]] = ""
-    
+    if self.newCategory=={}:
+      self.rootNewCategory.destroy()
+      self.root.destroy()
+      global hasIssue
+      hasIssue = True
+      return
     self.rootNewCategory.geometry("400x530")
     categoryFrameHead =tk.Frame(self.rootNewCategory)
     categoryFrameHead.pack(padx=0)
@@ -309,7 +329,6 @@ class NewCategory(tk.Frame):
     
     self.page = 1
     self.display()
-    # maxPage = (len(self.newCategory.keys())-1)/14
   
   def display(self):
     self.categoryFrame =ttk.LabelFrame(self.rootNewCategory)
@@ -331,10 +350,14 @@ class NewCategory(tk.Frame):
 
     self.buttonFrame= tk.Frame(self.rootNewCategory,width=400,height=60)
     self.buttonFrame.pack(padx=0)
-    decideButton = tk.Button(self.buttonFrame,text="決定",command=self.decideNewCategory)
-    decideButton.place(relx=0.42)
+    if self.page == int((len(self.newCategory.keys())-1)/14)+1:
+      decideButton = tk.Button(self.buttonFrame,text="決定",command=self.decideNewCategory)
+      decideButton.place(relx=0.42)
+    
+    
     pageLabel = tk.Label(self.buttonFrame,text=self.page)
     pageLabel.place(relx=0.48,rely=0.60)
+
     if self.page != int((len(self.newCategory.keys())-1)/14)+1:
       nextButton = tk.Button(self.buttonFrame,text="次へ",command =lambda: self.changePage(self.page+1))
       nextButton.place(relx=0.76)
@@ -354,21 +377,12 @@ class NewCategory(tk.Frame):
         self.newCategory[categoryNames[i-1].cget("text")] = categoryNames[i].get()
     self.categoryFrame.destroy()
     self.buttonFrame.destroy()
-    
-
-    # for widget in widget:
-    #   wid
     self.display()
   
   def decideNewCategory(self):
-    # for key in self.newCategory:
-    #   self.newCategory[key]=""
     isOk = True
     categoryNames = self.categoryFrame.winfo_children()
     tmp = [value for value in db.categoryDB.values()]
-    # tmp=db.categoryDB.values()
-    # print(type(tmp))
-    # print(tmp)
     for i in range(3,len(categoryNames),2):
       self.newCategory[categoryNames[i-1].cget("text")] = categoryNames[i].get()
 
@@ -396,44 +410,10 @@ class NewCategory(tk.Frame):
       count+=1
     if isOk:
       self.rootNewCategory.destroy()
-        # print("error")
+      self.root.destroy()
+      global hasIssue
+      hasIssue = True
 
-    # print(len(categoryNames))
-  
-  # def checkValidate(self,text):
-  #   if :
-  #     return True
-  #   else 
-# self.root.mainloop()        
-if __name__=="__main__":
-  items=[["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
-         ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
-         ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
-         ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
-         ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
-         ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
-         ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
 
-         ]
-  allItem=[ ['1', '2', '1', '4', '5', '6', '14']
-           ,['2', '3', '2', '4', '7', '0', '28']
-           ,['1', '2', '3', '4', '5', '6', '14']
-           ,['2', '3', '4', '4', '7', '0', '28']
-           ,['1', '2', '5', '4', '5', '6', '14']
-           ,['2', '3', '6', '4', '7', '0', '28']
-           ,['1', '2', '7', '4', '5', '6', '14']
-           ,['2', '3', '8', '4', '7', '0', '28']
-           ,['1', '2', '9', '4', '5', '6', '14']
-           ,['2', '3', '10', '4', '7', '0', '28']
-           ,['2', '3', '11', '4', '7', '0', '28']
-           ,['1', '2', '12', '4', '5', '6', '14']
-           ,['2', '3', '13', '4', '7', '0', '28']
-           ,['2', '3', '14', '4', '7', '0', '28']
-           ,['1', '2', '15', '4', '5', '6', '14']
-          #  ,['2', '3', '16', '4', '7', '0', '28']
-           
-           ]
-
-  # app=ComfirmReciept(items)
-  app = NewCategory(allItem)
-  app.mainloop()
+  def getNewCategory(self):
+    return self.newCategory

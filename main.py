@@ -10,18 +10,31 @@ def main():
   Itemline=receiptInfo.getItemLine()
   total=receiptInfo.getTotal()
   date=receiptInfo.getDate()
-  for item in Itemline:
-    print(item)
-  print(total)
-  print(date)
-  # root = tk.Tk()
-  # app=gui.ComfirmReciept(Itemline,parent=root)
+  # for item in Itemline:
+  #   print(item)
+  # print(total)
+  # print(date)
   gui=ui.ComfirmReciept(Itemline)
   gui.mainloop()
-  recordOb=recordre.RecordReceipt(gui.getAllItem())
+  # print(gui.getHasIssue())
+  # print(gui.getAllItem())
+  # print("-----")
+  # print(gui.getNewCategory())
+  if gui.getHasIssue():
+    recordOb=recordre.RecordReceipt(gui.getAllItem(),gui.getNewCategory())
   
-  print("aaa")
 
+
+# Itemline=[
+# ['深蒸し緑茶', '緑茶', '飲み物', 498, '2'],
+# # ['クーポン嗜好品20%', 'bb', 'aa', '200', 1],
+# # ['揚げせん', 'item', 'cc', 90, '2'],
+# # ['深蒸し緑茶', '緑茶', 'dd', 498, '2'],
+# # ['クーポン嗜好品20%', 'ee', 'aa', '200', 1],
+# # ['揚げせん', 'item', 'ff', 90, '2']
+# ]
+# # for i,x in enumerate(Itemline):
+# #   x[2] = i
 if __name__ == "__main__":
   main()
 
