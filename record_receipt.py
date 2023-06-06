@@ -1,7 +1,6 @@
 import item_db as db
 import csv
 import re
-import regex
 
 CSV_PATH_NAME = "output.csv"
 ITEMDB_PATH_NAME = "item_db.py"

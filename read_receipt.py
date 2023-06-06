@@ -9,8 +9,8 @@
 import sys
 import io
 import os
-import re
-import regex
+# import re 
+import regex as re
 from pykakasi import kakasi
 import mojimoji
 from google.cloud import vision
@@ -117,7 +117,7 @@ class ReadReceipt:
       for dbItem in itemValue: # roop in each item name
         itemConvert=dbItem # get DB item name to change Kanji, Hiragana, Katakana and Half Katakana.
         # check type of item name in DB whether Kanji, Hiragana, Katakana and Half Katakana and change status.
-        if regex.match('^\p{Script=Han}+$', itemConvert): # Kanji
+        if re.match('^\p{Script=Han}+$', itemConvert): # Kanji
           itemTypeStatus = 4
         elif re.match('[あ-ん]+', itemConvert): # Hiragana
           itemTypeStatus = 3

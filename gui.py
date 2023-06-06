@@ -2,8 +2,9 @@ import copy as cp
 import tkinter as tk
 from  tkinter import ttk
 import item_db as db
+import re
 class ComfirmReciept(tk.Frame):
-  root = tk.Tk()
+  # root = tk.Tk()
   def __init__(self,items):
     super().__init__(self.root)
     
@@ -78,12 +79,12 @@ class ComfirmReciept(tk.Frame):
       productNameEntry.insert(0,item[0])
       productNameEntry.grid(row=i+1,column=0)
 
-      registerNameCombobox=ttk.Combobox(self.tableFrame)
+      registerNameCombobox=ttk.Combobox(self.tableFrame,value=self.itemList)
       self.setStyle(registerNameCombobox)
       registerNameCombobox.set(item[1])
       registerNameCombobox.grid(row=i+1,column=1)
 
-      categoryCombobox=ttk.Combobox(self.tableFrame)
+      categoryCombobox=ttk.Combobox(self.tableFrame,value=db.itemDB.keys())
       self.setStyle(categoryCombobox)
       categoryCombobox.set(item[2])
       categoryCombobox.grid(row=i+1,column=2)
@@ -185,7 +186,7 @@ class ComfirmReciept(tk.Frame):
     if type(widget) == tk.Entry:
       widget.configure(width=7,justify="center",bg="#4B4B4B",borderwidth=-0.5,highlightbackground="#565656",relief="flat")
     elif type(widget) == ttk.Combobox:
-      widget.configure(value=self.itemList,width=7)
+      widget.configure(width=7)
     elif type(widget) == tk.Label:
       widget.configure(width=7,padx=2,justify="center")
       
@@ -207,11 +208,11 @@ class ComfirmReciept(tk.Frame):
     self.setStyle(productNameEntry)
     productNameEntry.grid(row=row+1,column=0)
 
-    registerNameCombobox=ttk.Combobox(self.tableFrame)
+    registerNameCombobox=ttk.Combobox(self.tableFrame,value=self.itemList)
     self.setStyle(registerNameCombobox)
     registerNameCombobox.grid(row=row+1,column=1)
 
-    categoryCombobox=ttk.Combobox(self.tableFrame)
+    categoryCombobox=ttk.Combobox(self.tableFrame,value=db.itemDB.keys())
     self.setStyle(categoryCombobox)
     categoryCombobox.grid(row=row+1,column=2)
 
@@ -275,14 +276,135 @@ class ComfirmReciept(tk.Frame):
             oneLine.append(element.get())
             self.allItem.append(cp.copy(oneLine))
             oneLine.clear()
-      for i,element in enumerate(elements):
-          elements[i].destroy()
+      # for i,element in enumerate(elements):
+      #     elements[i].destroy()
       self.root.destroy()
-
+      print(self.allItem)
+      # for i in self.addItem:
+      #   print(i)
+      # self.checkNewCategory()
 
   def getAllItem(self):
     return self.allItem
 
+
+
+
+class NewCategory(tk.Frame):
+  rootNewCategory = tk.Tk()
+  newCategory={}
+  def __init__(self,allItem):
+    super().__init__(self.rootNewCategory)
+    self.rootNewCategory.title("カテゴリー名の追加")
+    self.allItem=allItem
+    for item in self.allItem:
+      if not(item[2] in db.itemDB):
+        self.newCategory[item[2]] = ""
+    
+    self.rootNewCategory.geometry("400x530")
+    categoryFrameHead =tk.Frame(self.rootNewCategory)
+    categoryFrameHead.pack(padx=0)
+    messageLabelHead = ttk.Label(categoryFrameHead,text="新しいカテゴリー名に対応する英語を書いてください。")
+    messageLabelHead.pack(padx=0)
+    
+    self.page = 1
+    self.display()
+    # maxPage = (len(self.newCategory.keys())-1)/14
+  
+  def display(self):
+    self.categoryFrame =ttk.LabelFrame(self.rootNewCategory)
+    self.categoryFrame.pack(padx=0)
+    
+    categoryNameJpHead = ttk.Label(self.categoryFrame,text="カテゴリー名(日本語)")
+    categoryNameJpHead.grid(row=0,column=0)
+    categoryNameEnHead = ttk.Label(self.categoryFrame,text="カテゴリー名(英語)")
+    categoryNameEnHead.grid(row=0,column=1)
+    for i,key in enumerate(self.newCategory.keys()):
+      if i >= (self.page-1)*14 and i < (self.page)*14:
+        categoryNameJp = ttk.Label(self.categoryFrame,text=key)
+        categoryNameJp.grid(row=(i%14)+1,column=0)
+
+        categoryNameEn = tk.Entry(self.categoryFrame)
+        categoryNameEn.insert(0,self.newCategory[key])
+        categoryNameEn.grid(row=(i%14)+1,column=1)
+
+
+    self.buttonFrame= tk.Frame(self.rootNewCategory,width=400,height=60)
+    self.buttonFrame.pack(padx=0)
+    decideButton = tk.Button(self.buttonFrame,text="決定",command=self.decideNewCategory)
+    decideButton.place(relx=0.42)
+    pageLabel = tk.Label(self.buttonFrame,text=self.page)
+    pageLabel.place(relx=0.48,rely=0.60)
+    if self.page != int((len(self.newCategory.keys())-1)/14)+1:
+      nextButton = tk.Button(self.buttonFrame,text="次へ",command =lambda: self.changePage(self.page+1))
+      nextButton.place(relx=0.76)
+    if self.page != 1:
+      backButton = tk.Button(self.buttonFrame,text="前へ",command = lambda: self.changePage(self.page-1))
+      backButton.place(relx=0.09)
+    
+    self.categoryFrame.focus_force()
+
+
+  def changePage(self,page):
+    self.page=page
+    categoryNames = self.categoryFrame.winfo_children()
+    for i in range(3,len(categoryNames),2):
+      if re.search("^[a-zA-Z_]+$",categoryNames[i].get()):
+      # and not(categoryNames[i].get() in self.newCategory.values()) and not(categoryNames[i].get() in db.categoryDB.values()):
+        self.newCategory[categoryNames[i-1].cget("text")] = categoryNames[i].get()
+    self.categoryFrame.destroy()
+    self.buttonFrame.destroy()
+    
+
+    # for widget in widget:
+    #   wid
+    self.display()
+  
+  def decideNewCategory(self):
+    # for key in self.newCategory:
+    #   self.newCategory[key]=""
+    isOk = True
+    categoryNames = self.categoryFrame.winfo_children()
+    tmp = [value for value in db.categoryDB.values()]
+    # tmp=db.categoryDB.values()
+    # print(type(tmp))
+    # print(tmp)
+    for i in range(3,len(categoryNames),2):
+      self.newCategory[categoryNames[i-1].cget("text")] = categoryNames[i].get()
+
+    count=0
+    for key,value in self.newCategory.items():
+      if re.search("^[a-zA-Z_]+$",value):
+        if not(value in tmp):
+          tmp.append(value)
+          if count >= (self.page-1)*14 and count < (self.page)*14:
+            categoryNames[((count%14)+1)*2+1].configure(highlightbackground="#323232")
+        else:
+          if count >= (self.page-1)*14 and count < (self.page)*14:
+            categoryNames[((count%14)+1)*2+1].configure(highlightbackground="red")
+            categoryNames[((count%14)+1)*2+1].delete(0,tk.END)
+            categoryNames[((count%14)+1)*2+1].insert(0,"すでに存在します")
+          isOk=False
+      else:  
+        if count >= (self.page-1)*14 and count < (self.page)*14:
+          # print(((count%14)+1)*2+1)
+          categoryNames[((count%14)+1)*2+1].configure(highlightbackground="red")
+          categoryNames[((count%14)+1)*2+1].delete(0,tk.END)
+          categoryNames[((count%14)+1)*2+1].insert(0,"英字で入力してください。")
+          
+        isOk=False
+      count+=1
+    if isOk:
+      self.rootNewCategory.destroy()
+        # print("error")
+
+    # print(len(categoryNames))
+  
+  # def checkValidate(self,text):
+  #   if :
+  #     return True
+  #   else 
+# self.root.mainloop()        
 if __name__=="__main__":
   items=[["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
          ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
@@ -293,9 +415,25 @@ if __name__=="__main__":
          ,["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1],["fff",2,3,4,5,6],[1+1,2+1,3+1,4,6+1]
 
          ]
-  app=ComfirmReciept(items)
+  allItem=[ ['1', '2', '1', '4', '5', '6', '14']
+           ,['2', '3', '2', '4', '7', '0', '28']
+           ,['1', '2', '3', '4', '5', '6', '14']
+           ,['2', '3', '4', '4', '7', '0', '28']
+           ,['1', '2', '5', '4', '5', '6', '14']
+           ,['2', '3', '6', '4', '7', '0', '28']
+           ,['1', '2', '7', '4', '5', '6', '14']
+           ,['2', '3', '8', '4', '7', '0', '28']
+           ,['1', '2', '9', '4', '5', '6', '14']
+           ,['2', '3', '10', '4', '7', '0', '28']
+           ,['2', '3', '11', '4', '7', '0', '28']
+           ,['1', '2', '12', '4', '5', '6', '14']
+           ,['2', '3', '13', '4', '7', '0', '28']
+           ,['2', '3', '14', '4', '7', '0', '28']
+           ,['1', '2', '15', '4', '5', '6', '14']
+          #  ,['2', '3', '16', '4', '7', '0', '28']
+           
+           ]
+
+  # app=ComfirmReciept(items)
+  app = NewCategory(allItem)
   app.mainloop()
-
-
-
-# self.root.mainloop()        
