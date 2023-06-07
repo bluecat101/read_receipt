@@ -29,7 +29,7 @@ class RecordReceipt:
     if not(self.store in storeDB):
       storeDB.append(self.store)
       with open(STOREDB_PATH_NAME,"w") as f:
-        f.write(str(storeDB))
+        f.write("storeDB = " + str(storeDB))
     print("write for csv file")
 
 

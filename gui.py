@@ -195,6 +195,8 @@ class ComfirmReciept(tk.Frame):
         eachTotal=int(elements[i-2].get())*int(elements[i-1].get())
         if element.get().isdecimal():
           eachTotal-=int(element.get())
+        elif element.get()[-1] == "%" and re.match("[0-9]+",element.get()):
+          eachTotal=int(eachTotal*(1-int(re.match("[0-9]+",element.get()).group())/100))
       elif i%8 == 6:
         if isInt:
           element.delete(0,tk.END)
@@ -310,6 +312,9 @@ class ComfirmReciept(tk.Frame):
           elif i%8 == 5:
             if element.get().isdecimal():
               oneLine.append(element.get())
+            elif element.get()[-1] == "%" and re.match("[0-9]+",element.get()):
+              totalNoDiscount=int(elements[i-2].get())*int(elements[i-1].get())
+              oneLine.append(int(totalNoDiscount*int(re.match("[0-9]+",element.get()).group())/100))
             else:
               oneLine.append("0")
           elif i%8 == 6:
