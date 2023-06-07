@@ -9,13 +9,13 @@
 import sys
 import io
 import os
-# import re 
 import regex as re
 from pykakasi import kakasi
 import mojimoji
 from google.cloud import vision
 import io
-import item_db as db
+import item_db as iDB
+import store_db as sDB
 
 class ReadReceipt:
   """ read receipt, analyse and devide with each item. """
@@ -53,9 +53,12 @@ class ReadReceipt:
     self.itemList=[]
     self.totalInf=[]
     self.date=""
+    self.store=""
     isFinish=False
     for text in lineTexts:
       if self.date=="": # until find date in receipt
+        if self.store=="":
+          self.findStore(text[0])
         if re.search('20[0-9]{2}(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]): 
           self.date=re.search('20[0-9]{2}(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]).group() ## get self.date
       else: # After find self.date
@@ -104,16 +107,18 @@ class ReadReceipt:
               itemInfo.append(0)
               hasPrice=False
             self.itemList.append(itemInfo)
-    # self.texts=self.itemList
-    # for item in self.itemList:
-    #   print(item)
-    # print(self.totalInf)
-    # print(self.date)
+
+  def findStore(self,text):
+    for storeName in sDB.storeDB:
+      regular=re.escape(storeName)
+      if re.search(regular,text):
+        self.store=storeName
+        break
 
   def findItem(self,text):
     """ find item name from DataBase. 2nd argument is word maybe it become item name. """
     itemInfo=[]
-    for itemGenre,itemValue in db.itemDB.items(): # roop from DB
+    for itemGenre,itemValue in iDB.itemDB.items(): # roop from DB
       for dbItem in itemValue: # roop in each item name
         itemConvert=dbItem # get DB item name to change Kanji, Hiragana, Katakana and Half Katakana.
         # check type of item name in DB whether Kanji, Hiragana, Katakana and Half Katakana and change status.
@@ -236,6 +241,8 @@ class ReadReceipt:
     return self.totalInf
   def getDate(self):
     return self.date
+  def getStore(self):
+    return self.store
 
 # if __name__ == '__main__':
 #   readReceipt=Receipt("ion_long.png")  

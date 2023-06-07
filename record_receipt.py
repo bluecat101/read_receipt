@@ -8,14 +8,19 @@ ITEMDB_PATH_NAME = "item_db.py"
 class RecordReceipt:
   itemDB = db.itemDB
   categoryDB = db.categoryDB
-  def __init__(self,allItem,newCategoryEn):
+  def __init__(self,allItem,newCategoryEn,date,store):
     self.allItem=allItem
     self.newCategoryEn=newCategoryEn
+    self.date=date
+    self.store=store
+    self.writeFile()
     self.addDB()
 
   def writeFile(self):
     f = open(CSV_PATH_NAME, mode='a')
     writer = csv.writer(f)
+    writer.writerow([self.date,self.store])
+
     for lineItem in self.allItem:
       writer.writerow(lineItem)
     f.close()

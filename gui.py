@@ -3,29 +3,46 @@ import tkinter as tk
 from  tkinter import ttk
 import item_db as db
 import re
-import sys
 
 
 hasIssue = False
 class ComfirmReciept(tk.Frame):
   root = tk.Tk()
-  def __init__(self,items):
+  def __init__(self,items,date,store):
     super().__init__(self.root)
     
     self.root.title("comfirm detail")
     self.root.geometry("800x1000")
     self.root.update_idletasks()
+    self.date=date
+    self.store=store
+
+    # parentFrame.update_idletasks()
+    storeDateFrame=tk.Frame(self.root,height=27)
+    storeDateFrame.pack(pady=0)
+    
+    storeNameLabel=tk.Label(storeDateFrame,text="店舗名: ")
+    storeNameLabel.place(relx=0.0)
+
+    self.storeNameEntry=tk.Entry(storeDateFrame,width=20)
+    self.storeNameEntry.insert(0,self.store)
+    self.storeNameEntry.place(relx=0.08)
+
+    dateLabel=tk.Label(storeDateFrame,text="日付: "+self.date)
+    dateLabel.place(relx=0.8)
 
 
     parentFrame=ttk.LabelFrame(self.root)
-    parentFrame.pack(pady=0)
+    parentFrame.pack(pady=1)
 
     columnHaedFrame=tk.Frame(parentFrame)
     columnHaedFrame.pack(pady=0)
 
-    
+
     listFrame=tk.Frame(parentFrame)
     listFrame.pack(pady=1)
+
+    
 
     self.canvas=tk.Canvas(listFrame,width=100,height=10,scrollregion=(0,0,0,0), bg='white')
     self.tableFrame=tk.Frame(self.canvas,bg="#3A3A3A",borderwidth=20,highlightbackground="red",relief="flat")
@@ -51,8 +68,7 @@ class ComfirmReciept(tk.Frame):
     self.canvas.config(
         yscrollcommand=ybar.set
     )
-    
-    columns=["商品","登録名","カテゴリー","金額","数量","割引","合計"] # 合計000(-500)で割引金額表してもいいかも
+    columns=["商品","登録名","カテゴリー","金額","数量","割引","合計"] 
     for i,column in enumerate(columns): 
       if i == 1 or i == 2:
         columnLabel=tk.Label(columnHaedFrame,text=column)
@@ -92,6 +108,7 @@ class ComfirmReciept(tk.Frame):
       categoryCombobox=ttk.Combobox(self.tableFrame,value=[value for value in db.itemDB.keys()])
       self.setStyle(categoryCombobox)
       categoryCombobox.set(item[2])
+      categoryCombobox.bind("<Enter>",self.categoryEvent)
       categoryCombobox.grid(row=i+1,column=2)
 
       priceEntry=tk.Entry(self.tableFrame)
@@ -147,8 +164,18 @@ class ComfirmReciept(tk.Frame):
     self.root.config(width=self.tableFrame.winfo_width())
     self.calculate()
     
+    storeDateFrame.configure(width=parentFrame.winfo_width())
+
+
     self.root.bind_class("Entry", "<FocusOut>", self.calculateEvent)
 
+  def categoryEvent(self,event):
+    elements=self.tableFrame.winfo_children()
+    if event.widget.get() in db.itemDB.keys():
+      elements[elements.index(event.widget)-1].configure(value=[value for value in db.itemDB[event.widget.get()]])
+    else:
+      elements[elements.index(event.widget)-1].configure(value="")
+    
   def calculateEvent(self,event):
     self.calculate()
 
@@ -217,8 +244,9 @@ class ComfirmReciept(tk.Frame):
     self.setStyle(registerNameCombobox)
     registerNameCombobox.grid(row=row+1,column=1)
 
-    categoryCombobox=ttk.Combobox(self.tableFrame,value=db.itemDB.keys())
+    categoryCombobox=ttk.Combobox(self.tableFrame,value=[value for value in db.itemDB.keys()])
     self.setStyle(categoryCombobox)
+    categoryCombobox.bind("<Enter>",self.categoryEvent)
     categoryCombobox.grid(row=row+1,column=2)
 
     priceEntry=tk.Entry(self.tableFrame)
@@ -248,7 +276,13 @@ class ComfirmReciept(tk.Frame):
   def decideItem(self):
     elements = self.tableFrame.winfo_children()
     isOk = (elements!=[])
-
+    if self.storeNameEntry.get() == "":
+      self.storeNameEntry.configure(highlightbackground="red")
+      isOk=False
+    else:
+      self.store=self.storeNameEntry.get()
+      self.storeNameEntry.configure(highlightbackground="#565656")
+    
     for i,element in enumerate(elements):
       if type(element) == ttk.Combobox:
         if "---" in element.get():
@@ -282,25 +316,17 @@ class ComfirmReciept(tk.Frame):
             oneLine.append(element.get())
             self.allItem.append(cp.copy(oneLine))
             oneLine.clear()
-      # for i,element in enumerate(elements):
-      #     elements[i].destroy()
-      # print(self.allItem)
       self.newCategory = NewCategory(self.allItem,self.root)
 
-      # self.root.destroy()
-
-      # for i in self.addItem:
-      #   print(i)
-      # self.checkNewCategory()
 
   def getAllItem(self):
     return self.allItem
   
   def getNewCategory(self):
     return self.newCategory.getNewCategory()
+
   def getHasIssue(self):
     return hasIssue
-
 
 
 class NewCategory(tk.Frame):
