@@ -1,13 +1,15 @@
-import item_db as db
+import item_db as iDB
+import store_db as sDB
 import csv
 import re
 
 CSV_PATH_NAME = "output.csv"
 ITEMDB_PATH_NAME = "item_db.py"
+STOREDB_PATH_NAME = "store_db.py"
 
 class RecordReceipt:
-  itemDB = db.itemDB
-  categoryDB = db.categoryDB
+  itemDB = iDB.itemDB
+  categoryDB = iDB.categoryDB
   def __init__(self,allItem,newCategoryEn,date,store):
     self.allItem=allItem
     self.newCategoryEn=newCategoryEn
@@ -19,11 +21,15 @@ class RecordReceipt:
   def writeFile(self):
     f = open(CSV_PATH_NAME, mode='a')
     writer = csv.writer(f)
-    writer.writerow([self.date,self.store])
-
+    writer.writerow([self.date,self.store])  
     for lineItem in self.allItem:
       writer.writerow(lineItem)
     f.close()
+    storeDB=sDB.storeDB
+    if not(self.store in storeDB):
+      storeDB.append(self.store)
+      with open(STOREDB_PATH_NAME,"w") as f:
+        f.write(str(storeDB))
     print("write for csv file")
 
 
