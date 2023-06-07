@@ -18,7 +18,6 @@ import item_db as iDB
 import store_db as sDB
 
 class ReadReceipt:
-  """ read receipt, analyse and devide with each item. """
   def __init__(self,receiptName):
     self.kakasi = kakasi()
     self.path =os.path.abspath(receiptName) # set image path

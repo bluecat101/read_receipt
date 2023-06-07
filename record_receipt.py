@@ -1,82 +1,71 @@
+##############################################
+# ----------------- README ----------------- #
+# Record recipet infomation                  #
+#   such as store name, date, item, price.   #
+# If first store name or first item,         #
+#   update DataBase(item_db.py,store_db.py). #
+#                                            #
+##############################################
+
 import item_db as iDB
 import store_db as sDB
 import csv
-import re
 
-CSV_PATH_NAME = "output.csv"
-ITEMDB_PATH_NAME = "item_db.py"
-STOREDB_PATH_NAME = "store_db.py"
+CSV_PATH_NAME = "output.csv"      # save receipt infomation 
+ITEMDB_PATH_NAME = "item_db.py"   # reference item infomation and write for new it
+STOREDB_PATH_NAME = "store_db.py" # reference store name infomation and write for new it
 
 class RecordReceipt:
-  itemDB = iDB.itemDB
-  categoryDB = iDB.categoryDB
+  itemDB = iDB.itemDB         # read item from DataBase
+  categoryDB = iDB.categoryDB # read category name from DataBase
+  storeDB=sDB.storeDB         # read store name from DataBase
+
   def __init__(self,allItem,newCategoryEn,date,store):
-    self.allItem=allItem
-    self.newCategoryEn=newCategoryEn
-    self.date=date
-    self.store=store
-    self.writeFile()
-    self.addDB()
+    self.allItem = allItem              # to instance argument
+    self.newCategoryEn = newCategoryEn  # to instance argument
+    self.date = date                    # to instance argument
+    self.store = store                  # to instance argument
+    self.writeFile()                    # record for CSV file
+    self.addDB()                        # update DataBase
 
   def writeFile(self):
-    f = open(CSV_PATH_NAME, mode='a')
-    writer = csv.writer(f)
-    writer.writerow([self.date,self.store])  
+    """ record receipt for csv file """
+    f = open(CSV_PATH_NAME, mode='a') 
+    writer = csv.writer(f)                  # to write with csv format
+    writer.writerow([self.date,self.store]) # write date and store name
     for lineItem in self.allItem:
-      writer.writerow(lineItem)
+      writer.writerow(lineItem) # write item
     f.close()
-    storeDB=sDB.storeDB
-    if not(self.store in storeDB):
-      storeDB.append(self.store)
-      with open(STOREDB_PATH_NAME,"w") as f:
-        f.write("storeDB = " + str(storeDB))
     print("write for csv file")
 
-
-
   def addDB(self):
-    newCategory={}
-    for lineItem in self.allItem:
-      if not(lineItem[2] in self.itemDB):
-        self.itemDB[lineItem[2]] = []# 追加する
-        self.itemDB[lineItem[2]].append(lineItem[1])
+    """ update DataBase(item_db, store_db) """
+    for lineItem in self.allItem: 
+      if not(lineItem[2] in self.itemDB): # whether it is new category (no infomation for DataBase)
+        self.itemDB[lineItem[2]] = [] # add new key for itemDB
+        self.itemDB[lineItem[2]].append(lineItem[1]) # add item for new key as value
+        self.categoryDB[lineItem[2]] = self.newCategoryEn[lineItem[2]] # add new key and English value name for category
+      elif not(lineItem[1] in self.itemDB[lineItem[2]]): # not new category but it is new item
+        self.itemDB[lineItem[2]].append(lineItem[1]) # add item for new key as value
 
-        newCategory[lineItem[2]] = []# 追加する
-      elif not(lineItem[1] in self.itemDB[lineItem[2]]):
-        self.itemDB[lineItem[2]].append(lineItem[1])
+    replaceContent= " " # make sentence to write
 
-    for key in newCategory:
-      newCategory[key]=self.itemDB[key]
-    replaceContent=""
+    for key,val in self.itemDB.items(): # write category name and content of it
+      replaceContent += self.categoryDB[key] + " = " +str(val)+'\n'
 
-    for key,val in self.itemDB.items():
-      if key in newCategory:
-        replaceContent += self.newCategoryEn[key] +" = "+str(val)+'\n'
-      else:
-        replaceContent += self.categoryDB[key] + " = " +str(val)+'\n'
-
-    for key,value in self.newCategoryEn.items():
-      self.categoryDB[key]=value 
-    
+    ### make itemDB and categoryDB argument ###
     replaceContent+= "itemDB = {"
     for key in self.categoryDB:
       replaceContent += "'" + key + "': " + self.categoryDB[key] +", "
-    replaceContent=replaceContent[:-2]
+    replaceContent=replaceContent[:-2] # delete space and comma
     replaceContent += '}\n'
     replaceContent += "categoryDB = " + str(self.categoryDB) + '\n'
-    with open(ITEMDB_PATH_NAME,"w") as f:
+
+    with open(ITEMDB_PATH_NAME,"w") as f: # write for item_DB.py
       f.write(replaceContent)
+    
+    if not(self.store in self.storeDB): # Whether new store name or not
+      self.storeDB.append(self.store)
+      with open(STOREDB_PATH_NAME,"w") as f:  # write for item_DB.py
+        f.write("storeDB = " + str(self.storeDB))
 
-
-""""""
-if __name__=="__main__":
-  items=[
-        ['2', '牛乳', '乳製品', '4', '7', '0', '28']
-        ,['2', 'newItem', '乳製品', '4', '7', '0', '28']
-        ,['fff', 'newItem', '新しい', '4', '5', '6', '14']
-        ,['fff', 'newItem', '新しい', '4', '5', '6', '14']
-        ,['fff', 'newItem2', '新しい', '4', '5', '6', '14']
-        ]
-  # newCategoryEn={"新しい": "newcategory"}
-  newCategoryEn={}
-  app=RecordReceipt(items,newCategoryEn)
