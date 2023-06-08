@@ -55,8 +55,8 @@ class ReadReceipt:
     self.store=""
     isFinish=False
     for text in lineTexts:
-      if self.date=="": # until find date in receipt
-        if self.store=="":
+      if self.date=="": # until find date in receipt (store name must be exsisted above date)
+        if self.store=="": # find store name 
           self.findStore(text[0])
         if re.search('20[0-9]{2}(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]): 
           self.date=re.search('20[0-9]{2}(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]).group() ## get self.date
@@ -108,9 +108,9 @@ class ReadReceipt:
             self.itemList.append(itemInfo)
 
   def findStore(self,text):
-    for storeName in sDB.storeDB:
-      regular=re.escape(storeName)
-      if re.search(regular,text):
+    """ find Store name form DataBase """
+    for storeName in sDB.storeDB: 
+      if re.search(re.escape(storeName),text): # whether store name is included for text
         self.store=storeName
         break
 
@@ -120,7 +120,7 @@ class ReadReceipt:
     for itemGenre,itemValue in iDB.itemDB.items(): # roop from DB
       for dbItem in itemValue: # roop in each item name
         itemConvert=dbItem # get DB item name to change Kanji, Hiragana, Katakana and Half Katakana.
-        # check type of item name in DB whether Kanji, Hiragana, Katakana and Half Katakana and change status.
+        ### check type of item name in DB whether Kanji, Hiragana, Katakana and Half Katakana and change status. ###
         if re.match('^\p{Script=Han}+$', itemConvert): # Kanji
           itemTypeStatus = 4
         elif re.match('[あ-ん]+', itemConvert): # Hiragana
@@ -142,7 +142,6 @@ class ReadReceipt:
               itemInfo.append(text[:re.search("[0-9]+.?$",text).start()]) # append text from first to previous
             except:
               itemInfo.append(text)
-            # itemInfo.append(text[:re.search("[0-9]+.?$",text).start()])
             itemInfo.append(dbItem)
             itemInfo.append(itemGenre)
             break
@@ -223,13 +222,13 @@ class ReadReceipt:
           j-=1
         if i>=j:
           break
-        # swap
+        ### swap ###
         tmp=data[i]
         data[i]=data[j]
         data[j]=tmp
         i+=1
         j-=1
-      quickSort(data,left,i-1) # recursing
+      quickSort(data,left,i-1)  # recursing
       quickSort(data,j+1,right) # recursing
       return 0
     quickSort(data,0,len(data)-1) # exec when called sort()
@@ -242,8 +241,4 @@ class ReadReceipt:
     return self.date
   def getStore(self):
     return self.store
-
-# if __name__ == '__main__':
-#   readReceipt=Receipt("ion_long.png")  
-
 

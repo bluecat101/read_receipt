@@ -23,7 +23,7 @@ def main():
   # print(gui.getAllItem())
   # print("-----")
   # print(gui.getNewCategory())
-  if gui.getHasIssue():
+  if not(gui.getHasIssue()):
     recordOb=recordre.RecordReceipt(gui.getAllItem(),gui.getNewCategory(),gui.date,gui.store)
   
 
