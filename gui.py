@@ -110,10 +110,11 @@ class ComfirmReciept(tk.Frame):
 
       totalEntry=tk.Entry(self.tableFrame)    # set item total price
       self.setStyle(totalEntry)               # set Style
-      if hasDiscount:
-        totalEntry.insert(0,int(item[3])*int(item[4])-int(item[5])) # set total (discount)
-      else:
-        totalEntry.insert(0,int(item[3])*int(item[4])) # set total (no discount)
+      if type(item[3]) == int and type(item[4]) == int:
+        if hasDiscount: 
+          totalEntry.insert(0,int(item[3])*int(item[4])-int(item[5])) # set total (discount)
+        else:
+          totalEntry.insert(0,int(item[3])*int(item[4])) # set total (no discount)
       totalEntry.grid(row=i+1,column=6)       # set position
       
       deleteButton=ttk.Button(self.tableFrame,text="delete",width=7)  # set Button for delete

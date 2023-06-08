@@ -33,7 +33,6 @@ class ReadReceipt:
     image = vision.Image(content=content)
     response = client.text_detection(image=image)
     self.textsInfo = response.text_annotations # save content
-    
     if self.textsInfo==[]: # can't read receipt
       print("ERROR can not read")
       exit(1)
@@ -67,7 +66,7 @@ class ReadReceipt:
         elif re.match("合計",text[0]): # get total price and exit roop
           self.totalInf = ["合計","金額",text]
           break
-        elif re.search('割引',text[0]) and not(isFinish): # find discount 
+        elif re.search('[割引|値引]',text[0]) and not(isFinish): # find discount 
           if re.match('%',text[0][-1]): # whether last character is "%" in word
             text[0]=text[0][:-1] # delete "%"
             price= re.search('[0-9]+$',text[0]) # get price
@@ -95,7 +94,7 @@ class ReadReceipt:
         elif not(isFinish): # find item name
           itemInfo=self.findItem(text[0]) # get itemInfo
           if itemInfo !=[]: # match word in DataBase
-            while re.match('(\D)',text[0][-1]): # delete first character except number
+            while text[0] != "" and re.match('(\D)',text[0][-1]): # delete last charator if it is string
               text[0]=text[0][:-1]
             try:
               itemInfo.append(re.search('[0-9]+$',text[0]).group()) # get price

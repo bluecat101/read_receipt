@@ -48,7 +48,7 @@ class RecordReceipt:
       elif not(lineItem[1] in self.itemDB[lineItem[2]]): # not new category but it is new item
         self.itemDB[lineItem[2]].append(lineItem[1]) # add item for new key as value
 
-    replaceContent= " " # make sentence to write
+    replaceContent= "" # make sentence to write
 
     for key,val in self.itemDB.items(): # write category name and content of it
       replaceContent += self.categoryDB[key] + " = " +str(val)+'\n'

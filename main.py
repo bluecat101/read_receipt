@@ -3,26 +3,18 @@ import item_db as db
 import tkinter as tk
 import gui as ui
 import record_receipt as recordre
+from tkinter import filedialog
 
 
-def main():
-  # receiptInfo=readre.ReadReceipt("ion_long.png")
-  # Itemline=receiptInfo.getItemLine()
-  # total=receiptInfo.getTotal()
-  # date=receiptInfo.getDate()
-  # for item in Itemline:
-  #   print(item)
-  # print(total)
-  # print(date)
-  date="2023/4/9"
-  store=""
-  # gui=ui.ComfirmReciept(Itemline,receiptInfo.date,receiptInfo.store)
+def main(filename):
+  receiptInfo=readre.ReadReceipt(filename)
+  Itemline=receiptInfo.getItemLine()
+  store=receiptInfo.getStore()
+  date=receiptInfo.getDate()
+  
   gui=ui.ComfirmReciept(Itemline,date,store)
   gui.mainloop()
-  # print(gui.getHasIssue())
-  # print(gui.getAllItem())
-  # print("-----")
-  # print(gui.getNewCategory())
+  
   if not(gui.getHasIssue()):
     recordOb=recordre.RecordReceipt(gui.getAllItem(),gui.getNewCategory(),gui.date,gui.store)
   
@@ -36,8 +28,15 @@ Itemline=[
 # ['クーポン嗜好品20%', 'ee', 'aa', '200', 1],
 # ['揚げせん', 'item', 'ff', 90, '2']
 ]
-# for i,x in enumerate(Itemline):
-#   x[2] = i
+date="2023/4/9"
+store="ダイエーaaa"
+
 if __name__ == "__main__":
-  main()
+  filename = filedialog.askopenfilename(
+    title = "レシートを選択してください。",
+    filetypes = [("Image file", ".png .jpg "),("PNG", ".png"), ("JPEG", ".jpg")], # ファイルフィルタ
+    initialdir = "./" # 自分自身のディレクトリ
+    )
+  # print(filename)
+  main(filename)
 
