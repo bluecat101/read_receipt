@@ -37,6 +37,6 @@ if __name__ == "__main__":
     filetypes = [("Image file", ".png .jpg "),("PNG", ".png"), ("JPEG", ".jpg")], # ファイルフィルタ
     initialdir = "./" # 自分自身のディレクトリ
     )
-  # print(filename)
-  main(filename)
+  if filename != "":
+    main(filename)
 
