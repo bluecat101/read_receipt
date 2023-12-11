@@ -14,18 +14,22 @@ class SeeGraph(tk.Frame):
     self.root.title("Analyze")
     self.root.geometry("800x1000")
     # self.root.update_ideletaskes()
+    # get data
     data = pd.read_csv('output.csv')
+    # initialize
     total = data["金額"].sum()
     genre = data["ジャンル"].unique()
     totalenre=[]
+    # get price by each genre
     for x in genre:
       totalenre.append(data.query("ジャンル==@x")["金額"].sum())
+
+    # for figure
     frame = tk.Frame(self.master)
-    
-    
     fig = plt.Figure()
+    # dtaw total with circle graph
     self.setCircleGraph(fig,totalenre,genre,total)
-    # 
+    
     canvas = FigureCanvasTkAgg(fig, frame)
     canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
     canvas.draw()
@@ -36,21 +40,34 @@ class SeeGraph(tk.Frame):
     # totalMonth: 配列(integer)
 
   def setCircleGraph(self,fig,sizes,labels,total):
+    # creating instance
     instance=fig.subplots()
+    # sort sizes and labels together 
     zip_list = zip(sizes,labels)
     sizes,labels = zip(*sorted(zip_list,reverse=True))
+    # set font size
     plt.rcParams['font.size'] = 15
+    # draw circle graph
     instance.pie(
+      # data
       sizes,
+      # price by each genre
       labels=list(map(lambda size : str(size)+'円' if size/total>=0.05 else "" ,sizes)),
+      # setting
       counterclock=False,
       startangle=90,
+      # display persentage
       autopct=lambda p:'{:.1f}%'.format(p) if p>=5 else '',
+      # set position
       pctdistance=0.7,
+      # make hollow at center
       wedgeprops={'width':0.6}
     )
+    # display Usage Guide
     instance.legend(labels,fancybox=True,loc='center left',bbox_to_anchor=(1.0,0.6),fontsize=10)
+    # total num at center
     instance.set_title('合計\n'+str(total)+'円', fontsize=15,y=0.45)
+    # title for figure
     fig.suptitle('ジャンルごとの合計金額', fontsize=15)
   def rankingMonthByCategory(self,ago): # 何ヶ月前か
     # 内部で表示を行う
