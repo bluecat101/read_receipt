@@ -16,6 +16,7 @@ from google.cloud import vision
 import io
 import item_db as iDB
 import store_db as sDB
+import datetime as dt
 
 class ReadReceipt:
   def __init__(self,receiptName):
@@ -58,7 +59,8 @@ class ReadReceipt:
         if self.store=="": # find store name 
           self.findStore(text[0])
         if re.search('20[0-9]{2}(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]): 
-          self.date=re.search('20[0-9]{2}(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]).group() ## get self.date
+          result=re.search('(20[0-9]{2})(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0])
+          self.date = str(dt.date(int(result.group(1)),int(result.group(3)),int(result.group(5))))
       else: # After find self.date
         if re.match("小計",text[0]): # quit to read item in receipt
           isFinish = True
