@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import tkinter as tk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import japanize_matplotlib
+import datetime as dt
+from dateutil.relativedelta import relativedelta
 # from  tkinter import ttk
 
 
@@ -15,22 +17,19 @@ class SeeGraph(tk.Frame):
     self.root.geometry("800x1000")
     # self.root.update_ideletaskes()
     # get data
-    data = pd.read_csv('output.csv')
-    # initialize
-    total = data["金額"].sum()
-    genre = data["ジャンル"].unique()
-    totalenre=[]
-    # get price by each genre
-    for x in genre:
-      totalenre.append(data.query("ジャンル==@x")["金額"].sum())
+    self.data = pd.read_csv('output.csv')
+    
 
     # for figure
     frame = tk.Frame(self.master)
-    fig = plt.Figure()
-    # dtaw total with circle graph
-    self.setCircleGraph(fig,totalenre,genre,total)
-    
-    canvas = FigureCanvasTkAgg(fig, frame)
+    fig_circle = plt.Figure()
+    fig_bar = plt.Figure()
+    # dtaw total in pie chart
+    self.set_total_in_pie_chart(fig_circle)
+    # dtaw total by month in bar graph
+    self.set_total_for_each_month_in_bar_chart(fig_bar)
+    canvas = FigureCanvasTkAgg(fig_bar, frame)
+    canvas = FigureCanvasTkAgg(fig_circle, frame)
     canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
     canvas.draw()
     frame.pack()
@@ -39,20 +38,27 @@ class SeeGraph(tk.Frame):
     # month: 配列(data?,string?)
     # totalMonth: 配列(integer)
 
-  def setCircleGraph(self,fig,sizes,labels,total):
+  def set_total_in_pie_chart(self,fig):
+    # initialize
+    total = self.data["金額"].sum()
+    genre = self.data["ジャンル"].unique()
+    total_genre=[]
+    # get price by each genre
+    for x in genre:
+      total_genre.append(self.data.query("ジャンル==@x")["金額"].sum())
     # creating instance
     instance=fig.subplots()
     # sort sizes and labels together 
-    zip_list = zip(sizes,labels)
-    sizes,labels = zip(*sorted(zip_list,reverse=True))
+    zip_list = zip(total_genre,genre)
+    prices,labels = zip(*sorted(zip_list,reverse=True))
     # set font size
     plt.rcParams['font.size'] = 15
     # draw circle graph
     instance.pie(
       # data
-      sizes,
+      prices,
       # price by each genre
-      labels=list(map(lambda size : str(size)+'円' if size/total>=0.05 else "" ,sizes)),
+      labels=list(map(lambda price : str(price)+'円' if price/total>=0.05 else "" ,prices)),
       # setting
       counterclock=False,
       startangle=90,
@@ -69,6 +75,36 @@ class SeeGraph(tk.Frame):
     instance.set_title('合計\n'+str(total)+'円', fontsize=15,y=0.45)
     # title for figure
     fig.suptitle('ジャンルごとの合計金額', fontsize=15)
+  
+  def set_total_for_each_month_in_bar_chart(self,fig):
+    today = dt.date.today()
+    first_day_in_this_month = dt.datetime(today.year,today.month,1)
+    month_category_period=[]
+    for i in range(5,-2,-1):
+      month_category_period.append(first_day_in_this_month+ relativedelta(months=-i))
+    # get data from 5 month ago to this month
+    data = self.data[(month_category_period[0] <= pd.to_datetime(self.data["日付"])) & (pd.to_datetime(self.data["日付"]) < month_category_period[6])]
+    month_category_name =[ str(i.month)+"月" for i in month_category_period[:-1]] #タイトルに範囲をかく
+    print(month_category_name)
+    test_data=[100,300,200,300,400,400]
+    # creating instance
+    instance=fig.subplots()
+    # set font size
+    plt.rcParams['font.size'] = 15
+    # draw bar grath
+    rect = instance.bar(np.array([1, 2, 3, 4, 5, 6]), test_data, tick_label=month_category_name, align="center")
+
+    # add annotation
+    for one_rect in rect:
+        height = one_rect.get_height()
+        #annotationで文字やその位置を定義。文字を改行したいときは\nを挟む。
+        instance.annotate('{}'.format(height),
+                   xy=(one_rect.get_x() + one_rect.get_width() / 2, height-30),
+                   xytext=(0, 3),
+                   textcoords="offset points",
+                   ha='center', va='bottom',
+                   fontsize=14)
+    fig.suptitle('月ごとの合計金額', fontsize=15)  
   def rankingMonthByCategory(self,ago): # 何ヶ月前か
     # 内部で表示を行う
     # categoryThisMonth
