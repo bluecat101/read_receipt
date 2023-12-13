@@ -32,8 +32,10 @@ class RecordReceipt:
     """ record receipt for csv file """
     f = open(CSV_PATH_NAME, mode='a') 
     writer = csv.writer(f)                  # to write with csv format
-    writer.writerow([self.date,self.store]) # write date and store name
+    # writer.writerow([self.date,self.store]) # write date and store name
     for lineItem in self.allItem:
+      lineItem.insert(0,self.date)
+      lineItem.insert(0,self.store)
       writer.writerow(lineItem) # write item
     f.close()
     print("write for csv file")
