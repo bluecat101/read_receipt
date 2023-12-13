@@ -22,16 +22,22 @@ class SeeGraph(tk.Frame):
 
     # for figure
     frame = tk.Frame(self.master)
-    fig_circle = plt.Figure()
+    fig_pie = plt.Figure()
     fig_bar = plt.Figure()
     # dtaw total in pie chart
-    self.set_total_in_pie_chart(fig_circle)
+    self.set_total_in_pie_chart(fig_pie)
     # dtaw total by month in bar graph
     self.set_total_for_each_month_in_bar_chart(fig_bar)
-    canvas = FigureCanvasTkAgg(fig_bar, frame)
-    canvas = FigureCanvasTkAgg(fig_circle, frame)
-    canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-    canvas.draw()
+    # declare FigureCanvasTkAgg to attach matplotlib for tkinter
+    canvas_pie_chart = FigureCanvasTkAgg(fig_bar, frame)
+    canvas_bar_graph = FigureCanvasTkAgg(fig_pie, frame)
+    # change tk_widget and attach frame
+    canvas_pie_chart.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+    canvas_bar_graph.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+    # canvas_pie_chart.get_tk_widget().place(x = 100, y = 50)
+    # canvas_bar_graph.get_tk_widget().place(x = 200, y = 50)
+    canvas_pie_chart.draw()
+    canvas_bar_graph.draw()
     frame.pack()
     
 
@@ -85,27 +91,30 @@ class SeeGraph(tk.Frame):
     # get data from 5 month ago to this month
     data = self.data[(month_category_period[0] <= pd.to_datetime(self.data["日付"])) & (pd.to_datetime(self.data["日付"]) < month_category_period[6])]
     month_category_name =[ str(i.month)+"月" for i in month_category_period[:-1]] #タイトルに範囲をかく
-    print(month_category_name)
-    test_data=[100,300,200,300,400,400]
+    total_month = []
+    for i,x in enumerate(month_category_period[:-1]):
+      total_month.append(self.get_data_select_period(x,month_category_period[i+1])["金額"].sum())
+    # test_data=[100,300,200,300,400,400]
     # creating instance
     instance=fig.subplots()
     # set font size
     plt.rcParams['font.size'] = 15
     # draw bar grath
-    rect = instance.bar(np.array([1, 2, 3, 4, 5, 6]), test_data, tick_label=month_category_name, align="center")
+    rect = instance.bar(np.array([1, 2, 3, 4, 5, 6]), total_month, tick_label=month_category_name, align="center")
 
     # add annotation
     for one_rect in rect:
-        height = one_rect.get_height()
-        #annotationで文字やその位置を定義。文字を改行したいときは\nを挟む。
-        instance.annotate('{}'.format(height),
-                   xy=(one_rect.get_x() + one_rect.get_width() / 2, height-30),
-                   xytext=(0, 3),
-                   textcoords="offset points",
-                   ha='center', va='bottom',
-                   fontsize=14)
+      height = one_rect.get_height()
+      #annotationで文字やその位置を定義。文字を改行したいときは\nを挟む。
+      instance.annotate('{}'.format(height),
+                        xy=(one_rect.get_x() + one_rect.get_width() / 2, height-30),
+                        xytext=(0, 3),
+                        textcoords="offset points",
+                        ha='center', va='bottom',
+                        fontsize=14
+      )
     fig.suptitle('月ごとの合計金額', fontsize=15)  
-  def rankingMonthByCategory(self,ago): # 何ヶ月前か
+  def rankingMonthByCategory(self,fig,ago): # 何ヶ月前か
     # 内部で表示を行う
     # categoryThisMonth
     # totalCategoryThisMonth
@@ -123,6 +132,10 @@ class SeeGraph(tk.Frame):
   def readCSV(self):
     # output.csvをpandasのデータ構造で返す
     return 
+  def get_data_select_period(self,from_date,to_date):
+    return self.data[(from_date <= pd.to_datetime(self.data["日付"])) & (pd.to_datetime(self.data["日付"]) < to_date)]
+
+
 
 
 if __name__ == "__main__":
