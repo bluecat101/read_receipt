@@ -28,50 +28,72 @@ class SeeGraph(tk.Frame):
     # for figure
     # frame = tk.Frame(self.master)
     self.frame = self.root
-    # self.ranking_period_by_category(frame,"testERROR",{"from_month":9, "to_month":2})### 辞書の型がintなら、dateなら...
-    self.ranking_period_by_category(self.root,9,2,"")### 辞書の型がintなら、dateなら...
-    # self.ranking_period_by_category(frame,"testERROR",{"from_month":8})
-    if 0:
-      fig_pie = plt.Figure()
-      fig_bar = plt.Figure()
+    # self.ranking_period_by_category(9,2,"")
+    if 1:
+      # fig_pie = plt.Figure()
+      self.total_by_genre()
+      # fig_bar = plt.Figure()
       # dtaw total in pie chart
-      self.set_total_in_pie_chart(fig_pie)
+      # self.set_total_in_pie_chart(fig_pie)
       # dtaw total by month in bar graph
-      self.set_total_for_each_month_in_bar_chart(fig_bar)
+      # self.set_total_period_in_bar_chart(fig_bar)
       # declare FigureCanvasTkAgg to attach matplotlib for tkinter
-      canvas_pie_chart = FigureCanvasTkAgg(fig_bar, self.frame)
-      canvas_bar_graph = FigureCanvasTkAgg(fig_pie, self.frame)
+      # canvas_pie_chart = FigureCanvasTkAgg(fig_pie, self.frame)
+      # canvas_bar_graph = FigureCanvasTkAgg(fig_bar, self.frame)
+
+
       # change tk_widget and attach frame
-      canvas_pie_chart.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-      canvas_bar_graph.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+      # canvas_pie_chart.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+      # canvas_bar_graph.get_tk_widget().pack(fill=tk.BOTH, expand=True)
       ### canvas_pie_chart.get_tk_widget().place(x = 100, y = 50)
       ### canvas_bar_graph.get_tk_widget().place(x = 200, y = 50)
-      canvas_pie_chart.draw()
-      canvas_bar_graph.draw()
+      # canvas_pie_chart.draw()
+      # canvas_bar_graph.draw()
     # frame.pack()
     # exit()
     
 
     # month: 配列(data?,string?)
     # totalMonth: 配列(integer)
+  def total_by_genre(self):
+    label_tmp = tk.Label(self.root, text="ジャンルごとの合計金額",font=("MSゴシック", "20", "bold"))
+    label_tmp.pack()
+    
+    frame_figure = tk.Frame(self.root,height=400, width=350 ,bd=10)
+    frame_figure.pack()
 
-  def set_total_in_pie_chart(self,fig):
+    fig_pie = self.set_total_in_pie_chart()
+    canvas_pie_chart = FigureCanvasTkAgg(fig_pie, frame_figure)
+    canvas_pie_chart.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+    canvas_pie_chart.draw()
+
+    button_to_period = tk.Button(self.root, text="期間ごとに見る", command=self.see_period)
+    button_to_period.pack()
+
+
+    
+
+
+
+  def set_total_in_pie_chart(self):
     # initialize
     total = self.data["金額"].sum()
     genre = self.data["ジャンル"].unique()
     total_genre=[]
     # get price by each genre
     for x in genre:
-      total_genre.append(self.data.query("ジャンル==@x")["金額"].sum())
+      total_genre.append(self.data[self.data["ジャンル"]==x]["金額"].sum())
     # creating instance
-    instance=fig.subplots()
+    fig = plt.Figure()
+    instance_fig=fig.subplots()
+    # instance_usage=fig.subplots()
     # sort sizes and labels together 
     zip_list = zip(total_genre,genre)
     prices,labels = zip(*sorted(zip_list,reverse=True))
     # set font size
     plt.rcParams['font.size'] = 15
     # draw circle graph
-    instance.pie(
+    instance_fig.pie(
       # data
       prices,
       # price by each genre
@@ -86,33 +108,58 @@ class SeeGraph(tk.Frame):
       # make hollow at center
       wedgeprops={'width':0.6}
     )
+    instance_fig.legend(
+      bbox_to_anchor=(1.55, 1),
+      loc='upper left', borderaxespad=0, fontsize=18
+      )
+
     # display Usage Guide
-    instance.legend(labels,fancybox=True,loc='center left',bbox_to_anchor=(1.0,0.6),fontsize=10)
+    instance_fig.legend(labels,fancybox=True,loc='center left',bbox_to_anchor=(1.0,0.6),fontsize=10)
     # total num at center
-    instance.set_title('合計\n'+str(total)+'円', fontsize=15,y=0.45)
+    instance_fig.set_title('合計\n'+str(total)+'円', fontsize=15,y=0.45)
     # title for figure
-    fig.suptitle('ジャンルごとの合計金額', fontsize=15)
+    # fig.suptitle('ジャンルごとの合計金額', fontsize=15)
+    return fig
   
-  def set_total_for_each_month_in_bar_chart(self,fig):
+  def set_total_period_in_bar_chart(self,from_date,to_date):
+  # def set_total_period_in_bar_chart(self):
+    print(to_date-from_date)
+    print(to_date.year ,from_date.year)
+    year = to_date.year - from_date.year
     today = dt.date.today()
+
     first_day_in_this_month = dt.datetime(today.year,today.month,1)
+    from_month = dt.datetime(from_date.year,from_date.month,1)
     month_category_period=[]
-    for i in range(5,-2,-1):
-      month_category_period.append(first_day_in_this_month+ relativedelta(months=-i))
+    period = to_date.month-from_date.month+year*12+1
+    # diff_month(from_date, to_date)
+    for i in range(period):
+      month_category_period.append(from_month+ relativedelta(months=i))
+    
+    if month_category_period[0] != from_date:
+      month_category_period.insert(1,from_date)
+    if month_category_period[-1] != to_date:
+      month_category_period.append(to_date)
+    print(month_category_period)
+
     # get data from 5 month ago to this month
-    data = self.data[(month_category_period[0] <= pd.to_datetime(self.data["日付"])) & (pd.to_datetime(self.data["日付"]) < month_category_period[6])]
-    month_category_name =[ str(i.month)+"月" for i in month_category_period[:-1]] #タイトルに範囲をかく
+    # data = self.data[(month_category_period[0] <= pd.to_datetime(self.data["日付"])) & (pd.to_datetime(self.data["日付"]) < month_category_period[6])]
+    month_category_name =[ str(i.month)+"月" if i.month!=1 else str(i.month)+"月\n("+str(i.year)+"年)" for i in month_category_period] #タイトルに範囲をかく
+    print(month_category_name)
     total_month = []
     for i,x in enumerate(month_category_period[:-1]):
       total_month.append(self.get_data_select_period(x,month_category_period[i+1])["金額"].sum())
+    print(len(total_month),total_month)
+    print(len(month_category_name))
     # test_data=[100,300,200,300,400,400]
     # creating instance
+    fig = plt.Figure()
     instance=fig.subplots()
     # set font size
-    plt.rcParams['font.size'] = 15
+    plt.rcParams['font.size'] = 10
     # draw bar grath
-    rect = instance.bar(np.array([1, 2, 3, 4, 5, 6]), total_month, tick_label=month_category_name, align="center")
-
+    rect = instance.bar(np.array([i for i in range(len(total_month))]), total_month, tick_label=month_category_name[:-1], align="center")
+    
     # add annotation
     for one_rect in rect:
       height = one_rect.get_height()
@@ -125,10 +172,10 @@ class SeeGraph(tk.Frame):
                         fontsize=14
       )
     fig.suptitle('月ごとの合計金額', fontsize=15)  
+    return fig
 
-
-  def ranking_period_by_category(self,frame,from_month,to_month,error): # 何ヶ月前か
-    frame_period = tk.Frame(frame,height=100, width=350 ,bd=10)
+  def ranking_period_by_category(self,from_month,to_month,error): # 何ヶ月前か
+    frame_period = tk.Frame(self.root,height=100, width=350 ,bd=10)
     frame_period.pack()
     style = ttk.Style()
     style.theme_use('clam')
@@ -138,7 +185,7 @@ class SeeGraph(tk.Frame):
     entry_end_day.place(x=150, y=0)
     label_tmp = tk.Label(frame_period, text="〜")
     label_tmp.place(x=130, y=0)
-    self.seach_button = tk.Button(frame_period, text="検索", bg="coral", font=("Times New Roman", 10), command=lambda:self.click_day_decided(frame,entry_start_day,entry_end_day))
+    self.seach_button = tk.Button(frame_period, text="検索", bg="coral", font=("Times New Roman", 10), command=lambda:self.click_day_decided(entry_start_day,entry_end_day))
     self.seach_button.place(x=280, y=0)
     if isinstance(from_month, int) and isinstance(to_month, int):
       today = dt.date.today()
@@ -159,7 +206,7 @@ class SeeGraph(tk.Frame):
       self.data_period = self.get_data_select_period(first_day_in_this_month-relativedelta(months=from_month),first_day_in_this_month-relativedelta(months=to_month))
     else:
       self.data_period = self.get_data_select_period(from_month,to_month)
-    frame_ranking = tk.Frame(frame,height=100, width=500)
+    frame_ranking = tk.Frame(self.root,height=100, width=500)
     tree = ttk.Treeview(frame_ranking)
     tree.pack()
 
@@ -179,24 +226,26 @@ class SeeGraph(tk.Frame):
       row = sorted_data_by_genre.iloc[i]
       tree.insert("","end",values=(str(i+1)+"位",row.name,row[0]))
     frame_ranking.pack()
-
-    
-    # 内部で表示を行う
-    # categoryThisMonth
-    # totalCategoryThisMonth
-    return # 何も返さなくていいかな
-  def click_day_decided(self,frame,from_date,to_date):
-    from_date = dt.datetime.combine(from_date.get_date(),time())
-    to_date = dt.datetime.combine(to_date.get_date(),time())
+    return
+  def check_period(self,from_date,to_date):
     error=""
-    if from_date > to_date:
+    today =  dt.datetime.combine(dt.date.today(),time())
+    print(today,to_date)
+    print(from_date , to_date)
+    if (from_date > to_date) or (today < to_date):
       error = "期間の順番に誤りがあります。"
     elif self.get_data_select_period(from_date,to_date).empty:
       error = "指定された期間中のレシートがありませんでした。"
-    children = frame.winfo_children()
+    return error
+  
+  def click_day_decided(self,from_date,to_date):
+    from_date = dt.datetime.combine(from_date.get_date(),time())
+    to_date = dt.datetime.combine(to_date.get_date(),time())
+    error= self.check_period(from_date,to_date)
+    children = self.root.winfo_children()
     for child in children:
       child.destroy()
-    self.ranking_period_by_category(frame,from_date,to_date,error)
+    self.ranking_period_by_category(from_date,to_date,error)
   
   def select_record(self,event):
     children = self.root.winfo_children()
@@ -207,16 +256,14 @@ class SeeGraph(tk.Frame):
     record_id = widget.focus()
     record_values = widget.item(record_id, 'values')
     data_period = self.data_period[self.data_period['ジャンル'] == record_values[1]]
-    self.data_by_genre(self.root,data_period)
+    self.data_by_genre(data_period)
     
-    # print(data_period)
 
-  def data_by_genre(self,frame,data): # 何ヶ月前か
-    frame_data_by_genre = tk.Frame(frame,height=100, width=350 ,bd=10)
+  def data_by_genre(self,data): # 何ヶ月前か
+    frame_data_by_genre = tk.Frame(self.root,height=100, width=350 ,bd=10)
     tree = ttk.Treeview(frame_data_by_genre)
     tree.pack()
 
-    # tree.bind("<<TreeviewSelect>>", self.select_record)
     tree['columns'] = (1,2,3,4)
     tree['show'] = 'headings'
     tree.column(1,anchor=tk.CENTER)
@@ -254,7 +301,23 @@ class SeeGraph(tk.Frame):
     for i in range(sorted_data_by_genre.shape[0]): # for文でのdataframeは遅いので
       row = sorted_data_by_genre.iloc[i]
       tree.insert("","end",values=(row[1],row[0],row[3],row[8]))
-    
+
+  def see_period(self):
+    today = dt.date.today()
+    first_day_in_this_month = dt.datetime(today.year,today.month,1)
+    from_month = first_day_in_this_month-relativedelta(months=13)
+    to_month = first_day_in_this_month-relativedelta(months=2)-relativedelta(days=1)
+    error = self.check_period(from_month,to_month)
+    self.delete_all_data()
+    self.data_period=pd.DataFrame()
+    self.ranking_period_by_category(from_month,to_month,error)
+    print(from_month.month)
+    if error == "":
+      fig_bar = self.set_total_period_in_bar_chart(from_month,to_month)
+      canvas_bar_graph = FigureCanvasTkAgg(fig_bar, self.root)
+      canvas_bar_graph.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+      canvas_bar_graph.draw()
+    return 
   
   def ByMonth(): # 月毎の情報のページ    
     # カテゴリごとのランキング(円グラフ)
@@ -272,7 +335,9 @@ class SeeGraph(tk.Frame):
     return self.data[(from_date <= pd.to_datetime(self.data["日付"])) & (pd.to_datetime(self.data["日付"]) < to_date)]
 
   def delete_all_data(self):
-    self.frame.delete(*self.frame.get_children())
+    children = self.root.winfo_children()
+    for child in children:
+      child.destroy()
 
 
 
