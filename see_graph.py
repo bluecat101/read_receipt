@@ -1,3 +1,5 @@
+
+import re
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,59 +22,30 @@ class SeeGraph(tk.Frame):
     super().__init__(self.root)
     self.root.title("Analyze")
     self.root.geometry("800x1000")
-    # self.root.update_ideletaskes()
     # get data
     self.data = pd.read_csv('output.csv')
-    
+    # root display
+    self.total_by_genre()
 
-    # for figure
-    # frame = tk.Frame(self.master)
-    self.frame = self.root
-    # self.ranking_period_by_category(9,2,"")
-    if 1:
-      # fig_pie = plt.Figure()
-      self.total_by_genre()
-      # fig_bar = plt.Figure()
-      # dtaw total in pie chart
-      # self.set_total_in_pie_chart(fig_pie)
-      # dtaw total by month in bar graph
-      # self.set_total_period_in_bar_chart(fig_bar)
-      # declare FigureCanvasTkAgg to attach matplotlib for tkinter
-      # canvas_pie_chart = FigureCanvasTkAgg(fig_pie, self.frame)
-      # canvas_bar_graph = FigureCanvasTkAgg(fig_bar, self.frame)
-
-
-      # change tk_widget and attach frame
-      # canvas_pie_chart.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-      # canvas_bar_graph.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-      ### canvas_pie_chart.get_tk_widget().place(x = 100, y = 50)
-      ### canvas_bar_graph.get_tk_widget().place(x = 200, y = 50)
-      # canvas_pie_chart.draw()
-      # canvas_bar_graph.draw()
-    # frame.pack()
-    # exit()
-    
-
-    # month: 配列(data?,string?)
-    # totalMonth: 配列(integer)
+  # display totals price by genre in pie chart
   def total_by_genre(self):
+    # title
     label_tmp = tk.Label(self.root, text="ジャンルごとの合計金額",font=("MSゴシック", "20", "bold"))
     label_tmp.pack()
     
+    # frame for figure
     frame_figure = tk.Frame(self.root,height=400, width=350 ,bd=10)
     frame_figure.pack()
 
-    fig_pie = self.set_total_in_pie_chart()
-    canvas_pie_chart = FigureCanvasTkAgg(fig_pie, frame_figure)
-    canvas_pie_chart.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-    canvas_pie_chart.draw()
+    # pie chart
+    fig_pie = self.set_total_in_pie_chart()                           # setting pie chart
+    canvas_pie_chart = FigureCanvasTkAgg(fig_pie, frame_figure)       # to draw in tkinter
+    canvas_pie_chart.get_tk_widget().pack(fill=tk.BOTH, expand=True)  # how to place
+    canvas_pie_chart.draw()                                           # draw piechart
 
+    # button for next page
     button_to_period = tk.Button(self.root, text="期間ごとに見る", command=self.see_period)
     button_to_period.pack()
-
-
-    
-
 
 
   def set_total_in_pie_chart(self):
@@ -80,243 +53,318 @@ class SeeGraph(tk.Frame):
     total = self.data["金額"].sum()
     genre = self.data["ジャンル"].unique()
     total_genre=[]
+
     # get price by each genre
     for x in genre:
       total_genre.append(self.data[self.data["ジャンル"]==x]["金額"].sum())
-    # creating instance
-    fig = plt.Figure()
-    instance_fig=fig.subplots()
-    # instance_usage=fig.subplots()
+
+    # setting figure
+    fig = plt.Figure()          # make object 
+    instance_fig=fig.subplots() # make instance
     # sort sizes and labels together 
     zip_list = zip(total_genre,genre)
-    prices,labels = zip(*sorted(zip_list,reverse=True))
+    prices,labels = zip(*sorted(zip_list,reverse=True)) # sort by price
     # set font size
     plt.rcParams['font.size'] = 15
+
     # draw circle graph
     instance_fig.pie(
-      # data
-      prices,
-      # price by each genre
-      labels=list(map(lambda price : str(price)+'円' if price/total>=0.05 else "" ,prices)),
-      # setting
-      counterclock=False,
-      startangle=90,
-      # display persentage
-      autopct=lambda p:'{:.1f}%'.format(p) if p>=5 else '',
-      # set position
-      pctdistance=0.7,
-      # make hollow at center
-      wedgeprops={'width':0.6}
+      prices,                                                                                 # data
+      labels=list(map(lambda price : str(price)+'円' if price/total>=0.05 else "" ,prices)),  # price by each genre
+      counterclock=False,                                                                     # counterclockwise
+      startangle=90,                                                                          # rotate 
+      autopct=lambda p:'{:.1f}%'.format(p) if p>=5 else '',                                   # display persentage
+      pctdistance=0.7,                                                                        # set position
+      wedgeprops={'width':0.6}                                                                # make hollow at center
     )
+    # setting Usage Guide
     instance_fig.legend(
-      bbox_to_anchor=(1.55, 1),
-      loc='upper left', borderaxespad=0, fontsize=18
-      )
+      bbox_to_anchor=(1.55, 1),   # set relative position
+      loc='upper left',           # set position
+      borderaxespad=0,            # set distance between anchor and loc frame 
+      fontsize=18                 # fontsize
+    )
 
     # display Usage Guide
     instance_fig.legend(labels,fancybox=True,loc='center left',bbox_to_anchor=(1.0,0.6),fontsize=10)
     # total num at center
     instance_fig.set_title('合計\n'+str(total)+'円', fontsize=15,y=0.45)
-    # title for figure
-    # fig.suptitle('ジャンルごとの合計金額', fontsize=15)
     return fig
-  
-  def set_total_period_in_bar_chart(self,from_date,to_date):
-  # def set_total_period_in_bar_chart(self):
-    print(to_date-from_date)
-    print(to_date.year ,from_date.year)
-    year = to_date.year - from_date.year
-    today = dt.date.today()
 
-    first_day_in_this_month = dt.datetime(today.year,today.month,1)
-    from_month = dt.datetime(from_date.year,from_date.month,1)
-    month_category_period=[]
-    period = to_date.month-from_date.month+year*12+1
-    # diff_month(from_date, to_date)
-    for i in range(period):
+  # bar chart  
+  def set_total_period_in_bar_chart(self,from_date,to_date):
+    # get some months between from_date and to_date
+    year = to_date.year - from_date.year                       # get some years
+    from_month = dt.datetime(from_date.year,from_date.month,1) # get from_date's first days of the month
+    period = to_date.month-from_date.month+year*12+1           # get some months 
+    # make month array
+    month_category_period=[from_date] # init 
+    for i in range(1,period+1):
       month_category_period.append(from_month+ relativedelta(months=i))
     
-    if month_category_period[0] != from_date:
-      month_category_period.insert(1,from_date)
-    if month_category_period[-1] != to_date:
-      month_category_period.append(to_date)
-    print(month_category_period)
-
-    # get data from 5 month ago to this month
-    # data = self.data[(month_category_period[0] <= pd.to_datetime(self.data["日付"])) & (pd.to_datetime(self.data["日付"]) < month_category_period[6])]
-    month_category_name =[ str(i.month)+"月" if i.month!=1 else str(i.month)+"月\n("+str(i.year)+"年)" for i in month_category_period] #タイトルに範囲をかく
-    print(month_category_name)
-    total_month = []
+    # make x memori name
+    month_category_name =[ str(i.month)+"月" if i.month!=1 else str(i.month)+"月     "+str(i.year)+"年" for i in month_category_period] #タイトルに範囲をかく
+    # get totals by month
+    total_by_month = []
     for i,x in enumerate(month_category_period[:-1]):
-      total_month.append(self.get_data_select_period(x,month_category_period[i+1])["金額"].sum())
-    print(len(total_month),total_month)
-    print(len(month_category_name))
-    # test_data=[100,300,200,300,400,400]
-    # creating instance
-    fig = plt.Figure()
-    instance=fig.subplots()
+      total_by_month.append(self.get_data_select_period(x,month_category_period[i+1])["金額"].sum())
+    
+    # setting figure
+    plt.rcParams['figure.subplot.bottom'] = 0.15 # make space at bottom
+    fig = plt.Figure()                           # make figure object
+    instance=fig.subplots()                      # make instance
     # set font size
-    plt.rcParams['font.size'] = 10
+    
     # draw bar grath
-    rect = instance.bar(np.array([i for i in range(len(total_month))]), total_month, tick_label=month_category_name[:-1], align="center")
+    rect = instance.bar(np.array([i for i in range(len(total_by_month))]), total_by_month, tick_label=self.tategaki(month_category_name[:-1]), align="center")#
     
     # add annotation
     for one_rect in rect:
-      height = one_rect.get_height()
-      #annotationで文字やその位置を定義。文字を改行したいときは\nを挟む。
+      height = one_rect.get_height()  # get height
       instance.annotate('{}'.format(height),
-                        xy=(one_rect.get_x() + one_rect.get_width() / 2, height-30),
-                        xytext=(0, 3),
-                        textcoords="offset points",
-                        ha='center', va='bottom',
-                        fontsize=14
+                        xy=(one_rect.get_x() + one_rect.get_width() / 2, height-30), # position for annotation
+                        xytext=(0, 3),              # position for text 
+                        textcoords="offset points", # position for figure
+                        ha='center',                # horizontalalignment
+                        va='bottom',                # verticalalignment
       )
+    # other setting
+    instance.set_xticklabels(self.tategaki(month_category_name[:-1]), fontsize=10)
     fig.suptitle('月ごとの合計金額', fontsize=15)  
     return fig
+  
+  # make label name vertical (insert '\n')
+  def tategaki(self,labels):
+    labels_tategaki =[]
+    for label in labels:
+      index = label.find("月")
+      if label.find("年") != -1:
+        # find "年"(== "1月")
+        labels_tategaki.append(label[:index]+'\n'+label[index:index+1]+'\n'+label[index+1:index+2]+'\n'+label[index+2:])
+      elif index == 2:
+        # don't find "年" and month is 2 length(=="10月"or"11月"or"12月")
+        labels_tategaki.append(label[:1]+'\n'+label[1:index]+'\n'+label[index:])
+      else:
+        # don't find "年" and month is 1 length(=="1月"~"9月")
+        labels_tategaki.append(label[:index]+'\n'+label[index:])      
+    return labels_tategaki
+  
 
-  def ranking_period_by_category(self,from_month,to_month,error): # 何ヶ月前か
-    frame_period = tk.Frame(self.root,height=100, width=350 ,bd=10)
+  # display category in any period in tree chart
+  def ranking_period_by_category(self,from_date,to_date,error):
+    # set frame 
+    frame_period = tk.Frame(self.sub_frame,height=100, width=350 ,bd=10)
     frame_period.pack()
+    # set option for DateEntry
     style = ttk.Style()
     style.theme_use('clam')
-    entry_start_day = DateEntry(frame_period,showweeknumbers=False)
-    entry_start_day.place(x=0, y=0)
-    entry_end_day = DateEntry(frame_period,showweeknumbers=False)
-    entry_end_day.place(x=150, y=0)
+    # from Date
+    entry_start_day = DateEntry(frame_period,showweeknumbers=False) # make object
+    entry_start_day.set_date(from_date)                             # set date
+    entry_start_day.place(x=0, y=0)                                 # put 
+    # to Date
+    entry_end_day = DateEntry(frame_period,showweeknumbers=False) # make object
+    entry_end_day.set_date(to_date)                               # set date
+    entry_end_day.place(x=150, y=0)                               # put 
+    # set label
     label_tmp = tk.Label(frame_period, text="〜")
     label_tmp.place(x=130, y=0)
+    # set button for search
     self.seach_button = tk.Button(frame_period, text="検索", bg="coral", font=("Times New Roman", 10), command=lambda:self.click_day_decided(entry_start_day,entry_end_day))
     self.seach_button.place(x=280, y=0)
-    if isinstance(from_month, int) and isinstance(to_month, int):
-      today = dt.date.today()
-      first_day_in_this_month = dt.datetime(today.year,today.month,1)
-    if isinstance(from_month, int) and isinstance(to_month, int):
-      entry_start_day.set_date(first_day_in_this_month-relativedelta(months=from_month))
-      entry_end_day.set_date(first_day_in_this_month-relativedelta(months=to_month)-relativedelta(days=1))
-    else:
-      entry_start_day.set_date(from_month)
-      entry_end_day.set_date(to_month)
-
+    
+    # has error
     if error != "":
+      # display error
       label_error = tk.Label(frame_period, text=error, foreground='red')
       label_error.place(relx = 0.5, y=35,anchor = tk.CENTER)
       return
     
-    if isinstance(from_month, int) and isinstance(to_month, int):
-      self.data_period = self.get_data_select_period(first_day_in_this_month-relativedelta(months=from_month),first_day_in_this_month-relativedelta(months=to_month))
-    else:
-      self.data_period = self.get_data_select_period(from_month,to_month)
-    frame_ranking = tk.Frame(self.root,height=100, width=500)
-    tree = ttk.Treeview(frame_ranking)
-    tree.pack()
-
-    tree.bind("<<TreeviewSelect>>", self.select_record)
-    tree['columns'] = (1,2,3)
-    tree['show'] = 'headings'
-    tree.column(1,anchor=tk.CENTER)
-    tree.column(2,anchor=tk.CENTER)
-    tree.column(3,anchor=tk.CENTER)
-    tree.heading(1,text="ランキング",anchor=tk.CENTER)#command=lambda:self.sort_row(tree)
-    tree.heading(2,text="ジャンル",anchor=tk.CENTER)#command=lambda:self.sort_row(tree)
-    tree.heading(3,text="金額",anchor=tk.CENTER)#command=lambda:self.sort_row(tree)
+    # get data in the period
+    self.data_period = self.get_data_select_period(from_date,to_date)
+    
+    # setting tree
+    frame_ranking = tk.Frame(self.sub_frame,height=100, width=500)
+    frame_ranking.pack()
+    tree = ttk.Treeview(frame_ranking)                  # make object
+    tree.pack()                                         # put
+    tree.bind("<<TreeviewSelect>>", self.select_record) # add function of selection
+    # set columns
+    tree['columns'] = (1,2,3)                           
+    tree.column(1,anchor=tk.CENTER)                      
+    tree.column(2,anchor=tk.CENTER)                     
+    tree.column(3,anchor=tk.CENTER)                     
+    # set heading
+    tree['show'] = 'headings'                           
+    tree.heading(1,text="ランキング",anchor=tk.CENTER)
+    tree.heading(2,text="ジャンル",anchor=tk.CENTER)
+    tree.heading(3,text="金額",anchor=tk.CENTER)
+    # sort data
     sorted_data_by_genre =self.data_period.groupby("ジャンル")[["金額"]].sum().sort_values('金額',ascending=False)    
-    for i in range(10): # for文でのdataframeは遅いので
+    # insert 10 genres
+    for i in range(10):
       if len(sorted_data_by_genre) <= i:
         break
       row = sorted_data_by_genre.iloc[i]
       tree.insert("","end",values=(str(i+1)+"位",row.name,row[0]))
-    frame_ranking.pack()
     return
+  
+  # whether period is correct
   def check_period(self,from_date,to_date):
     error=""
-    today =  dt.datetime.combine(dt.date.today(),time())
-    print(today,to_date)
-    print(from_date , to_date)
-    if (from_date > to_date) or (today < to_date):
+    if from_date > to_date: # wrong the period
       error = "期間の順番に誤りがあります。"
-    elif self.get_data_select_period(from_date,to_date).empty:
+    elif self.get_data_select_period(from_date,to_date).empty: # no data in the period
       error = "指定された期間中のレシートがありませんでした。"
     return error
   
+  # update display content when search button is clicked
   def click_day_decided(self,from_date,to_date):
+    # convert type of date
     from_date = dt.datetime.combine(from_date.get_date(),time())
     to_date = dt.datetime.combine(to_date.get_date(),time())
+    # get error message
     error= self.check_period(from_date,to_date)
-    children = self.root.winfo_children()
-    for child in children:
-      child.destroy()
-    self.ranking_period_by_category(from_date,to_date,error)
+    # update display content
+    self.see_period(from_date,to_date,error)
   
+  # show detail list when one row is clicked
   def select_record(self,event):
-    children = self.root.winfo_children()
+    # delete show detail
+    children = self.sub_frame.winfo_children()
     for i,child in enumerate(children):
       if i > 2:
         child.destroy()
+    # get serected row
     widget = event.widget
     record_id = widget.focus()
     record_values = widget.item(record_id, 'values')
+    # get data
     data_period = self.data_period[self.data_period['ジャンル'] == record_values[1]]
     self.data_by_genre(data_period)
     
 
-  def data_by_genre(self,data): # 何ヶ月前か
-    frame_data_by_genre = tk.Frame(self.root,height=100, width=350 ,bd=10)
+  # display detail list in tree chart
+  def data_by_genre(self,data):
+    # setting 
+    frame_data_by_genre = tk.Frame(self.sub_frame,height=100, width=350 ,bd=10)
+    frame_data_by_genre.pack()
     tree = ttk.Treeview(frame_data_by_genre)
     tree.pack()
 
+    # set columns
     tree['columns'] = (1,2,3,4)
-    tree['show'] = 'headings'
     tree.column(1,anchor=tk.CENTER)
     tree.column(2,anchor=tk.CENTER)
     tree.column(3,anchor=tk.CENTER)
     tree.column(4,anchor=tk.CENTER)
+    # set heading
+    tree['show'] = 'headings'
     tree.heading(1,text="日付",anchor=tk.CENTER,command=lambda:self.sort_row(tree,data))
     tree.heading(2,text="場所",anchor=tk.CENTER,command=lambda:self.sort_row(tree,data))
     tree.heading(3,text="商品名",anchor=tk.CENTER,command=lambda:self.sort_row(tree,data))
     tree.heading(4,text="金額",anchor=tk.CENTER,command=lambda:self.sort_row(tree,data))
-    for i in range(data.shape[0]): # for文でのdataframeは遅いので
+    # insert items
+    for i in range(data.shape[0]):
       row = data.iloc[i]
       tree.insert("","end",values=(row[1],row[0],row[3],row[8]))
-    frame_data_by_genre.pack()
 
+  # sort data when heading of detail list is clicked
   def sort_row(self,tree,data):
-    # 押されたボタンのx座標の位置を取得
+    # get x of the clicked heading
     x = tree.winfo_pointerx() - tree.winfo_rootx()
-    # 一番上の要素を取得
-    first_row = tree.item(tree.get_children()[0]) 
-    # 押されたカラムの情報を取得
+    # get information of clicked heading column
     column_clicked = {"name": tree.heading(tree.identify_column(x))["text"], "id": int(tree.column(tree.identify_column(x))["id"])-1}
-    # 押されたカラムの一番上の要素を取得
-    first_row_item_genre = first_row["values"][column_clicked["id"]]
+    # get top item in the row
+    first_row_item_genre = tree.item(tree.get_children()[0]) ["values"][column_clicked["id"]]
     
-    # データの削除
+    # delete tree data
     tree.delete(*tree.get_children())
     
-    # データを作成する
+    # sort data
     sorted_data_by_genre=data.sort_values(column_clicked["name"],ascending=False)
-    # sort後の内容が変わらなければ降順にする
+    # whether the sorted data and showed data are some 
     if first_row_item_genre == sorted_data_by_genre.iloc[0][column_clicked["name"]]:
+      # change sort order
       sorted_data_by_genre=data.sort_values(column_clicked["name"],ascending=True)
-    # 表示
-    for i in range(sorted_data_by_genre.shape[0]): # for文でのdataframeは遅いので
+    # insert items
+    for i in range(sorted_data_by_genre.shape[0]):
       row = sorted_data_by_genre.iloc[i]
       tree.insert("","end",values=(row[1],row[0],row[3],row[8]))
 
-  def see_period(self):
-    today = dt.date.today()
-    first_day_in_this_month = dt.datetime(today.year,today.month,1)
-    from_month = first_day_in_this_month-relativedelta(months=13)
-    to_month = first_day_in_this_month-relativedelta(months=2)-relativedelta(days=1)
-    error = self.check_period(from_month,to_month)
+  # see data in any period 
+  def see_period(self,from_date=None,to_date=None,error=""):
+    # set default
+    if (from_date is None) and (to_date is None):
+      from_date = self.get_first_day(6)
+      to_date = self.get_last_day(0)
+    
+    # get error message
+    error = self.check_period(from_date,to_date)
+    # delete 
     self.delete_all_data()
+
+    # get size of frrot
+    root_x = int(re.split("[,x+]",self.root.geometry())[0])
+    root_y = int(re.split("[,x+]",self.root.geometry())[1])
+    # make canvas for scrollbar
+    canvas = tk.Canvas(self.root)
+    canvas.pack(expand=True, fill=tk.BOTH)
+    # make frame for attach widgets    
+    self.sub_frame = tk.Frame(canvas)
+    self.sub_frame.pack(expand=True, fill=tk.BOTH)
+    # make scrollbar
+    scrollbar = tk.Scrollbar(canvas, orient=tk.VERTICAL, command=canvas.yview)
+    scrollbar.pack(side = tk.RIGHT,fill=tk.Y)
+
+    # setting scrollbar for canvas
+    canvas.configure(scrollregion=(0, 0, root_x, root_y*2))
+    canvas.configure(yscrollcommand=scrollbar.set)
+    
+    # attach canvas to use sub_frame
+    canvas.create_window((0, 0), window=self.sub_frame, anchor="nw", width=root_x, height=root_y*2)
+    
+    # get data
     self.data_period=pd.DataFrame()
-    self.ranking_period_by_category(from_month,to_month,error)
-    print(from_month.month)
+    # display category in tree chart
+    self.ranking_period_by_category(from_date,to_date,error)
+
+    # display bar chart
     if error == "":
-      fig_bar = self.set_total_period_in_bar_chart(from_month,to_month)
-      canvas_bar_graph = FigureCanvasTkAgg(fig_bar, self.root)
-      canvas_bar_graph.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+      fig_bar = self.set_total_period_in_bar_chart(from_date,to_date)
+      canvas_bar_graph = FigureCanvasTkAgg(fig_bar, self.sub_frame)
+      canvas_bar_graph.get_tk_widget().pack()
       canvas_bar_graph.draw()
+    return
+  
+  # get first day of the month
+  def get_first_day(self,ago):
+    # get today
+    today = dt.date.today()
+    # get first day of today's month
+    first_day_in_this_month = dt.datetime(today.year,today.month,1)
+    return first_day_in_this_month-relativedelta(months=ago-1)
+  
+  # get last day of the month
+  def get_last_day(self,ago):
+    # get today
+    today = dt.date.today()
+    # get first day of today's month
+    first_day_in_this_month = dt.datetime(today.year,today.month,1)
+    return first_day_in_this_month-relativedelta(months=ago-1)-relativedelta(days=1)
+  
+  # get data in the period
+  def get_data_select_period(self,from_date,to_date):
+    return self.data[(from_date <= pd.to_datetime(self.data["日付"])) & (pd.to_datetime(self.data["日付"]) < to_date)]
+  
+  # delete all content in root frame
+  def delete_all_data(self):
+    children = self.root.winfo_children()
+    for child in children:
+      child.destroy()
+  
+  def readCSV(self):
+    # output.csvをpandasのデータ構造で返す
     return 
   
   def ByMonth(): # 月毎の情報のページ    
@@ -327,28 +375,7 @@ class SeeGraph(tk.Frame):
   def suiiByItem(self): # 商品ごとの金額の推移をグラフ化する
     return
 
-  
-  def readCSV(self):
-    # output.csvをpandasのデータ構造で返す
-    return 
-  def get_data_select_period(self,from_date,to_date):
-    return self.data[(from_date <= pd.to_datetime(self.data["日付"])) & (pd.to_datetime(self.data["日付"]) < to_date)]
-
-  def delete_all_data(self):
-    children = self.root.winfo_children()
-    for child in children:
-      child.destroy()
-
-
-
 if __name__ == "__main__":
-  # filename = filedialog.askopenfilename(
-  #   title = "レシートを選択してください。",
-  #   filetypes = [("Image file", ".png .jpg "),("PNG", ".png"), ("JPEG", ".jpg")], # ファイルフィルタ
-  #   initialdir = "./" # 自分自身のディレクトリ
-  #   )
-  # if filename != "":
-  #   main(filename)
   graph = SeeGraph()
   graph.mainloop()
 
