@@ -45,7 +45,8 @@ class ReadReceipt:
     """ Disassemble content for each line. """
     del self.textsInfo[0]
     lineTexts = self.combine(self.textsInfo) # disassembe content for each line and save it for lineTexts
-  
+    # for i in lineTexts:
+    #   print(i)
     self.sort(lineTexts) # sort from top to bottom because sometimes disassembling is mistake order.
     
     hasPrice=True
@@ -130,10 +131,9 @@ class ReadReceipt:
           itemTypeStatus = 2
         elif re.match('[ｱ-ﾝ]+', itemConvert): # Half Katakana
           itemTypeStatus = 1
-        else: # English or Other language
+        else: # English, Other language or combination of tow character type
           itemTypeStatus=0
-
-        while itemTypeStatus != 0:
+        while itemTypeStatus != -1:
           regular=re.escape(itemConvert)  # make regular expression object.
           if re.search(regular,text): # if itemConvert is included in text
             if re.match('[0-9]',text): # if first character is number
