@@ -230,11 +230,6 @@ class SeeGraph(tk.Frame):
   
   # show detail list when one row is clicked
   def select_record(self,event):
-    # delete show detail
-    children = self.sub_frame.winfo_children()
-    for i,child in enumerate(children):
-      if i > 2:
-        child.destroy()
     # get serected row
     widget = event.widget
     record_id = widget.focus()
@@ -242,13 +237,30 @@ class SeeGraph(tk.Frame):
     # get data
     data_period = self.data_period[self.data_period['ジャンル'] == record_values[1]]
     self.data_by_genre(data_period)
-    
+
 
   # display detail list in tree chart
-  def data_by_genre(self,data):
+  def data_by_genre(self,data,status=None):
+    # delete show detail
+    children = self.sub_frame.winfo_children()
+    for i,child in enumerate(children):
+      if i > 2:
+        child.destroy()
+    if status is None:
+      status = False
     # setting 
     frame_data_by_genre = tk.Frame(self.sub_frame,height=100, width=350 ,bd=10)
     frame_data_by_genre.pack()
+
+    frame_summarize = tk.Frame(self.sub_frame,height=100, width=350 ,bd=10)
+    frame_summarize.pack()
+    is_summarize = tk.BooleanVar()
+    checkbutton_summarize = tk.Checkbutton(frame_summarize,text="まとめて表示する", variable=is_summarize)
+    checkbutton_summarize.grid(row = 0, column = 1)
+    button_summarize = tk.Button(frame_summarize,text="再表示",command=lambda:self.data_by_genre(data,is_summarize.get()))
+    button_summarize.grid(row = 0, column = 2)
+    is_summarize.set(status)
+
     tree = ttk.Treeview(frame_data_by_genre)
     tree.pack()
 
@@ -264,10 +276,39 @@ class SeeGraph(tk.Frame):
     tree.heading(2,text="場所",anchor=tk.CENTER,command=lambda:self.sort_row(tree,data))
     tree.heading(3,text="商品名",anchor=tk.CENTER,command=lambda:self.sort_row(tree,data))
     tree.heading(4,text="金額",anchor=tk.CENTER,command=lambda:self.sort_row(tree,data))
-    # insert items
-    for i in range(data.shape[0]):
-      row = data.iloc[i]
-      tree.insert("","end",values=(row[1],row[0],row[3],row[8]))
+    # whether summarizing display or each display
+    if status:
+      # summarizing display
+      column = ["日付","場所","商品名","金額"]
+      items = data['商品名'].unique().tolist() # get all item
+      new_data = pd.DataFrame(index=[], columns=column) # make dataframe for display
+
+      for item in items:
+        record=[]
+        data_by_item = data[data['商品名'] == item] # select by item
+        date = data_by_item.iloc[0]["日付"] # get start date
+        if date != data_by_item.iloc[-1]["日付"]: # start and end date are different
+          date += "-"+data_by_item.iloc[-1]["日付"] # add end date
+        place_list = data_by_item["場所"].unique().tolist() # get each place
+        place =",".join(place_list) # concat place
+        sum = data_by_item.sum()["金額"] # get total proce
+        # add date for record
+        record.append(date)
+        record.append(place)
+        record.append(item)
+        record.append(sum)
+        add_data = pd.DataFrame(data = [record], index=[1], columns=column)
+        new_data = pd.concat([new_data,add_data],ignore_index=True)
+      
+      # insert item
+      for i in range(new_data.shape[0]):
+        row = new_data.iloc[i]
+        tree.insert("","end",values=(row[0],row[1],row[2],row[3]))
+    else:
+      # insert item
+      for i in range(data.shape[0]):
+        row = data.iloc[i]
+        tree.insert("","end",values=(row[1],row[0],row[3],row[8]))
 
   # sort data when heading of detail list is clicked
   def sort_row(self,tree,data):
