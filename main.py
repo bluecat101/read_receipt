@@ -30,8 +30,8 @@ def main(filename):
   gui=ui.ComfirmReciept(Itemline,date,store,specialDiscount)
   gui.mainloop()
   
-  if not(gui.getHasIssue()):
-    recordOb=recordre.RecordReceipt(gui.getAllItem(),gui.getNewCategory(),gui.date,gui.store)
+  # if gui.isOk:
+  recordOb=recordre.RecordReceipt(gui.getAllItem(),gui.newCategory,gui.date,gui.store)
   
 
 
