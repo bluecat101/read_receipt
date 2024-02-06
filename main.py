@@ -5,7 +5,7 @@ import gui as ui
 import record_receipt as recordre
 from tkinter import filedialog
 
-TEST = True
+TEST = False
 
 def main(filename):
   if TEST:
