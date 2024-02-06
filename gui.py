@@ -3,9 +3,9 @@ import tkinter as tk
 from  tkinter import ttk
 import item_db as db
 import re
+from googletrans import Translator
 
-
-hasIssue = True # Whether System behavior is nomal
+# hasIssue = True # Whether System behavior is nomal
 class ComfirmReciept(tk.Frame):
   root = tk.Tk() # make display
   def __init__(self,items,date,store,discount): 
@@ -132,9 +132,9 @@ class ComfirmReciept(tk.Frame):
     
     result_tk ={"frame":tk.Frame(functionFrame,relief=tk.SOLID)}
     result_tk["frame"].configure(width=parentFrame.winfo_width()/4,height=200) # set Style
-    print(parentFrame.winfo_width())
-    print(result_tk["frame"].winfo_width(),result_tk["frame"].winfo_height())
-    print(functionFrame.winfo_width(),functionFrame.winfo_height())
+    # print(parentFrame.winfo_width())
+    # print(result_tk["frame"].winfo_width(),result_tk["frame"].winfo_height())
+    # print(functionFrame.winfo_width(),functionFrame.winfo_height())
     result_tk["frame"].place(relx=0.75)
     
     result_tk.update(
@@ -236,7 +236,7 @@ class ComfirmReciept(tk.Frame):
           isInt=False
         else:                                                                            # integer or not
           element.configure(highlightbackground="#565656")                               # change default Style
-      elif i%8 == 5 and isInt:                                                           # for discount and item price and item amount is integer
+      elif i%8 == 5 and isInt and element.get() != "":                                   # for discount and item price and item amount is integer
         eachTotal=int(elements[i-2].get())*int(elements[i-1].get())                      # calculate each item total
         if element.get().isdecimal():                                                    # discount is integer
           eachTotal-=int(element.get())                                                  # calculate total
@@ -244,6 +244,7 @@ class ComfirmReciept(tk.Frame):
           eachTotal=int(eachTotal*(1-int(re.match("[0-9]+",element.get()).group())/100)) # calculate total
       elif i%8 == 6:                                                                     # for total
         if isInt:                                                                        # integer or not
+          eachTotal=int(elements[i-3].get())*int(elements[i-2].get())                      # calculate each item total
           element.delete(0,tk.END)                                                       # delete text in the total Label
           element.insert(0,eachTotal)                                                    # input total
           subtotal+=eachTotal                                                               # add each item total to total
@@ -364,7 +365,7 @@ class ComfirmReciept(tk.Frame):
           elif i%8 == 5:
             if element.get().isdecimal(): # whether discount is included "%" or string or not
               oneLine.append(element.get()) # only int type
-            elif element.get()[-1] == "%" and re.match("[0-9]+",element.get()): # included "%"
+            elif element.get() != "" and element.get()[-1] == "%" and re.match("[0-9]+",element.get()): # included "%"
               totalNoDiscount=int(elements[i-2].get())*int(elements[i-1].get()) # calcurate discount amount from "%"
               oneLine.append(int(totalNoDiscount*int(re.match("[0-9]+",element.get()).group())/100)) # add dicount amount 
             else:
@@ -373,131 +374,25 @@ class ComfirmReciept(tk.Frame):
             oneLine.append(element.get()) # add total for oneLine[]
             self.allItem.append(cp.copy(oneLine)) # add row for all item with copy()
             oneLine.clear() # reset oneLine[]
-      self.newCategory = NewCategory(self.allItem,self.root) # make new GUI for let user type new categpry name in English
+      translator = Translator()
+      # self.newCategory = NewCategory(self.allItem,self.root) # make new GUI for let user type new categpry name in English
+      self.newCategory={}
+      for item in self.allItem:
+        if not(item[2] in db.itemDB):    # category name is not included register category name
+          en_text = translator.translate(item[2], dest='en').text
+          # if en_text already exist, change name
+          tmp_text = en_text
+          i = 2
+          while tmp_text in db.itemDB.values():
+            tmp_text = en_text + str(i)
+            i += 1
+          en_text += str(i)
 
+          self.newCategory[item[2]] = "_".join(list(en_text.split())) # add category for dictionary
+      print(self.newCategory)
+      self.root.destroy()              # destory parent gui
+      return 
 
   def getAllItem(self): # get all item 
     return self.allItem
-  
-  def getNewCategory(self): # get new category from NewCategory class though this class
-    return self.newCategory.getNewCategory()
-
-  def getHasIssue(self): # get processing has no problem or do not
-    return hasIssue
-
-
-class NewCategory(tk.Frame):
-  """ get new category name in English for new category """
-  newCategory={}                                  # initializa new category variable as dictionary type
-  def __init__(self,allItem,root):
-    self.rootNewCategory = tk.Tk()                # make new window
-    super().__init__(self.rootNewCategory) 
-    self.rootNewCategory.title("カテゴリー名の追加") # set title
-    self.allItem = allItem                        # to instance variable
-    self.root = root                              # to instance variable
-
-    for item in self.allItem:
-      if not(item[2] in db.itemDB):    # category name is not included register category name
-        self.newCategory[item[2]] = "" # add category for dictionary
-    if self.newCategory == {}:         # no new category
-      self.rootNewCategory.destroy()   # destory this object
-      self.root.destroy()              # destory parent gui
-      global hasIssue 
-      hasIssue = False                 # processing is nomal
-      return
-    self.rootNewCategory.geometry("400x530") # set dispaly size 
-    categoryFrameHead = tk.Frame(self.rootNewCategory) # Frame for category header not list header
-    categoryFrameHead.pack(padx = 0) # set position
-    messageLabelHead = ttk.Label(categoryFrameHead,text= "新しいカテゴリー名に対応する英語を書いてください。") # set message for header
-    messageLabelHead.pack(padx = 0)  # set position
-    
-    self.page = 1 # set page number to be many new category
-    self.display() # call display function
-  
-  def display(self):
-    self.categoryFrame = ttk.LabelFrame(self.rootNewCategory) # Frame for add place to type
-    self.categoryFrame.pack(padx = 0) # set position
-    
-    categoryNameJpHead = ttk.Label(self.categoryFrame,text= "カテゴリー名(日本語)") # Label for list header
-    categoryNameJpHead.grid(row= 0,column = 0) # set position
-    categoryNameEnHead = ttk.Label(self.categoryFrame,text= "カテゴリー名(英語)") # Label for list header
-    categoryNameEnHead.grid(row= 0,column = 1) # set position
-    for i,key in enumerate(self.newCategory.keys()): # roop with all new category
-      if i >= (self.page-1) * 14 and i < (self.page) * 14:        # if the item(key) should display current page 
-        categoryNameJp = ttk.Label(self.categoryFrame,text = key) # Label for category name in Japanese
-        categoryNameJp.grid(row = (i%14)+1,column = 0)            # set position
-
-        categoryNameEn = tk.Entry(self.categoryFrame)  # Entry for category name in English
-        categoryNameEn.insert(0,self.newCategory[key]) # set name that null or typed from user (first is null) 
-        categoryNameEn.grid(row= (i%14)+1,column = 1)  # set position
-
-    self.buttonFrame = tk.Frame(self.rootNewCategory,width = 400,height = 60) # Frame for button such as decide, next page, back page
-    self.buttonFrame.pack(padx = 0)                                           # set position
-    if self.page == int((len(self.newCategory.keys())-1) / 14) + 1: # current page is last page 
-      decideButton = tk.Button(self.buttonFrame,text = "決定",command = self.decideNewCategory) # Button for decide
-      decideButton.place(relx = 0.42) # set position
-
-    if self.page != int((len(self.newCategory.keys())-1) / 14)+1: # current page is not last page 
-      nextButton = tk.Button(self.buttonFrame,text = "次へ",command = lambda: self.changePage(self.page+1)) # Button for next page
-      nextButton.place(relx = 0.76)                                                                         # set position
-
-    if self.page != 1:                                            # current page is not first page 
-      backButton = tk.Button(self.buttonFrame,text = "前へ",command = lambda: self.changePage(self.page-1)) # Button for back page
-      backButton.place(relx = 0.09)                                                                         # set position
-    
-    pageLabel = tk.Label(self.buttonFrame,text = self.page) # Label for page number
-    pageLabel.place(relx = 0.48,rely = 0.60)                # set position
-
-    self.categoryFrame.focus_force() # foucus for categoryFrame
-
-
-  def changePage(self,page): # 2th argument is next page.
-    """ change page """
-    self.page = page                                    # update self.page 
-    categoryNames = self.categoryFrame.winfo_children() # get all item from categoryFrame
-    for i in range(3,len(categoryNames),2): # skip Label for categoryNameJpHead / categoryNameEnHead Label
-      if re.search("^[a-zA-Z_]+$",categoryNames[i].get()): # input is alphabet or _ 
-        self.newCategory[categoryNames[i-1].cget("text")] = categoryNames[i].get() # save category name for dictionary
-    self.categoryFrame.destroy() # destory Frame
-    self.buttonFrame.destroy()   # destory Frame
-    self.display()               # call display function
-  
-  def decideNewCategory(self):
-    """ 
-    Called when decide button pushed
-    check inout is English or not, save for dictionary
-    """
-    isOk = True # whether all inout is English or underbar
-    categoryNames = self.categoryFrame.winfo_children() # 
-    tmp = [value for value in db.categoryDB.values()] # make category array from registered category 
-    for i in range(3,len(categoryNames),2): # roop i for only input area in current page
-      self.newCategory[categoryNames[i-1].cget("text")] = categoryNames[i].get() # save category name for dictionary
-
-    for i,value in enumerate(self.newCategory.values()):
-      if re.search("^[a-zA-Z_]+$",value): # Whether new category name is English or underbar
-        if not(value in tmp): # value do not be included temp
-          tmp.append(value) # add to tmp because not allowed same name in same page
-          if i >= (self.page-1)*14 and i < (self.page)*14: # value is in current page
-            categoryNames[((i%14)+1)*2 + 1].configure(highlightbackground="#323232") # change Style
-        else:
-          if i >= (self.page-1)*14 and i < (self.page)*14:                       # value is in current page
-            categoryNames[((i%14)+1)*2 + 1].configure(highlightbackground="red") # change Style
-            categoryNames[((i%14)+1)*2 + 1].delete(0,tk.END)                     # delete text in Entry
-            categoryNames[((i%14)+1)*2 + 1].insert(0,"すでに存在します")            # set error message
-          isOk = False # error
-      else:  
-        if i >= (self.page-1)*14 and i < (self.page)*14:                       # value is in current page
-          categoryNames[((i%14)+1)*2 + 1].configure(highlightbackground="red") # change Style
-          categoryNames[((i%14)+1)*2 + 1].delete(0,tk.END)                     # delete text in Entry
-          categoryNames[((i%14)+1)*2 + 1].insert(0,"英字で入力してください。")     # set error message
-        isOk = False
-
-    if isOk: # no error
-      self.rootNewCategory.destroy() # destory Frame
-      self.root.destroy()            # destory Frame
-      global hasIssue
-      hasIssue = False               # no error
-
-
-  def getNewCategory(self): # give variable of newCategory to foreign class though ComfirmReciept Class
-    return self.newCategory
+ 
