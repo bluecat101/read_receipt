@@ -52,9 +52,11 @@ class ReadReceipt:
     hasPrice=True
     self.itemList=[]
     self.totalInf=[]
+    self.specialDiscount=[]
     self.date=""
     self.store=""
     isFinish=False
+    # print(lineTexts)
     for text in lineTexts:
       if self.date=="": # until find date in receipt (store name must be exsisted above date)
         if self.store=="": # find store name 
@@ -69,7 +71,11 @@ class ReadReceipt:
         elif re.match("合計",text[0]): # get total price and exit roop
           self.totalInf = ["合計","金額",text]
           break
-        elif re.search('[割引|値引]',text[0]) and not(isFinish): # find discount 
+        elif re.search('[クーポン]',text[0]) and isFinish: # find discount
+          search= re.search('[0-9]+$',text[0]) # get price
+          self.specialDiscount.append([text[0][:search.start()-1],int(search.group())])
+          # tmp = text[0][:price()]
+        elif re.search('[割引|値引|クーポン]',text[0]) and not(isFinish): # find discount 
           if re.match('%',text[0][-1]): # whether last character is "%" in word
             text[0]=text[0][:-1] # delete "%"
             price= re.search('[0-9]+$',text[0]) # get price
