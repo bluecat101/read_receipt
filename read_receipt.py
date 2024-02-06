@@ -141,7 +141,7 @@ class ReadReceipt:
           itemTypeStatus=0
         while itemTypeStatus != -1:
           regular=re.escape(itemConvert)  # make regular expression object.
-          if re.search(regular,text): # if itemConvert is included in text
+          if re.search(regular,text) or text in iDB.special_name.keys(): # if itemConvert is included in text
             if re.match('[0-9]',text): # if first character is number
               price=re.match('[0-9]*',text) # get price from first character
               text=text[price.end():]+price.group() # change the order 
@@ -149,8 +149,12 @@ class ReadReceipt:
               itemInfo.append(text[:re.search("[0-9]+.?$",text).start()]) # append text from first to previous
             except:
               itemInfo.append(text)
-            itemInfo.append(dbItem)
-            itemInfo.append(itemGenre)
+            if text in iDB.special_name.keys():
+              itemInfo.append(iDB.special_name[text][0])
+              itemInfo.append(iDB.special_name[text][1])
+            else:
+              itemInfo.append(dbItem)
+              itemInfo.append(itemGenre)
             break
           itemTypeStatus -= 1 # change type
           if itemTypeStatus ==3:
