@@ -42,23 +42,22 @@ class RecordReceipt:
 
   def addDB(self):
     """ update DataBase(item_db, store_db) """
-    # print(self.itemDB)
-    # print("----")
-    # print(self.categoryDB)
-    # print("----")
     for lineItem in self.allItem:
-      # print(lineItem) 
+      if not(lineItem[3] in lineItem[2]): # whether lineItem is special_name
+        print(lineItem)
+        iDB.special_name[lineItem[2]] = [lineItem[3],str(lineItem[4])]
       if not(lineItem[4] in self.itemDB): # whether it is new category (no infomation for DataBase)
         self.itemDB[lineItem[4]] = [] # add new key for itemDB
         self.itemDB[lineItem[4]].append(lineItem[3]) # add item for new key as value
         self.categoryDB[lineItem[4]] = self.newCategoryEn[lineItem[4]] # add new key and English value name for category
       elif not(lineItem[3] in self.itemDB[lineItem[4]]): # not new category but it is new item
         self.itemDB[lineItem[4]].append(lineItem[3]) # add item for new key as value
-
+    
     replaceContent= "" # make sentence to write
 
     for key,val in self.itemDB.items(): # write category name and content of it
       replaceContent += self.categoryDB[key] + " = " +str(val)+'\n'
+    replaceContent += "special_name = " +str(iDB.special_name)+'\n'
 
     ### make itemDB and categoryDB argument ###
     replaceContent+= "itemDB = {"
