@@ -386,7 +386,7 @@ class ComfirmReciept(tk.Frame):
           while tmp_text in db.itemDB.values():
             tmp_text = en_text + str(i)
             i += 1
-          en_text += str(i)
+          en_text = tmp_text
 
           self.newCategory[item[2]] = "_".join(list(en_text.split())) # add category for dictionary
       print(self.newCategory)
