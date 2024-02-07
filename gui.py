@@ -2,6 +2,7 @@ import copy as cp
 import tkinter as tk
 from  tkinter import ttk
 import item_db as db
+import store_db as sdb
 import re
 from googletrans import Translator
 
@@ -15,9 +16,9 @@ class ComfirmReciept(tk.Frame):
     self.root.geometry("800x1000")    # size
     self.root.update_idletasks()      # updadate root size (default is 1x1)
     self.date=date   # to instance variable
-    self.store=store # to instance variable
+    self.store=[store,sdb.tax(store)] # to instance variable
     self.discount = discount
-    self.discount_total = sum(list(zip(*discount))[1])
+    self.discount_total = sum(list(zip(*discount))[1]) if len(discount) > 0 else 0
 
     storeDateFrame=tk.Frame(self.root,height=27) # Frame for store name and date 
     storeDateFrame.pack(pady=0)                  # set position
@@ -26,7 +27,7 @@ class ComfirmReciept(tk.Frame):
     storeNameLabel.place(relx=0.0)                         # set position
 
     self.storeNameEntry=tk.Entry(storeDateFrame,width=20) # Entry for store name
-    self.storeNameEntry.insert(0,self.store)              # set store name
+    self.storeNameEntry.insert(0,self.store[0])              # set store name
     self.storeNameEntry.place(relx=0.08)                  # set position
 
     dateLabel=tk.Label(storeDateFrame,text="日付: "+self.date) # Label for date
@@ -140,9 +141,12 @@ class ComfirmReciept(tk.Frame):
     result_tk.update(
       subtotal = tk.Label(result_tk["frame"],text="小計"),
       discount = tk.Label(result_tk["frame"],text="割引"),
-      tax      = tk.Label(result_tk["frame"],text="税"),
+      tax      = ttk.Combobox(result_tk["frame"],value=["内税","外税"],width=3),
       total    = tk.Label(result_tk["frame"],text="合計"),
     )
+    result_tk["tax"].set(self.store[1])        
+    result_tk["tax"].bind("<<ComboboxSelected>>",lambda event: self.changeTax(event,result_tk["tax"].get()))
+    # result_tk["tax"].bind("<<ComboboxSelected>>",self.changeTax)
     self.result_tk_value = {
       "subtotal" :tk.Label(result_tk["frame"],text=0),
       "discount" :tk.Entry(result_tk["frame"],width=5, justify=tk.RIGHT,bg="#4B4B4B"),
@@ -164,7 +168,7 @@ class ComfirmReciept(tk.Frame):
         unit_label.grid(row = i-1, column = 2)
         
 
-    decideButton=ttk.Button(functionFrame,text="決定",command=self.decideItem) # Button for decide function
+    decideButton=ttk.Button(functionFrame,text="決定",command=self.decide) # Button for decide function
     decideButton.place(relx=0.35)                                             # set position
 
     decideButton=ttk.Button(functionFrame,text="+",command=self.addItem) # Button for add function
@@ -180,7 +184,9 @@ class ComfirmReciept(tk.Frame):
 
 
     self.root.bind_class("Entry", "<FocusOut>", self.calculateEvent) # Add Event for Entry
-
+  def changeTax(self,event,kind_of_tax):
+    self.store[1] = kind_of_tax
+    self.calculate()
   def display_discount_detail(self,event):
     x = self.result_tk_value["discount"].winfo_rootx()+ 25
     y = self.result_tk_value["discount"].winfo_rooty()+ 20
@@ -236,15 +242,18 @@ class ComfirmReciept(tk.Frame):
           isInt=False
         else:                                                                            # integer or not
           element.configure(highlightbackground="#565656")                               # change default Style
+          if i%8 == 4 and isInt:
+            eachTotal=int(elements[i-1].get())*int(elements[i].get())                      # calculate each item total
       elif i%8 == 5 and isInt and element.get() != "":                                   # for discount and item price and item amount is integer
-        eachTotal=int(elements[i-2].get())*int(elements[i-1].get())                      # calculate each item total
+        # eachTotal=int(elements[i-2].get())*int(elements[i-1].get())                      # calculate each item total
+        # print(i)
         if element.get().isdecimal():                                                    # discount is integer
           eachTotal-=int(element.get())                                                  # calculate total
         elif element.get()[-1] == "%" and re.match("[0-9]+",element.get()):              # discount is include "%"
           eachTotal=int(eachTotal*(1-int(re.match("[0-9]+",element.get()).group())/100)) # calculate total
       elif i%8 == 6:                                                                     # for total
         if isInt:                                                                        # integer or not
-          eachTotal=int(elements[i-3].get())*int(elements[i-2].get())                      # calculate each item total
+          # eachTotal=int(elements[i-3].get())*int(elements[i-2].get())                      # calculate each item total
           element.delete(0,tk.END)                                                       # delete text in the total Label
           element.insert(0,eachTotal)                                                    # input total
           subtotal+=eachTotal                                                               # add each item total to total
@@ -252,9 +261,14 @@ class ComfirmReciept(tk.Frame):
         isInt=True                                                                       # init variable
     self.result_tk_value["subtotal"].configure(text=subtotal)                        # insert subtotal num and "yesn"
     discount = int(self.result_tk_value["discount"].get())
-    tax = int((subtotal-discount)*0.08)
-    self.result_tk_value["tax"].configure(text = tax)                        # insert tax num and "yesn"
-    self.result_tk_value["total"].configure(text = subtotal - discount + tax)                        # insert total num and "yesn"
+    if self.store[1] == "内税":
+      tax = int(((subtotal-discount)/1.08)*0.08)
+      self.result_tk_value["tax"].configure(text = tax)                        # insert tax num and "yesn"
+      self.result_tk_value["total"].configure(text = subtotal - discount)                        # insert total num and "yesn"
+    else:
+      tax = int((subtotal-discount)*0.08)
+      self.result_tk_value["tax"].configure(text = tax)                        # insert tax num and "yesn"
+      self.result_tk_value["total"].configure(text = subtotal - discount + tax)                        # insert total num and "yesn"
   
 
   def updateRegion(self):
@@ -327,7 +341,7 @@ class ComfirmReciept(tk.Frame):
 
 
 
-  def decideItem(self):
+  def decide(self):
     """ Called when decide button is clicked. check all item is validation and class new category GUI """
     elements = self.tableFrame.winfo_children()
     isOk = (elements!=[]) # if item is null = false
@@ -335,7 +349,7 @@ class ComfirmReciept(tk.Frame):
       self.storeNameEntry.configure(highlightbackground="red") # if enpty, change Style
       isOk=False # error
     else: # entered
-      self.store=self.storeNameEntry.get() 
+      self.store[0]=self.storeNameEntry.get() 
       self.storeNameEntry.configure(highlightbackground="#565656") # cahnge Style
     
     for i,element in enumerate(elements):
