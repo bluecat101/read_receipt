@@ -30,8 +30,11 @@ class ComfirmReciept(tk.Frame):
     self.storeNameEntry.insert(0,self.store[0])              # set store name
     self.storeNameEntry.place(relx=0.08)                  # set position
 
-    dateLabel=tk.Label(storeDateFrame,text="日付: "+self.date) # Label for date
-    dateLabel.place(relx=0.8)                                 # set position
+    dateLabel=tk.Label(storeDateFrame,text="日付: ") # Label for date
+    self.dateEntry=tk.Entry(storeDateFrame) # Label for date
+    self.dateEntry.insert(0,self.date)              
+    dateLabel.place(relx=0.75)                                 # set position
+    self.dateEntry.place(relx=0.8)                                 # set position
 
 
     parentFrame=ttk.LabelFrame(self.root) # Frame for item list
@@ -90,7 +93,7 @@ class ComfirmReciept(tk.Frame):
       categoryCombobox=ttk.Combobox(self.tableFrame,value=[value for value in db.itemDB.keys()]) # Combobox for item category
       self.setStyle(categoryCombobox)                                                            # set Style  
       categoryCombobox.set(item[2])                                                              # set item category 
-      categoryCombobox.bind("<Enter>",self.categoryEvent)                                        # set Enter Event
+      categoryCombobox.bind("<<ComboboxSelected>>",self.categoryEvent)                                        # set Enter Event
       categoryCombobox.grid(row=i+1,column=2)                                                    # set position 
 
       priceEntry=tk.Entry(self.tableFrame) # Entry for item price
@@ -314,7 +317,7 @@ class ComfirmReciept(tk.Frame):
 
     categoryCombobox=ttk.Combobox(self.tableFrame,value=[value for value in db.itemDB.keys()]) # Combobox for item category
     self.setStyle(categoryCombobox)                                                            # set Style  
-    categoryCombobox.bind("<Enter>",self.categoryEvent)                                        # set Enter Event
+    categoryCombobox.bind("<<ComboboxSelected>>",self.categoryEvent)                                        # set Enter Event
     categoryCombobox.grid(row=row+1,column=2)                                                  # set position 
 
     priceEntry=tk.Entry(self.tableFrame) # Entry for item price
@@ -352,6 +355,12 @@ class ComfirmReciept(tk.Frame):
       self.store[0]=self.storeNameEntry.get() 
       self.storeNameEntry.configure(highlightbackground="#565656") # cahnge Style
     
+    if self.dateEntry.get() == "": # Check store name is entered
+      self.dateEntry.configure(highlightbackground="red") # if enpty, change Style
+      isOk=False # error
+    else: # entered
+      self.data=self.dateEntry.get()
+      self.dateEntry.configure(highlightbackground="#565656") # cahnge Style
     for i,element in enumerate(elements):
       if type(element) == ttk.Combobox: # check for Combobox
         if "---" in element.get(): # if entered "---""
@@ -403,7 +412,6 @@ class ComfirmReciept(tk.Frame):
           en_text = tmp_text
 
           self.newCategory[item[2]] = "_".join(list(en_text.split())) # add category for dictionary
-      print(self.newCategory)
       self.root.destroy()              # destory parent gui
       return 
 
