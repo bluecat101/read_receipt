@@ -1,5 +1,5 @@
-storeDB = ['ダイエー', 'ローゼン', 'イオン', 'FamilyMart',"セブン-イレブン"]
-target ={'ダイエー':"", 'ローゼン':"", 'イオン':"", 'FamilyMart':"領収証","セブン-イレブン":"領収書"}
+storeDB = ['ダイエー', 'ローゼン', 'イオン', 'FamilyMart', 'セブン-イレブン', '吉野家', 'まかいの牧場', 'EXCELSIOR CAFFE', '業務スーパー', 'KAMUKURA', 'LAWSON', 'EXCELSIOR CAFFEEXCELSIOR CAFFE', '業務スーパー', '山安', '文左亭', 'LAWSON', 'KALDI', '世界一のアップルパイ', 'サービスエリア', 'NewDays', 'STARBUCKS', 'アトレ', 'クリエイト']
+target = {'ダイエー': '', 'ローゼン': '', 'イオン': '', 'FamilyMart': '領収証', 'セブン-イレブン': '領収書', '吉野家': '', 'まかいの牧場': '', '業務スーパー': '', 'EXCELSIOR CAFFE': '', 'KAMUKURA': '', 'LAWSON': '', 'EXCELSIOR CAFFEEXCELSIOR CAFFE': '', '山安': '', '文左亭': '', 'KALDI': '', '世界一のアップルパイ': '', 'サービスエリア': '', 'NewDays': '', 'STARBUCKS': '', 'アトレ': '', 'クリエイト': ''}
 
 def setting(store_name,text):
   if store_name == "":
@@ -20,8 +20,8 @@ def setting(store_name,text):
     return text
 
 def tax(store_name):
-  include_tax = ["FamilyMart"]
-  exclude_tax = ["","ダイエー","ローゼン","イオン","セブン-イレブン"]
+  include_tax = ["FamilyMart","EXCELSIOR CAFFE","LAWSON"]
+  exclude_tax = ["","ダイエー","ローゼン","イオン","セブン-イレブン",]
   if store_name in include_tax:
     return "内税"
   else:
