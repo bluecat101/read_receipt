@@ -10,7 +10,7 @@
 import item_db as iDB
 import store_db as sDB
 import csv
-
+# import os
 CSV_PATH_NAME = "output.csv"      # save receipt infomation 
 ITEMDB_PATH_NAME = "item_db.py"   # reference item infomation and write for new it
 STOREDB_PATH_NAME = "store_db.py" # reference store name infomation and write for new it
@@ -44,7 +44,7 @@ class RecordReceipt:
     """ update DataBase(item_db, store_db) """
     for lineItem in self.allItem:
       if not(lineItem[3] in lineItem[2]): # whether lineItem is special_name
-        print(lineItem)
+        # print(lineItem)
         iDB.special_name[lineItem[2]] = [lineItem[3],str(lineItem[4])]
       if not(lineItem[4] in self.itemDB): # whether it is new category (no infomation for DataBase)
         self.itemDB[lineItem[4]] = [] # add new key for itemDB
@@ -72,6 +72,18 @@ class RecordReceipt:
     
     if not(self.store in self.storeDB): # Whether new store name or not
       self.storeDB.append(self.store)
-      with open(STOREDB_PATH_NAME,"w") as f:  # write for item_DB.py
-        f.write("storeDB = " + str(self.storeDB))
+      sDB.target[self.store] = ""
+      with open(STOREDB_PATH_NAME) as file:
+        contents = file.readlines()
+      contents[0] = "storeDB = " + str(self.storeDB) + '\n'
+      contents[1] = "target = " + str(sDB.target) + '\n'
+      with open(STOREDB_PATH_NAME, mode="w") as file:
+        print(type(contents))
+        print(contents)
+        file.writelines("".join(contents))
+
+
+
+      # with open(STOREDB_PATH_NAME,"w") as f:  # write for item_DB.py
+      #   f.write("storeDB = " + str(self.storeDB))
 
