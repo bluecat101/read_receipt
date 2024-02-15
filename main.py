@@ -6,7 +6,7 @@ import record_receipt as recordre
 from tkinter import filedialog
 
 TEST = False
-TEST2 = True
+TEST2 = False
 
 def main(filename):
   if TEST:

@@ -68,7 +68,7 @@ class ReadReceipt:
     self.store=""
     isFinish=False
     is_find_target = True
-    print(lineTexts)
+    # print(lineTexts)
     for text in lineTexts:
       if self.date=="": # until find date in receipt (store name must be exsisted above date)
         if self.store=="": # find store name 
@@ -96,7 +96,7 @@ class ReadReceipt:
           self.specialDiscount.append([text[0][:search.start()-1],int(search.group())])
           # tmp = text[0][:price()]
         elif re.search('(割引|値引|クーポン)',text[0]) and not(isFinish): # find discount 
-          print()
+          # print()
           # print("yes") if re.search('[割引|値引|クーポン]',text[0]) else print("no")
           if re.match('%',text[0][-1]): # whether last character is "%" in word
             text[0]=text[0][:-1] # delete "%"
@@ -110,7 +110,7 @@ class ReadReceipt:
               self.itemList[len(self.itemList)-1].append("---") # can't find discount
           else: # last character is not "%"
             price= re.search('[0-9]+$',text[0])
-            print(text)
+            # print(text)
             self.itemList[len(self.itemList)-1].append(price.group()) if price else itemInfo.append("---") # store discount price or not find it then put "can't find discount"
         elif re.search('[0-9]個',text[0])and not(isFinish): # word is not discount and it is quantity
           try:
