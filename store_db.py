@@ -16,6 +16,12 @@ def setting(store_name,text):
       if idx != -1:
         return text[:idx] + text[idx+1:]
     return text
+  elif store_name == "セブン-イレブン":
+    if len(text) >0:
+      idx = text.find("*")
+      if idx != -1:
+        return text[:idx] + text[idx+1:]
+    return text
   else:
     return text
 
