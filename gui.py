@@ -392,7 +392,8 @@ class ComfirmReciept(tk.Frame):
         line_discount = elements[i*8+5].get()
         line_total = elements[i*8+6].get()
         if line_discount.isdecimal(): # whether discount is included "%" or string or not
-              oneLine.append(line_discount) # only int type
+          # oneLine.append(line_discount) # only int type
+          oneLine["discount"] = int(line_discount)
         elif line_discount != "" and line_discount[-1] == "%" and re.match("[0-9]+",line_discount): # included "%"
           totalNoDiscount=int(elements[i*8+3].get())*int(elements[i*8+4].get()) # calcurate discount amount from "%"
           oneLine["discount"] = int(totalNoDiscount*int(re.match("[0-9]+",line_discount).group())/100) # add dicount amount 

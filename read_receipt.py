@@ -54,7 +54,7 @@ class ReadReceipt:
       #   print(i)
       self.sort(lineTexts) # sort from top to bottom because sometimes disassembling is mistake order.
     else:
-      lineTexts = [['英', 2988, 104, 0.6666666666666666, 150], ['SEVENCIOLINGS', 1097, 201, 18.0, 17], ['数', 2989, 207, 0.6666666666666666, 151], ['日(日31月12年2023番号登録者事業:電話9-1市横浜県神奈川横浜セブン-イレブン小雀町店戸塚区小雀町111045-851-7119レジ#217020001093092)21:23青229', 1673, 1083, 132.66666666666666, 0], ['領収書', 1442, 1277, 64.66666666666667, 41], ['塩むすび*100※', 953, 1496, 59.333333333333336, 44], ['塩むすび*100est', 953, 1496, 59.333333333333336, 44], ['塩むすび*100', 963, 1890, 53.333333333333336, 64], ['小計(税抜8%)¥500', 956, 2090, 60.0, 66], ['消費税等(8%)¥40', 1148, 2188, 58.666666666666664, 74], ['合計¥540', 1940, 2305, 48.0, 93], ['(税率8%対象¥540)', 955, 2376, 60.0, 96], ['(内消費税等8%¥40)', 957, 2477, 60.666666666666664, 101], ['商品券支払¥1.000', 1047, 2568, 60.0, 108], ['商品券残高¥460', 1048, 2672, 57.333333333333336, 113], ['¥460', 1936, 2767, 46.666666666666664, 119], ['お買上明細は上記のとおりです。', 957, 2860, 59.333333333333336, 121], ['お', 957, 2869, 47.333333333333336, 118], ['[*]マークは軽減税率対象です。', 907, 2954, 62.666666666666664, 130], ['伝票番号231-231-206-5874', 955, 3045, 56.666666666666664, 140]]
+      lineTexts = [['英', 2988, 104, 0.6666666666666666, 150], ['SEVENCIOLINGS', 1097, 201, 18.0, 17], ['数', 2989, 207, 0.6666666666666666, 151], ['日(日31月12年2023番号登録者事業:電話9-1市横浜県神奈川横浜セブン-イレブン小雀町店戸塚区小雀町111045-851-7119レジ#217020001093092)21:23青229', 1673, 1083, 132.66666666666666, 0], ['領収書', 1442, 1277, 64.66666666666667, 41], ['塩むすび*100※', 953, 1496, 59.333333333333336, 44],['割引33', 953, 1700, 59.333333333333336, 44], ['2個X単価', 963, 1890, 53.333333333333336, 64], ['小計(税抜8%)¥500', 956, 2090, 60.0, 66], ['消費税等(8%)¥40', 1148, 2188, 58.666666666666664, 74], ['合計¥540', 1940, 2305, 48.0, 93], ['(税率8%対象¥540)', 955, 2376, 60.0, 96], ['(内消費税等8%¥40)', 957, 2477, 60.666666666666664, 101], ['商品券支払¥1.000', 1047, 2568, 60.0, 108], ['商品券残高¥460', 1048, 2672, 57.333333333333336, 113], ['¥460', 1936, 2767, 46.666666666666664, 119], ['お買上明細は上記のとおりです。', 957, 2860, 59.333333333333336, 121], ['お', 957, 2869, 47.333333333333336, 118], ['[*]マークは軽減税率対象です。', 907, 2954, 62.666666666666664, 130], ['伝票番号231-231-206-5874', 955, 3045, 56.666666666666664, 140]]
     
 
     self.itemList=[]
@@ -62,38 +62,40 @@ class ReadReceipt:
     self.specialDiscount=[]
     self.date=""
     self.store=""
+    # if not found date, you can't get data so in secound time, you don't mind date
     if self.search_texts(lineTexts,status= "first"):
       self.search_texts(lineTexts,status= "secound")
-      self.date = ""
-      self.store = ""
+      self.date = ""  # reset date
+      self.store = "" # reset date
 
     
   def search_texts(self,lineTexts,status):
+    # text[0] has price
     hasPrice=True
+    # read word of "小計"
     isFinish=False
-    is_find_target = True
+    exist_target = True # don't read item until the target word exist
     if status == "secound":
-      self.date = "sample"
-      self.store = "sample"
-      is_find_target = True
+      # make dummy not to mind date and store
+      self.date = "sample"  # dummy date
+      self.store = "sample" # dummy store
     for text in lineTexts:
-      itemInfo={"item": text,"register_name": "---","genre": "---","price":"---","amount":"0","discount":"---"}
+      itemInfo={"item": text[0],"register_name": "---","genre": "---","price":-1,"amount":0,"discount":0}
       if self.date=="": # until find date in receipt (store name must be exsisted above date)
         if self.store=="": # find store name 
           if self.findStore(text[0]) and (sDB.target[self.store] != ""):
-            is_find_target = False
+            exist_target = False
         if re.search('20[0-9]{2}(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0]): 
           result=re.search('(20[0-9]{2})(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0])
           self.date = str(dt.date(int(result.group(1)),int(result.group(3)),int(result.group(5))))
         if  re.search('(日)([1-3][0-9]|[1-9])(月)(1[0-2]|0[1-9]|[1-9])(年)(20[0-9]{2})',text[0]):
           result=re.search('(日)([1-3][0-9]|[1-9])(月)(1[0-2]|0[1-9]|[1-9])(年)(20[0-9]{2})',text[0])
           self.date = str(dt.date(int(result.group(6)),int(result.group(4)),int(result.group(2))))
-      elif not(is_find_target):
+      elif not(exist_target):
         if re.search(re.escape(sDB.target[self.store]),text[0]): # whether store target is included for text
-          is_find_target = True
-        # print("is_find_target:",is_find_target)
+          exist_target = True
       elif isFinish:
-        if re.search('(クーポン)',text[0]) and isFinish: # find discount
+        if re.search('(クーポン)',text[0]): # find discount
           search= re.search('[0-9]+$',text[0]) # get price
           self.specialDiscount.append([text[0][:search.start()-1],int(search.group())])
         if re.search("合計",text[0]): # get total price and exit roop
@@ -104,27 +106,24 @@ class ReadReceipt:
         elif re.search("合計",text[0]): # get total price and exit roop
           break
         elif re.search('(割引|値引|クーポン)',text[0]): # find discount 
-          if re.match('%',text[0][-1]): # whether last character is "%" in word
+          if re.match('%',text[0][-1]): # whether last character is "%"
             text[0]=text[0][:-1] # delete "%"
             price= re.search('[0-9]+$',text[0]) # get price
-            try:
-              # calcurate discount price because noe price is  "%"
-              self.itemList[len(self.itemList)-1]["discount"] = (int(self.itemList[len(self.itemList)-1][-1])*(1-(int(price.group())/100))) 
-              # self.itemList[len(self.itemList)-1].append(int(self.itemList[len(self.itemList)-1][-1])*(1-(int(price.group())/100))) 
-            except: # TypeError, AttributeError
-              pass
+            print(self.itemList,price,text[0])
+            # calcurate discount price because noe price is  "%"
+            self.itemList[-1]["discount"] = int(self.itemList[-1]["price"]*(1-(int(price.group())/100))) 
           else: # last character is not "%"
             price= re.search('[0-9]+$',text[0]) # get price
-            self.itemList[len(self.itemList)-1]["discount"] = price.group()
-            # print(text)
-            # self.itemList[len(self.itemList)-1].append(price.group()) if price # store discount price or not find it then put "can't find discount"
-            # if price:
+            self.itemList[-1]["discount"] = int(price.group())
             
         elif re.search('[0-9]個',text[0]): # word is not discount and it is quantity
           try:
             if hasPrice: # have item and need to get quantity
-              self.itemList[len(self.itemList)-1][4]=re.search('([0-9]+)個',text[0]).group()[:-1] # get quantity
-              self.itemList[len(self.itemList)-1][3]=int(int(self.itemList[len(self.itemList)-1][3])/int(self.itemList[len(self.itemList)-1][4])) # add price per one item
+              ## 注意お店によって、計算式が違う
+              ## 一列に(1つあたりの金額)*(個数)=(合計)がある場合のみ
+              ## 1つの値段があって次の行に合計がある場合には不可
+              self.itemList[-1]["amount"]=re.search('([0-9]+)個',text[0]).group()[:-1] # get quantity
+              self.itemList[-1]["price"]=int((self.itemList[-1]["price"])/int(self.itemList[-1]["amount"])) # add price per one item
             else: # don't have item yet but find quantity
               print("can't find item",sys.stderr)
           except TypeError:
@@ -132,15 +131,11 @@ class ReadReceipt:
           except AttributeError:
             print("AttributeError in finding quantity",sys.stderr)
         else: # find item name
-          itemInfo=self.findItem(text[0],itemInfo) # get itemInfo
-          hasPrice = (itemInfo["price"] != "")
-          if hasPrice:
-            itemInfo["amount"] = 1 # amount of item
-          else:
-            itemInfo["amount"] = 0
+          itemInfo = self.findItem(text[0],itemInfo) # whether item is register for DB
+          hasPrice = (itemInfo["price"] != "") # use hasPrice to search amount
           self.itemList.append(itemInfo)
-
-    return self.date == ""    
+    # if date is not found, return false and search secound time 
+    return self.date == ""  
   def findStore(self,text):
     """ find Store name form DataBase """
     for storeName in sDB.storeDB: 
@@ -150,18 +145,18 @@ class ReadReceipt:
     return False
 
   def findItem(self,text,itemInfo):
-    isHit = False
+    # change data for each store
     text = sDB.setting(self.store,text)
-    # itemInfo={"item": text,"register_name": "---","genre": "---","price":"---"}
-    try: # get item name
-      tmp_text = re.search("([0-9]+).?$",text)
-      text = text[:re.search("[0-9]+.?$",text).start()]
-      price = tmp_text.group(1)
-      itemInfo["price"] = price
-    except:
-      pass
+    # get boarder line between item and price
+    price = re.search("([0-9]+).?$",text)
+    # devide item and price
+    if price:
+      text = text[:price.start()]
+      price = int(price.group())
+      itemInfo["price"] = int(price)
+      itemInfo["amount"] = 1
+
     """ find item name from DataBase. 2nd argument is word maybe it become item name. """
-    # print(text,register_name,genre,price)
     for itemGenre,itemValue in iDB.itemDB.items(): # roop from DB
       for dbItem in itemValue: # roop in each item name
         itemConvert=dbItem # get DB item name to change Kanji, Hiragana, Katakana and Half Katakana.
@@ -187,6 +182,7 @@ class ReadReceipt:
             else:
               register_name = dbItem
               genre = itemGenre
+            # set register_name and genre
             itemInfo["register_name"] = register_name
             itemInfo["genre"] = genre
             return itemInfo
@@ -197,15 +193,7 @@ class ReadReceipt:
             itemConvert = self.kakasi.convert(itemConvert)[0]['kana'] # change type of word for Katakana
           elif itemTypeStatus ==1:
             itemConvert=mojimoji.zen_to_han(itemConvert) # change type of word for Half Katakana
-      #   if isHit: # find name from DataBase
-      #     break
-      # if isHit: # find name from DataBase
-      #   break
-    # add item for itemInfo
-
-    
-    # print(itemInfo)
-    return itemInfo # itemInfo[0]: item name, itemInfo[1]: item DB name, itemInfo[2]: genre
+    return itemInfo 
 
   def combine(self,textsInfo):
     """ search each text in textsInfo. Get and Combine word. Return words by each line. 2nd argument is all text infomation in reciept. """
