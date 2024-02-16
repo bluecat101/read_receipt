@@ -39,7 +39,6 @@ class RecordReceipt:
     print("write for csv file")
 
   def addDB(self):
-    # "item": text,"register_name": "---","genre": "---","price":"---","amount":"0","discount":"---"
     """ update DataBase(item_db, store_db) """
     for lineItem in self.allItem:
       if not(lineItem["register_name"] in lineItem["item"]): # whether lineItem is special_name
