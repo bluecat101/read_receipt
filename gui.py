@@ -20,18 +20,25 @@ class ComfirmReciept(tk.Frame):
     self.discount = discount
     self.discount_total = sum(list(zip(*discount))[1]) if len(discount) > 0 else 0
 
-    storeDateFrame=tk.Frame(self.root,height=27) # Frame for store name and date 
-    storeDateFrame.pack(pady=0)                  # set position
+    storeHeaderFrame=tk.Frame(self.root,height=27) # Frame for store name and date 
+    storeHeaderFrame.pack(pady=0)                  # set position
     
-    storeNameLabel=tk.Label(storeDateFrame,text="店舗名: ") # Label for "店舗名: "
+    storeNameLabel=tk.Label(storeHeaderFrame,text="店舗名: ") # Label for "店舗名: "
     storeNameLabel.place(relx=0.0)                         # set position
-
-    self.storeNameEntry=tk.Entry(storeDateFrame,width=20) # Entry for store name
+    self.storeNameEntry=tk.Entry(storeHeaderFrame,width=20) # Entry for store name
     self.storeNameEntry.insert(0,self.store[0])              # set store name
     self.storeNameEntry.place(relx=0.08)                  # set position
 
-    dateLabel=tk.Label(storeDateFrame,text="日付: ") # Label for date
-    self.dateEntry=tk.Entry(storeDateFrame) # Label for date
+
+    purposeLabel=tk.Label(storeHeaderFrame,text="目的: ") # Label for "店舗名: "
+    purposeLabel.place(relx=0.43)                         # set position
+    self.purposeCombobox=ttk.Combobox(storeHeaderFrame,value=["家族","父"]) # Entry for store name
+    self.setStyle(self.purposeCombobox)
+    self.purposeCombobox.set("家族")                                                              # set item category 
+    self.purposeCombobox.place(relx=0.48)                  # set position
+
+    dateLabel=tk.Label(storeHeaderFrame,text="日付: ") # Label for date
+    self.dateEntry=tk.Entry(storeHeaderFrame) # Label for date
     self.dateEntry.insert(0,self.date)              
     dateLabel.place(relx=0.75)                                 # set position
     self.dateEntry.place(relx=0.8)                                 # set position
@@ -82,45 +89,45 @@ class ComfirmReciept(tk.Frame):
       
       productNameEntry=tk.Entry(self.tableFrame) # Entry for item name
       self.setStyle(productNameEntry)            # set Style
-      productNameEntry.insert(0,item[0])         # set item name
+      productNameEntry.insert(0,item["item"])         # set item name
       productNameEntry.grid(row=i+1,column=0)    # set position
 
       registerNameCombobox=ttk.Combobox(self.tableFrame,value=self.itemList) # Combobox for register item list
       self.setStyle(registerNameCombobox)                                    # set Style 
-      registerNameCombobox.set(item[1])                                      # set register item name 
+      registerNameCombobox.set(item["register_name"])                                      # set register item name 
       registerNameCombobox.grid(row=i+1,column=1)                            # set position
 
       categoryCombobox=ttk.Combobox(self.tableFrame,value=[value for value in db.itemDB.keys()]) # Combobox for item category
       self.setStyle(categoryCombobox)                                                            # set Style  
-      categoryCombobox.set(item[2])                                                              # set item category 
+      categoryCombobox.set(item["genre"])                                                              # set item category 
       categoryCombobox.bind("<<ComboboxSelected>>",self.categoryEvent)                                        # set Enter Event
       categoryCombobox.grid(row=i+1,column=2)                                                    # set position 
 
       priceEntry=tk.Entry(self.tableFrame) # Entry for item price
       self.setStyle(priceEntry)            # set Style
-      priceEntry.insert(0,item[3])         # set item price
+      priceEntry.insert(0,item["price"])         # set item price
       priceEntry.grid(row=i+1,column=3)    # set position
 
       amountEntry=tk.Entry(self.tableFrame) # Entry for item amount
       self.setStyle(amountEntry)            # set Style
-      amountEntry.insert(0,item[4])         # set item amount
+      amountEntry.insert(0,item["amount"])         # set item amount
       amountEntry.grid(row=i+1,column=4)    # set position
 
       discountEntry=tk.Entry(self.tableFrame) # Entry for item discount
       self.setStyle(discountEntry)            # set Style
       if hasDiscount:                         
-        discountEntry.insert(0,item[5])       # set item discount
+        discountEntry.insert(0,item["discount"])       # set item discount
       else:
         discountEntry.insert(0,"---")         # set no discount as "---"
       discountEntry.grid(row=i+1,column=5)    # set position
 
       totalEntry=tk.Entry(self.tableFrame)    # set item total price
       self.setStyle(totalEntry)               # set Style
-      if type(item[3]) == int and type(item[4]) == int:
+      if type(item["price"]) == int and type(item["amount"]) == int:
         if hasDiscount: 
-          totalEntry.insert(0,int(item[3])*int(item[4])-int(item[5])) # set total (discount)
+          totalEntry.insert(0,int(item["price"])*int(item["amount"])-int(item["discount"])) # set total (discount)
         else:
-          totalEntry.insert(0,int(item[3])*int(item[4])) # set total (no discount)
+          totalEntry.insert(0,int(item["price"])*int(item["amount"])) # set total (no discount)
       totalEntry.grid(row=i+1,column=6)       # set position
       
       deleteButton=ttk.Button(self.tableFrame,text="delete",width=7)  # set Button for delete
@@ -183,7 +190,7 @@ class ComfirmReciept(tk.Frame):
     # print(functionFrame.winfo_width(),functionFrame.winfo_height())
     # print(resultFrame.winfo_width(),resultFrame.winfo_height())
 
-    storeDateFrame.configure(width=parentFrame.winfo_width()) # update parentFrame width
+    storeHeaderFrame.configure(width=parentFrame.winfo_width()) # update parentFrame width
 
 
     self.root.bind_class("Entry", "<FocusOut>", self.calculateEvent) # Add Event for Entry
@@ -379,30 +386,26 @@ class ComfirmReciept(tk.Frame):
           element.configure(highlightbackground="#565656") # change Style
           
     if isOk == True: # no error
-      oneLine=[] # for each row
       self.allItem=[] # for all item 
-      for i,element in enumerate(elements):
-        if type(element) == tk.Entry or type(element) == ttk.Combobox: # only item infomation widget
-          if i%8 < 5 : 
-            oneLine.append(element.get()) # add element for oneLine[]
-          elif i%8 == 5:
-            if element.get().isdecimal(): # whether discount is included "%" or string or not
-              oneLine.append(element.get()) # only int type
-            elif element.get() != "" and element.get()[-1] == "%" and re.match("[0-9]+",element.get()): # included "%"
-              totalNoDiscount=int(elements[i-2].get())*int(elements[i-1].get()) # calcurate discount amount from "%"
-              oneLine.append(int(totalNoDiscount*int(re.match("[0-9]+",element.get()).group())/100)) # add dicount amount 
-            else:
-              oneLine.append("0") # no dicount
-          elif i%8 == 6: # end row
-            oneLine.append(element.get()) # add total for oneLine[]
-            self.allItem.append(cp.copy(oneLine)) # add row for all item with copy()
-            oneLine.clear() # reset oneLine[]
+      for i in range(int(len(elements)/8)):
+        oneLine = {"store":self.store[0],"date":self.date,"purpose":self.purposeCombobox.get(),"item": elements[i*8].get(),"register_name": elements[i*8+1].get(),"genre": elements[i*8+2].get(),"price":elements[i*8+3].get(),"amount":elements[i*8+4].get(),"discount":0,"total":0} # for each row
+        line_discount = elements[i*8+5].get()
+        line_total = elements[i*8+6].get()
+        if line_discount.isdecimal(): # whether discount is included "%" or string or not
+              oneLine.append(line_discount) # only int type
+        elif line_discount != "" and line_discount[-1] == "%" and re.match("[0-9]+",line_discount): # included "%"
+          totalNoDiscount=int(elements[i*8+3].get())*int(elements[i*8+4].get()) # calcurate discount amount from "%"
+          oneLine["discount"] = int(totalNoDiscount*int(re.match("[0-9]+",line_discount).group())/100) # add dicount amount 
+        oneLine["total"] = line_total
+        self.allItem.append(cp.copy(oneLine)) # add row for all item with copy()
+              
+          
+
       translator = Translator()
-      # self.newCategory = NewCategory(self.allItem,self.root) # make new GUI for let user type new categpry name in English
       self.newCategory={}
       for item in self.allItem:
-        if not(item[2] in db.itemDB):    # category name is not included register category name
-          en_text = translator.translate(item[2], dest='en').text
+        if not(item["genre"] in db.itemDB):    # category name is not included register category name
+          en_text = translator.translate(item["genre"], dest='en').text
           # if en_text already exist, change name
           tmp_text = en_text
           i = 2
@@ -411,10 +414,11 @@ class ComfirmReciept(tk.Frame):
             i += 1
           en_text = tmp_text
 
-          self.newCategory[item[2]] = "_".join(list(en_text.split())) # add category for dictionary
+          self.newCategory[item["genre"]] = "_".join(list(en_text.split())) # add category for dictionary
       self.root.destroy()              # destory parent gui
       return 
 
   def getAllItem(self): # get all item 
+    # print(self.allItem)
     return self.allItem
  

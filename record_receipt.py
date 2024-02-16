@@ -20,11 +20,11 @@ class RecordReceipt:
   categoryDB = iDB.categoryDB # read category name from DataBase
   storeDB=sDB.storeDB         # read store name from DataBase
 
-  def __init__(self,allItem,newCategoryEn,date,store):
+  def __init__(self,allItem,newCategoryEn):
     self.allItem = allItem              # to instance argument
     self.newCategoryEn = newCategoryEn  # to instance argument
-    self.date = date                    # to instance argument
-    self.store = store                  # to instance argument
+    # self.date = date                    # to instance argument
+    self.store = allItem[0]["store"]                  # to instance argument
     self.writeFile()                    # record for CSV file
     self.addDB()                        # update DataBase
 
@@ -34,24 +34,23 @@ class RecordReceipt:
     writer = csv.writer(f)                  # to write with csv format
     # writer.writerow([self.date,self.store]) # write date and store name
     for lineItem in self.allItem:
-      lineItem.insert(0,self.date)
-      lineItem.insert(0,self.store)
-      writer.writerow(lineItem) # write item
+      writer.writerow(lineItem.values()) # write item
     f.close()
     print("write for csv file")
 
   def addDB(self):
+    # "item": text,"register_name": "---","genre": "---","price":"---","amount":"0","discount":"---"
     """ update DataBase(item_db, store_db) """
     for lineItem in self.allItem:
-      if not(lineItem[3] in lineItem[2]): # whether lineItem is special_name
+      if not(lineItem["register_name"] in lineItem["item"]): # whether lineItem is special_name
         # print(lineItem)
-        iDB.special_name[lineItem[2]] = [lineItem[3],str(lineItem[4])]
-      if not(lineItem[4] in self.itemDB): # whether it is new category (no infomation for DataBase)
-        self.itemDB[lineItem[4]] = [] # add new key for itemDB
-        self.itemDB[lineItem[4]].append(lineItem[3]) # add item for new key as value
-        self.categoryDB[lineItem[4]] = self.newCategoryEn[lineItem[4]] # add new key and English value name for category
-      elif not(lineItem[3] in self.itemDB[lineItem[4]]): # not new category but it is new item
-        self.itemDB[lineItem[4]].append(lineItem[3]) # add item for new key as value
+        iDB.special_name[lineItem["item"]] = [lineItem["register_name"],str(lineItem["genre"])]
+      if not(lineItem["genre"] in self.itemDB): # whether it is new category (no infomation for DataBase)
+        self.itemDB[lineItem["genre"]] = [] # add new key for itemDB
+        self.itemDB[lineItem["genre"]].append(lineItem["register_name"]) # add item for new key as value
+        self.categoryDB[lineItem["genre"]] = self.newCategoryEn[lineItem["genre"]] # add new key and English value name for category
+      elif not(lineItem["register_name"] in self.itemDB[lineItem["genre"]]): # not new category but it is new item
+        self.itemDB[lineItem["genre"]].append(lineItem["register_name"]) # add item for new key as value
     
     replaceContent= "" # make sentence to write
 
