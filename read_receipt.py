@@ -132,6 +132,9 @@ class ReadReceipt:
             print("AttributeError in finding quantity",sys.stderr)
         else: # find item name
           itemInfo = self.findItem(text[0],itemInfo) # whether item is register for DB
+          # if text[0] == "", itemInfo is False
+          if not(itemInfo):
+            continue
           hasPrice = (itemInfo["price"] != "") # use hasPrice to search amount
           self.itemList.append(itemInfo)
     # if date is not found, return false and search secound time 
@@ -147,12 +150,16 @@ class ReadReceipt:
   def findItem(self,text,itemInfo):
     # change data for each store
     text = sDB.setting(self.store,text)
+    itemInfo["item"] = text
+    if text == "":
+      return False
+    print(text)
     # get boarder line between item and price
     price = re.search("([0-9]+).?$",text)
     # devide item and price
     if price:
       text = text[:price.start()]
-      price = int(price.group())
+      price = int(price.group(1))
       itemInfo["price"] = int(price)
       itemInfo["amount"] = 1
 
@@ -175,10 +182,12 @@ class ReadReceipt:
           regular=re.escape(itemConvert)  # make regular expression object.
           if re.search(regular,text) or text in iDB.special_name.keys(): # if itemConvert is included in text
             itemInfo["item"] = text
-            if text in iDB.special_name.keys():
-              # specialnameと完全一致以外も入れる
-              register_name = iDB.special_name[text][0]
-              genre = iDB.special_name[text][1]
+            if any(map(lambda key: text in key, iDB.special_name.keys())):
+              for key in iDB.special_name.keys():
+                if text in key:
+                  register_name = iDB.special_name[key][0]
+                  genre = iDB.special_name[key][1]
+                  break
             else:
               register_name = dbItem
               genre = itemGenre
