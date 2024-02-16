@@ -5,17 +5,13 @@ import gui as ui
 import record_receipt as recordre
 from tkinter import filedialog
 
-TEST = False
-TEST2 = False
+exec_type = "develop_reciept" # production,develop_receipt,develop_noreceipt
 
 def main(filename):
-  if TEST:
-    Itemline=receiptInfo.getItemLine()
-    store=receiptInfo.getStore()
-    date=receiptInfo.getDate()
+  if exec_type == "develop_noreciept":
     Itemline=[
-    ['深蒸し緑茶', '緑茶', '飲み物', 498, '2'],
-    # ['クーポン嗜好品20%', 'bb', 'aa', '200', 1],
+    ['つぶグミP濃厚ぶどう', '緑茶', '飲み物', 498, '2'],
+    ['かつ丼･小', 'bb', 'aa', '200', 1],
     # ['揚げせん', 'item', 'cc', 90, '2'],
     # ['深蒸し緑茶', '緑茶', 'dd', 498, '2'],
     # ['クーポン嗜好品20%', 'ee', 'aa', '200', 1],
@@ -25,13 +21,13 @@ def main(filename):
     store="ダイエー"
     # specialDiscount =[["フルグラ",50],["割引",532]]
     specialDiscount = []
-  elif TEST2:
-    receiptInfo=readre.ReadReceipt(filename,TEST2)
+  elif exec_type == "develop_reciept":
+    receiptInfo=readre.ReadReceipt(filename,exec_type)
     Itemline=receiptInfo.getItemLine()
     store=receiptInfo.getStore()
     date=receiptInfo.getDate()
     specialDiscount = receiptInfo.specialDiscount
-  else:
+  elif exec_type == "production":
     receiptInfo=readre.ReadReceipt(filename)
     Itemline=receiptInfo.getItemLine()
     store=receiptInfo.getStore()
@@ -42,17 +38,15 @@ def main(filename):
   gui.mainloop()
   
   # if gui.isOk:
-  recordOb=recordre.RecordReceipt(gui.getAllItem(),gui.newCategory,gui.date,gui.store[0])
+  recordOb=recordre.RecordReceipt(gui.getAllItem(),gui.newCategory)
   
 
 
 
 
 if __name__ == "__main__":
-  if TEST:
-    main("test")
-  elif TEST2:
-    main("test")
+  if "develop" in exec_type:
+    main("develop")
   else:
     filename = filedialog.askopenfilename(
       title = "レシートを選択してください。",
