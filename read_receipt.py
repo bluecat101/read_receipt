@@ -50,11 +50,13 @@ class ReadReceipt:
       """ Disassemble content for each line. """
       del self.textsInfo[0]
       lineTexts = self.combine(self.textsInfo) # disassembe content for each line and save it for lineTexts
-      # for i in lineTexts:
-      #   print(i)
-      self.sort(lineTexts) # sort from top to bottom because sometimes disassembling is mistake order.
+      lineTexts = sorted(lineTexts, reverse=False, key=lambda x: x[2])
+      # print(lineTexts)
+      for i in lineTexts:
+        print(i[2])
+
     else:
-      lineTexts = [['英', 2988, 104, 0.6666666666666666, 150], ['SEVENCIOLINGS', 1097, 201, 18.0, 17], ['数', 2989, 207, 0.6666666666666666, 151], ['日(日31月12年2023番号登録者事業:電話9-1市横浜県神奈川横浜セブン-イレブン小雀町店戸塚区小雀町111045-851-7119レジ#217020001093092)21:23青229', 1673, 1083, 132.66666666666666, 0], ['領収書', 1442, 1277, 64.66666666666667, 41], ['塩むすび*100※', 953, 1496, 59.333333333333336, 44],['割引33', 953, 1700, 59.333333333333336, 44], ['2個X単価', 963, 1890, 53.333333333333336, 64], ['小計(税抜8%)¥500', 956, 2090, 60.0, 66], ['消費税等(8%)¥40', 1148, 2188, 58.666666666666664, 74], ['合計¥540', 1940, 2305, 48.0, 93], ['(税率8%対象¥540)', 955, 2376, 60.0, 96], ['(内消費税等8%¥40)', 957, 2477, 60.666666666666664, 101], ['商品券支払¥1.000', 1047, 2568, 60.0, 108], ['商品券残高¥460', 1048, 2672, 57.333333333333336, 113], ['¥460', 1936, 2767, 46.666666666666664, 119], ['お買上明細は上記のとおりです。', 957, 2860, 59.333333333333336, 121], ['お', 957, 2869, 47.333333333333336, 118], ['[*]マークは軽減税率対象です。', 907, 2954, 62.666666666666664, 130], ['伝票番号231-231-206-5874', 955, 3045, 56.666666666666664, 140]]
+      lineTexts = [['/EONFOODSTYLE', 1303, 244, 34.0, 0], ['TELイオンフードスタイル港南台店045-832-1361', 1353, 417, 23.333333333333332, 4], ['領収証', 1490, 491, 42.0, 100], ['株式会社ダイエー', 1672, 583, 16.0, 65], ['登録番号T4140001005666', 1472, 623, 25.333333333333332, 67], ['レジ06002023/12/24(日)11:55', 1293, 673, 24.666666666666668, 11], ['6369:180310600:002494296', 1354, 716, 22.0, 17], ['AEON会員:********68499401', 1333, 757, 22.666666666666668, 22], ['LBPチョコ596%', 1343, 845, 18.666666666666668, 27], ['(2個X298)', 1302, 874, 20.666666666666668, 31], ['LBPストロベリ298X', 1341, 928, 19.333333333333332, 37], ['ビオ砂糖脂肪O198X', 1315, 970, 24.0, 39], ['トマト350X', 1346, 1010, 18.666666666666668, 43], ['バナナ200%', 1348, 1052, 19.333333333333332, 29], ['はくさい78%', 1374, 1093, 19.333333333333332, 30], ['れんこん320%', 1377, 1133, 18.666666666666668, 44], ['(2個X160)', 1295, 1164, 21.333333333333332, 45], ['柿の種チョコ1,900X', 1273, 1215, 20.0, 51], ['(19個X単100)', 1290, 1248, 22.0, 55], ['ほうれん草50%', 1408, 1298, 21.333333333333332, 62], ['ピーナッツ218X', 1408, 1338, 19.333333333333332, 63], ['きゅうり432*', 1369, 1380, 18.666666666666668, 64], ['(9個X単48)', 1293, 1411, 21.333333333333332, 70], ['なめこ(GE有機)50%', 1335, 1463, 22.666666666666668, 77], ['小松菜88X', 1304, 1503, 20.666666666666668, 82], ['BPもっちり仕込み8138X', 1296, 1543, 21.333333333333332, 84], ['割引20%-28', 1299, 1585, 20.0, 88], ['雪印北海道バター378X', 1306, 1625, 23.333333333333332, 92], ['エキストラバージンオリ698X', 1399, 1667, 20.666666666666668, 95], ['TVたまご496X', 1323, 1708, 16.666666666666668, 98], ['(2個X248)', 1282, 1739, 20.0, 118], ['BP成分無調整牛乳1L356', 1291, 1784, 22.666666666666668, 124], ['(2個X178)', 1279, 1816, 21.333333333333332, 131], ['キリ10P498X', 1290, 1864, 16.666666666666668, 137], ['おじゃがまる654*', 1260, 1905, 18.666666666666668, 103], ['(3個X単218)', 1274, 1936, 21.333333333333332, 111], ['割引30%-198', 1286, 1985, 20.0, 106], ['絹厚揚げ196X', 1252, 2027, 20.666666666666668, 108], ['(2個X単98)', 1272, 2059, 22.0, 139], ['割引20%-40', 1282, 2109, 22.666666666666668, 146], ['がんもセット476X', 1284, 2149, 20.666666666666668, 148], ['(2個X単238)', 1266, 2184, 22.0, 153], ['割引30%-144', 1280, 2234, 22.666666666666668, 160], ['BP油揚げ98X', 1275, 2278, 22.666666666666668, 151], ['割引20%-20', 1278, 2321, 22.666666666666668, 175], ['国産大豆の田舎がんも356X', 1276, 2363, 23.333333333333332, 179], ['(2個X単178)', 1258, 2396, 23.333333333333332, 185], ['割引50%-178', 1272, 2449, 22.0, 192], ['ブロッコリー296X', 1410, 2492, 22.0, 162], ['(2個X148)', 1256, 2528, 22.666666666666668, 165], ['肉いおでん150X', 1236, 2579, 21.333333333333332, 169], ['昭和贅沢餃子338X', 1269, 2622, 22.666666666666668, 172], ['割引50%-169', 1267, 2663, 20.666666666666668, 163], ['大根60%', 1236, 2705, 20.0, 195], ['グリーンオーク160X', 1340, 2746, 20.666666666666668, 197], ['(2個X単80)', 1254, 2778, 22.666666666666668, 199], ['もやし20X', 1303, 2829, 19.333333333333332, 194], ['小計¥9,369', 1236, 2912, 25.333333333333332, 223], ['クーポンはちべえトマト¥100', 1336, 2954, 21.333333333333332, 225], ['クーポンオリーブオイル¥200', 1337, 2997, 24.0, 228], ['クーポンダノンビオ¥30', 1335, 3039, 24.0, 231], ['外税8%対象額¥9,039', 1248, 3080, 24.0, 233], ['外税8%4723', 1251, 3123, 22.666666666666668, 239], ['合計¥9,762', 1305, 3204, 22.666666666666668, 210], ['AEONPay¥9,762', 1266, 3246, 20.0, 211], ['お釣り40', 1228, 3287, 18.666666666666668, 213], ['お買上商品数:67', 1351, 3328, 23.333333333333332, 282], ['※印は軽減税率8%対象商品', 1226, 3366, 23.333333333333332, 288]]
     
 
     self.itemList=[]
@@ -65,8 +67,6 @@ class ReadReceipt:
     # if not found date, you can't get data so in secound time, you don't mind date
     if self.search_texts(lineTexts,status= "first"):
       self.search_texts(lineTexts,status= "secound")
-      self.date = ""  # reset date
-      self.store = "" # reset date
 
     
   def search_texts(self,lineTexts,status):
@@ -75,10 +75,12 @@ class ReadReceipt:
     # read word of "小計"
     isFinish=False
     exist_target = True # don't read item until the target word exist
-    if status == "secound":
+    # print(sDB.target)
+    if self.store in sDB.target and (sDB.target[self.store] != ""): exist_target = False
+    # if status == "secound":
       # make dummy not to mind date and store
-      self.date = "sample"  # dummy date
-      self.store = "sample" # dummy store
+      # self.date = "sample"  # dummy date
+      # self.store = "sample" # dummy store
     for text in lineTexts:
       itemInfo={"item": text[0],"register_name": "---","genre": "---","price":-1,"amount":0,"discount":0}
       if self.date=="": # until find date in receipt (store name must be exsisted above date)
@@ -109,7 +111,7 @@ class ReadReceipt:
           if re.match('%',text[0][-1]): # whether last character is "%"
             text[0]=text[0][:-1] # delete "%"
             price= re.search('[0-9]+$',text[0]) # get price
-            print(self.itemList,price,text[0])
+            # print(self.itemList,price,text[0])
             # calcurate discount price because noe price is  "%"
             self.itemList[-1]["discount"] = int(self.itemList[-1]["price"]*(1-(int(price.group())/100))) 
           else: # last character is not "%"
@@ -138,7 +140,14 @@ class ReadReceipt:
           hasPrice = (itemInfo["price"] != "") # use hasPrice to search amount
           self.itemList.append(itemInfo)
     # if date is not found, return false and search secound time 
-    return self.date == ""  
+    if status == "first":
+      if self.date == "": self.date = "sample"
+      if self.store == "": self.store = "sample"
+    if status == "secound":
+      if self.date == "sample": self.date = ""
+      if self.store == "sample": self.store = ""
+    # print(status,self.date,self.store,self.itemList) 
+    return self.itemList == []
   def findStore(self,text):
     """ find Store name form DataBase """
     for storeName in sDB.storeDB: 
@@ -153,12 +162,13 @@ class ReadReceipt:
     itemInfo["item"] = text
     if text == "":
       return False
-    print(text)
+    # print(text)
     # get boarder line between item and price
     price = re.search("([0-9]+).?$",text)
     # devide item and price
     if price:
       text = text[:price.start()]
+      itemInfo["item"] = text
       price = int(price.group(1))
       itemInfo["price"] = int(price)
       itemInfo["amount"] = 1
@@ -243,35 +253,6 @@ class ReadReceipt:
     return lineInfo
   
 
-  def sort(self,data):
-    """ quickSort by index as textsInfo. 2nd infomation is infomation """
-    def findPivot(data,left,right): # get Pivot
-      return data[int((left+right)/2)]
-    
-    def quickSort(data,left,right):
-      if left>=right:
-        return 0
-      pivot=findPivot(data,left,right) # get pivot
-      i=left
-      j=right
-      while(1):
-        while(data[i][2]<pivot[2]): # find position i
-          i+=1
-        while(data[j][2]>pivot[2]): # find position j
-          j-=1
-        if i>=j:
-          break
-        ### swap ###
-        tmp=data[i]
-        data[i]=data[j]
-        data[j]=tmp
-        i+=1
-        j-=1
-      quickSort(data,left,i-1)  # recursing
-      quickSort(data,j+1,right) # recursing
-      return 0
-    quickSort(data,0,len(data)-1) # exec when called sort()
-
   def getItemLine(self):
     return self.itemList
   def getTotal(self):
@@ -280,4 +261,5 @@ class ReadReceipt:
     return self.date
   def getStore(self):
     return self.store
+
 
