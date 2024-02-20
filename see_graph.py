@@ -13,7 +13,7 @@ import datetime as dt
 from dateutil.relativedelta import relativedelta
 import sys
 from datetime import datetime, date, time
-# from  tkinter import ttk
+from  tkinter import ttk
 
 
 class SeeGraph(tk.Frame):
@@ -24,6 +24,9 @@ class SeeGraph(tk.Frame):
     self.root.geometry("800x1000")
     # get data
     self.data = pd.read_csv('output.csv')
+    # filtered data
+    self.filter_status ={"genre":"","purpose":"","summarize":False}
+    self.filtered_data = pd.read_csv('output.csv')
     # root display
     self.total_by_genre()
 
@@ -108,6 +111,7 @@ class SeeGraph(tk.Frame):
     total_by_month = []
     for i,x in enumerate(month_category_period[:-1]):
       total_by_month.append(self.get_data_select_period(x,month_category_period[i+1])["金額"].sum())
+    print(self.data.resample("MS"))
     
     # setting figure
     plt.rcParams['figure.subplot.bottom'] = 0.15 # make space at bottom
@@ -181,14 +185,14 @@ class SeeGraph(tk.Frame):
       return
     
     # get data in the period
-    self.data_period = self.get_data_select_period(from_date,to_date)
+    self.data = self.get_data_select_period(from_date,to_date)
     
     # setting tree
     frame_ranking = tk.Frame(self.sub_frame,height=100, width=500)
     frame_ranking.pack()
     tree = ttk.Treeview(frame_ranking)                  # make object
     tree.pack()                                         # put
-    tree.bind("<<TreeviewSelect>>", self.select_record) # add function of selection
+    tree.bind("<<TreeviewSelect>>", self.clicked_genre) # add function of selection
     # set columns
     tree['columns'] = (1,2,3)                           
     tree.column(1,anchor=tk.CENTER)                      
@@ -200,7 +204,7 @@ class SeeGraph(tk.Frame):
     tree.heading(2,text="ジャンル",anchor=tk.CENTER)
     tree.heading(3,text="金額",anchor=tk.CENTER)
     # sort data
-    sorted_data_by_genre =self.data_period.groupby("ジャンル")[["金額"]].sum().sort_values('金額',ascending=False)    
+    sorted_data_by_genre =self.data.groupby("ジャンル")[["金額"]].sum().sort_values('金額',ascending=False)
     # insert 10 genres
     for i in range(10):
       if len(sorted_data_by_genre) <= i:
@@ -228,38 +232,105 @@ class SeeGraph(tk.Frame):
     # update display content
     self.see_period(from_date,to_date,error)
   
-  # show detail list when one row is clicked
-  def select_record(self,event):
+  def clicked_genre(self,event):
+    self.filter_data = self.data
     # get serected row
     widget = event.widget
     record_id = widget.focus()
     record_values = widget.item(record_id, 'values')
+    self.filter_status["genre"] = record_values[1]
+
+    self.select_record()
+
+  def clicked_filter_search(self,event):
+    print(self.filter_status,event)
+    self.filter_data = self.data
+    self.filter_status.update(
+      genre     = self.filter_tk["genre_value"].get(),
+      purpose   = self.filter_tk["purpose_value"].get(),
+      summarize = self.filter_tk["summarize_value"].get(),
+    )
+    print(self.filter_status,event)
+    self.select_record()
+
+  # show detail list when one row is clicked
+  def select_record(self):
+    def summarize():
+      summarized_target = self.filter_status["summarize"]
+      if summarized_target == "日付":
+        self.filter_data = self.filter_data.groupby(summarized_target).agg({'場所':lambda x: ','.join(sorted(list(set(x)))),'商品名':lambda x: ','.join(sorted(list(set(x)))),'金額':sum}).reset_index()
+      elif summarized_target == "場所":
+        self.filter_data = self.filter_data.groupby(summarized_target).agg({'日付':lambda x: '~'.join(list(set(x)) if len(set(x))== 1 else [min(x),max(x)]),'商品名':lambda x: ','.join(sorted(list(set(x)))),'金額':sum}).reset_index()
+      elif summarized_target == "商品名":
+        self.filter_data = self.filter_data.groupby(summarized_target).agg({'日付':lambda x: '~'.join(list(set(x)) if len(set(x))== 1 else [min(x),max(x)]),'場所':lambda x: ','.join(sorted(list(set(x)))),'金額':sum}).reset_index()
+      # summarizing display
+      # column = ["日付","場所","商品名","金額"]
+      # items = self.filter_data["商品名"].unique().tolist() # get all item
+      # summarized_data = pd.DataFrame(index=[], columns=column) # make dataframe for display
+      self.filter_data = self.filter_data.reindex(columns=['日付', '場所', '商品名', '金額'])
+      print(self.filter_data)
+      # for item in items:
+      #   record=[]
+      #   data_by_item = self.filter_data[self.filter_data['商品名'] == item] # select by item
+      #   date = data_by_item.iloc[0]["日付"] # get start date
+      #   if date != data_by_item.iloc[-1]["日付"]: # start and end date are different
+      #     date += "-"+data_by_item.iloc[-1]["日付"] # add end date
+      #   place_list = data_by_item["場所"].unique().tolist() # get each place
+      #   place =",".join(place_list) # concat place
+      #   sum = data_by_item.sum()["金額"] # get total proce
+      #   # add date for record
+      #   record.append(date)
+      #   record.append(place)
+      #   record.append(item)
+      #   record.append(sum)
+      #   add_data = pd.DataFrame(data = [record], index=[1], columns=column)
+      #   summarized_data = pd.concat([summarized_data,add_data],ignore_index=True)
+      # return summarized_data
+      # # insert item
+      # for i in range(new_data.shape[0]):
+      #   row = new_data.iloc[i]
+      #   tree.insert("","end",values=(row[0],row[1],row[2],row[3]))
+
+    # get serected row
+    # widget = event.widget
+    # record_id = widget.focus()
+    # record_values = widget.item(record_id, 'values')
     # get data
-    data_period = self.data_period[self.data_period['ジャンル'] == record_values[1]]
-    self.data_by_genre(data_period)
+    print(self.filter_status)
+    if self.filter_status["genre"] != "":
+      self.filter_data = self.filter_data[self.filter_data["ジャンル"]==self.filter_status["genre"]]
+    elif self.filter_status["purpose"] != "":
+      self.filter_data = self.filter_data[self.filter_data["目的"]==self.filter_status["purpose"]]
+    elif self.filter_status["summarize"] != "":
+      self.filter_data = summarize()
+      # data_period = self.data_period[self.data_period['ジャンル'] == record_values[1]]
+    self.data_by_genre()
+
+
+
 
 
   # display detail list in tree chart
-  def data_by_genre(self,data,status=None):
+  def data_by_genre(self):
     # delete show detail
     children = self.sub_frame.winfo_children()
     for i,child in enumerate(children):
       if i > 2:
         child.destroy()
-    if status is None:
-      status = False
+    # if status is None:
+    #   status = False
     # setting 
     frame_data_by_genre = tk.Frame(self.sub_frame,height=100, width=350 ,bd=10)
     frame_data_by_genre.pack()
 
     frame_summarize = tk.Frame(self.sub_frame,height=100, width=350 ,bd=10)
     frame_summarize.pack()
-    is_summarize = tk.BooleanVar()
-    checkbutton_summarize = tk.Checkbutton(frame_summarize,text="まとめて表示する", variable=is_summarize)
-    checkbutton_summarize.grid(row = 0, column = 1)
-    button_summarize = tk.Button(frame_summarize,text="再表示",command=lambda:self.data_by_genre(data,is_summarize.get()))
-    button_summarize.grid(row = 0, column = 2)
-    is_summarize.set(status)
+    # is_summarize = tk.BooleanVar()
+    # checkbutton_summarize = tk.Checkbutton(frame_summarize,text="まとめて表示する", variable=is_summarize)
+    # checkbutton_summarize.grid(row = 0, column = 1)
+    # button_summarize = tk.Button(frame_summarize,text="再表示",command=lambda:self.data_by_genre(self.filter_data,is_summarize.get()))
+    # button_summarize.grid(row = 0, column = 2)
+    # is_summarize.set(status)
 
     tree = ttk.Treeview(frame_data_by_genre)
     tree.pack()
@@ -272,66 +343,39 @@ class SeeGraph(tk.Frame):
     tree.column(4,anchor=tk.CENTER)
     # set heading
     tree['show'] = 'headings'
-    tree.heading(1,text="日付",anchor=tk.CENTER,command=lambda:self.sort_row(tree,data))
-    tree.heading(2,text="場所",anchor=tk.CENTER,command=lambda:self.sort_row(tree,data))
-    tree.heading(3,text="商品名",anchor=tk.CENTER,command=lambda:self.sort_row(tree,data))
-    tree.heading(4,text="金額",anchor=tk.CENTER,command=lambda:self.sort_row(tree,data))
-    # whether summarizing display or each display
-    if status:
-      # summarizing display
-      column = ["日付","場所","商品名","金額"]
-      items = data['商品名'].unique().tolist() # get all item
-      new_data = pd.DataFrame(index=[], columns=column) # make dataframe for display
-
-      for item in items:
-        record=[]
-        data_by_item = data[data['商品名'] == item] # select by item
-        date = data_by_item.iloc[0]["日付"] # get start date
-        if date != data_by_item.iloc[-1]["日付"]: # start and end date are different
-          date += "-"+data_by_item.iloc[-1]["日付"] # add end date
-        place_list = data_by_item["場所"].unique().tolist() # get each place
-        place =",".join(place_list) # concat place
-        sum = data_by_item.sum()["金額"] # get total proce
-        # add date for record
-        record.append(date)
-        record.append(place)
-        record.append(item)
-        record.append(sum)
-        add_data = pd.DataFrame(data = [record], index=[1], columns=column)
-        new_data = pd.concat([new_data,add_data],ignore_index=True)
-      
-      # insert item
-      for i in range(new_data.shape[0]):
-        row = new_data.iloc[i]
-        tree.insert("","end",values=(row[0],row[1],row[2],row[3]))
-    else:
-      # insert item
-      for i in range(data.shape[0]):
-        row = data.iloc[i]
-        tree.insert("","end",values=(row[1],row[0],row[3],row[8]))
-
+    tree.heading(1,text="日付",anchor=tk.CENTER,command=lambda:self.sort_row(tree))
+    tree.heading(2,text="場所",anchor=tk.CENTER,command=lambda:self.sort_row(tree))
+    tree.heading(3,text="商品名",anchor=tk.CENTER,command=lambda:self.sort_row(tree))
+    tree.heading(4,text="金額",anchor=tk.CENTER,command=lambda:self.sort_row(tree))
+    for i in range(self.filtered_data.shape[0]):
+      row = self.filtered_data.iloc[i]
+      tree.insert("","end",values=(row["日付"],row["場所"],row["商品名"],row["金額"]))
+    
   # sort data when heading of detail list is clicked
-  def sort_row(self,tree,data):
+  def sort_row(self,tree):
     # get x of the clicked heading
     x = tree.winfo_pointerx() - tree.winfo_rootx()
     # get information of clicked heading column
     column_clicked = {"name": tree.heading(tree.identify_column(x))["text"], "id": int(tree.column(tree.identify_column(x))["id"])-1}
     # get top item in the row
     first_row_item_genre = tree.item(tree.get_children()[0]) ["values"][column_clicked["id"]]
-    
     # delete tree data
     tree.delete(*tree.get_children())
     
     # sort data
-    sorted_data_by_genre=data.sort_values(column_clicked["name"],ascending=False)
+    sorted_data_by_genre=self.filter_data.sort_values(column_clicked["name"],ascending=False)
     # whether the sorted data and showed data are some 
     if first_row_item_genre == sorted_data_by_genre.iloc[0][column_clicked["name"]]:
       # change sort order
-      sorted_data_by_genre=data.sort_values(column_clicked["name"],ascending=True)
+      sorted_data_by_genre=self.filter_data.sort_values(column_clicked["name"],ascending=True)
     # insert items
-    for i in range(sorted_data_by_genre.shape[0]):
-      row = sorted_data_by_genre.iloc[i]
-      tree.insert("","end",values=(row[1],row[0],row[3],row[8]))
+    # for i in range(sorted_data_by_genre.shape[0]):
+    #   row = sorted_data_by_genre.iloc[i]
+    #   tree.insert("","end",values=(row[1],row[0],row[3],row[8]))
+
+    for i in range(self.sorted_data_by_genre.shape[0]):
+      row = self.sorted_data_by_genre.iloc[i]
+      tree.insert("","end",values=(row["日付"],row["場所"],row["商品名"],row["金額"]))
 
   # see data in any period 
   def see_period(self,from_date=None,to_date=None,error=""):
@@ -345,7 +389,7 @@ class SeeGraph(tk.Frame):
     # delete 
     self.delete_all_data()
 
-    # get size of frrot
+    # get size of front
     root_x = int(re.split("[,x+]",self.root.geometry())[0])
     root_y = int(re.split("[,x+]",self.root.geometry())[1])
     # make canvas for scrollbar
@@ -366,7 +410,7 @@ class SeeGraph(tk.Frame):
     canvas.create_window((0, 0), window=self.sub_frame, anchor="nw", width=root_x, height=root_y*2)
     
     # get data
-    self.data_period=pd.DataFrame()
+    # self.data_period=pd.DataFrame()
     # display category in tree chart
     self.ranking_period_by_category(from_date,to_date,error)
 
@@ -376,6 +420,7 @@ class SeeGraph(tk.Frame):
       canvas_bar_graph = FigureCanvasTkAgg(fig_bar, self.sub_frame)
       canvas_bar_graph.get_tk_widget().pack()
       canvas_bar_graph.draw()
+      self.display_filter()
     return
   
   # get first day of the month
@@ -396,7 +441,8 @@ class SeeGraph(tk.Frame):
   
   # get data in the period
   def get_data_select_period(self,from_date,to_date):
-    return self.data[(from_date <= pd.to_datetime(self.data["日付"])) & (pd.to_datetime(self.data["日付"]) < to_date)]
+    origin_data = pd.read_csv('output.csv')
+    return origin_data[(from_date <= pd.to_datetime(self.data["日付"])) & (pd.to_datetime(self.data["日付"]) < to_date)]
   
   # delete all content in root frame
   def delete_all_data(self):
@@ -407,7 +453,41 @@ class SeeGraph(tk.Frame):
   def readCSV(self):
     # output.csvをpandasのデータ構造で返す
     return 
-  
+  def display_filter(self):
+    self.filter_tk = {"frame":tk.Frame(self.sub_frame,bg="red"),#"summarize_value":tk.BooleanVar()
+                      }
+    
+    self.filter_tk.update(
+      genre_label     = tk.Label(self.filter_tk["frame"], text="ジャンル"),
+      genre_value     = ttk.Combobox(self.filter_tk["frame"],value=[""],width=5),
+      purpose_label   = tk.Label(self.filter_tk["frame"], text="目的"),
+      purpose_value   = ttk.Combobox(self.filter_tk["frame"],value=[""],width=5),
+      summarize_label = tk.Label(self.filter_tk["frame"],text="まとめて表示する"),
+      summarize_value = ttk.Combobox(self.filter_tk["frame"],value=["日付","場所","商品名"],width=5),
+      search          = tk.Button(self.filter_tk["frame"],text="検索")  
+    )
+#     # Bind the button click event to the clicked_filter_search method
+# search = tk.Button(self.filter_tk["frame"], text="検索")
+    self.filter_tk["search"].bind("<Button-1>", self.clicked_filter_search)
+    self.filter_tk["frame"].pack()
+    genres = self.data['ジャンル'].unique().tolist() # ジャンルを得る
+    purposes = self.data['目的'].unique().tolist()
+    self.filter_tk["genre_value"]["value"]=genres
+    self.filter_tk["purpose_value"]["value"]=purposes
+    for i,(key,value) in enumerate(self.filter_tk.items()):
+      print(i,key,value)
+      if type(value) == tk.Frame or type(value) == tk.BooleanVar():
+        continue
+      elif type(value) == tk.Label or type(value) == ttk.Combobox:
+        value.grid(row = 0, column = i-1)
+      elif type(value) == tk.Checkbutton:
+        value.grid(row = 1, column = 0,columnspan=3)
+      elif type(value) == tk.Button:
+        value.grid(row = 0, column = i-1)
+
+  # def search_filter(self):
+  #   return 
+
   def ByMonth(): # 月毎の情報のページ    
     # カテゴリごとのランキング(円グラフ)
     # 買ったもの一覧
@@ -419,5 +499,3 @@ class SeeGraph(tk.Frame):
 if __name__ == "__main__":
   graph = SeeGraph()
   graph.mainloop()
-
-
