@@ -5,7 +5,7 @@ import gui as ui
 import record_receipt as recordre
 from tkinter import filedialog
 
-exec_type = "production" # production,develop_receipt,develop_noreceipt
+exec_type = "production" # production,develop_reciept,develop_noreceipt
 
 def main(filename):
   if exec_type == "develop_noreciept":
