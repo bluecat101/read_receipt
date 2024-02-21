@@ -333,11 +333,11 @@ class SeeGraph(tk.Frame):
     # delete tree data
     tree.delete(*tree.get_children())   
     # sort data
-    sorted_data_by_genre=self.filtered_data.sort_values(column_clicked["name"],ascending=False)
+    self.filtered_data=self.filtered_data.sort_values(column_clicked["name"],ascending=False)
     # whether the sorted data and showed data are some 
-    if first_row_item_genre == sorted_data_by_genre.iloc[0][column_clicked["name"]]:
+    if first_row_item_genre == self.filtered_data.iloc[0][column_clicked["name"]]:
       # change sort order
-      sorted_data_by_genre=self.filtered_data.sort_values(column_clicked["name"],ascending=True)
+      self.filtered_data=self.filtered_data.sort_values(column_clicked["name"],ascending=True)
     # display items
     self.display_filtered_data(tree)
 
