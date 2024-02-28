@@ -9,7 +9,6 @@ def setting(store_name,text):
     return text
   elif store_name == "ローゼン":
     if len(text) >0:
-      # print(text)
       extra_char = re.match("\*?([A-Z]|[a-z]|[0-9])+",text)
       if not(extra_char):
         print("NO char")
