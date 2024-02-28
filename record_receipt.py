@@ -73,11 +73,11 @@ class RecordReceipt:
       sDB.target[self.store] = ""
       with open(STOREDB_PATH_NAME) as file:
         contents = file.readlines()
-      contents[0] = "storeDB = " + str(self.storeDB) + '\n'
-      contents[1] = "target = " + str(sDB.target) + '\n'
+      contents[1] = "storeDB = " + str(self.storeDB) + '\n'
+      contents[2] = "target = " + str(sDB.target) + '\n'
       with open(STOREDB_PATH_NAME, mode="w") as file:
-        print(type(contents))
-        print(contents)
+        # print(type(contents))
+        # print(contents)
         file.writelines("".join(contents))
 
 
