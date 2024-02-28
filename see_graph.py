@@ -434,6 +434,8 @@ class SeeGraph(tk.Frame):
     # So self.filtered_data is nothing and use self.data
     genres = self.data['ジャンル'].unique().tolist() # ジャンルを得る
     purposes = self.data['目的'].unique().tolist()
+    genres.insert(0,"")
+    purposes.insert(0,"")
     self.filter_tk["genre_value"]["value"]=genres
     self.filter_tk["purpose_value"]["value"]=purposes
     # put tk widget
