@@ -244,6 +244,7 @@ class SeeGraph(tk.Frame):
       purpose   = "",
       summarize = "",
     )
+    self.filter_tk["genre_value"].set(record_values[1])
     # to filter data
     self.filter_data()
 
@@ -295,28 +296,61 @@ class SeeGraph(tk.Frame):
     for i,child in enumerate(children):
       if i > 3:
         child.destroy()
+    
+    filtered_data_tk = {"frame":tk.Frame(self.sub_frame,height=100, width=350 ,bd=10)}
+    filtered_data_tk["tree"] = ttk.Treeview(filtered_data_tk["frame"])
+
     # put frame for Treeview
-    frame_data_by_genre = tk.Frame(self.sub_frame,height=100, width=350 ,bd=10)
-    frame_data_by_genre.pack()
+    filtered_data_tk["frame"].pack()
     
     # display filtered data
-    tree = ttk.Treeview(frame_data_by_genre)
-    tree.pack()
-
+    filtered_data_tk["tree"].bind("<<TreeviewSelect>>", lambda event: self.selected_filtered_data(event,filtered_data_tk["tree"]))
+    filtered_data_tk["tree"].pack()
+    
     # set columns
-    tree['columns'] = (1,2,3,4)
-    tree.column(1,anchor=tk.CENTER)
-    tree.column(2,anchor=tk.CENTER)
-    tree.column(3,anchor=tk.CENTER)
-    tree.column(4,anchor=tk.CENTER)
+    filtered_data_tk["tree"]['columns'] = (1,2,3,4)
+    filtered_data_tk["tree"].column(1,anchor=tk.CENTER)
+    filtered_data_tk["tree"].column(2,anchor=tk.CENTER)
+    filtered_data_tk["tree"].column(3,anchor=tk.CENTER)
+    filtered_data_tk["tree"].column(4,anchor=tk.CENTER)
     # set heading
-    tree['show'] = 'headings'
-    tree.heading(1,text="日付",anchor=tk.CENTER,command=lambda:self.sort_row(tree))
-    tree.heading(2,text="場所",anchor=tk.CENTER,command=lambda:self.sort_row(tree))
-    tree.heading(3,text="商品名",anchor=tk.CENTER,command=lambda:self.sort_row(tree))
-    tree.heading(4,text="金額",anchor=tk.CENTER,command=lambda:self.sort_row(tree))
-    self.display_filtered_data(tree)
+    filtered_data_tk["tree"]['show'] = 'headings'
+    filtered_data_tk["tree"].heading(1,text="日付",anchor=tk.CENTER,command=lambda:self.sort_row(filtered_data_tk["tree"]))
+    filtered_data_tk["tree"].heading(2,text="場所",anchor=tk.CENTER,command=lambda:self.sort_row(filtered_data_tk["tree"]))
+    filtered_data_tk["tree"].heading(3,text="商品名",anchor=tk.CENTER,command=lambda:self.sort_row(filtered_data_tk["tree"]))
+    filtered_data_tk["tree"].heading(4,text="金額",anchor=tk.CENTER,command=lambda:self.sort_row(filtered_data_tk["tree"]))
 
+    # to display subtotal
+    self.subtotal_tk = {"frame":tk.Frame(self.sub_frame,height=10, width=50 ,bd=10)}
+    self.subtotal_tk.update(
+      label = tk.Label(self.subtotal_tk["frame"], text="合計"),
+      value = tk.Label(self.subtotal_tk["frame"], text=""),
+    )
+    # update subtotal value
+    self.update_subtotal(filtered_data_tk["tree"])
+    # display widget
+    self.subtotal_tk["frame"].pack(side=tk.RIGHT,anchor = tk.N,padx=50)
+    self.subtotal_tk["label"].grid(row = 0, column = 0)
+    self.subtotal_tk["value"].grid(row = 0, column = 1,sticky=tk.E)
+    
+    self.display_filtered_data(filtered_data_tk["tree"])
+  
+  def selected_filtered_data(self,evant,tree):
+    self.update_subtotal(tree)
+  
+  def update_subtotal(self,tree):
+    total = 0
+    # no selected row
+    if not(tree.selection()):
+      # get all item total
+      total = self.filtered_data["金額"].sum()
+    else:
+      # get selected item total
+      for item in tree.selection():
+        total += int(tree.item(item,"values")[3])
+    # set subtotal and "円" together
+    self.subtotal_tk["value"]["text"]=str(total)+"円"
+    
   def display_filtered_data(self,tree):
     for i in range(self.filtered_data.shape[0]):
       row = self.filtered_data.iloc[i]
