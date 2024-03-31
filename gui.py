@@ -7,7 +7,7 @@ import re
 from googletrans import Translator
 
 # hasIssue = True # Whether System behavior is nomal
-class ComfirmReciept(tk.Frame):
+class ComfirmReceipt(tk.Frame):
   root = tk.Tk() # make display
   def __init__(self,items,date,store,discount): 
     super().__init__(self.root)
@@ -89,12 +89,13 @@ class ComfirmReciept(tk.Frame):
       
       productNameEntry=tk.Entry(self.tableFrame) # Entry for item name
       self.setStyle(productNameEntry)            # set Style
+      # print(item)
       productNameEntry.insert(0,item["item"])         # set item name
       productNameEntry.grid(row=i+1,column=0)    # set position
 
       registerNameCombobox=ttk.Combobox(self.tableFrame,value=self.itemList) # Combobox for register item list
       self.setStyle(registerNameCombobox)                                    # set Style 
-      registerNameCombobox.set(item["register_name"])                                      # set register item name 
+      registerNameCombobox.set(item["registed_name"])                                      # set register item name 
       registerNameCombobox.grid(row=i+1,column=1)                            # set position
 
       categoryCombobox=ttk.Combobox(self.tableFrame,value=[value for value in db.itemDB.keys()]) # Combobox for item category
@@ -388,7 +389,7 @@ class ComfirmReciept(tk.Frame):
     if isOk == True: # no error
       self.allItem=[] # for all item 
       for i in range(int(len(elements)/8)):
-        oneLine = {"store":self.store[0],"date":self.date,"purpose":self.purposeCombobox.get(),"item": elements[i*8].get(),"register_name": elements[i*8+1].get(),"genre": elements[i*8+2].get(),"price":elements[i*8+3].get(),"amount":elements[i*8+4].get(),"discount":0,"total":0} # for each row
+        oneLine = {"store":self.store[0],"date":self.date,"purpose":self.purposeCombobox.get(),"item": elements[i*8].get(),"registed_name": elements[i*8+1].get(),"genre": elements[i*8+2].get(),"price":elements[i*8+3].get(),"amount":elements[i*8+4].get(),"discount":0,"total":0} # for each row
         line_discount = elements[i*8+5].get()
         line_total = elements[i*8+6].get()
         if line_discount.isdecimal(): # whether discount is included "%" or string or not

@@ -41,15 +41,15 @@ class RecordReceipt:
   def addDB(self):
     """ update DataBase(item_db, store_db) """
     for lineItem in self.allItem:
-      if not(lineItem["register_name"] in lineItem["item"]): # whether lineItem is special_name
+      if not(lineItem["registed_name"] in lineItem["item"]): # whether lineItem is special_name
         # print(lineItem)
-        iDB.special_name[lineItem["item"]] = [lineItem["register_name"],str(lineItem["genre"])]
+        iDB.special_name[lineItem["item"]] = [lineItem["registed_name"],str(lineItem["genre"])]
       if not(lineItem["genre"] in self.itemDB): # whether it is new category (no infomation for DataBase)
         self.itemDB[lineItem["genre"]] = [] # add new key for itemDB
-        self.itemDB[lineItem["genre"]].append(lineItem["register_name"]) # add item for new key as value
+        self.itemDB[lineItem["genre"]].append(lineItem["registed_name"]) # add item for new key as value
         self.categoryDB[lineItem["genre"]] = self.newCategoryEn[lineItem["genre"]] # add new key and English value name for category
-      elif not(lineItem["register_name"] in self.itemDB[lineItem["genre"]]): # not new category but it is new item
-        self.itemDB[lineItem["genre"]].append(lineItem["register_name"]) # add item for new key as value
+      elif not(lineItem["registed_name"] in self.itemDB[lineItem["genre"]]): # not new category but it is new item
+        self.itemDB[lineItem["genre"]].append(lineItem["registed_name"]) # add item for new key as value
     
     replaceContent= "" # make sentence to write
 
@@ -70,11 +70,11 @@ class RecordReceipt:
     
     if not(self.store in self.storeDB): # Whether new store name or not
       self.storeDB.append(self.store)
-      sDB.target[self.store] = ""
+      sDB.keyword[self.store] = ""
       with open(STOREDB_PATH_NAME) as file:
         contents = file.readlines()
       contents[1] = "storeDB = " + str(self.storeDB) + '\n'
-      contents[2] = "target = " + str(sDB.target) + '\n'
+      contents[2] = "keyword = " + str(sDB.keyword) + '\n'
       with open(STOREDB_PATH_NAME, mode="w") as file:
         # print(type(contents))
         # print(contents)
