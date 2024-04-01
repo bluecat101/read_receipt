@@ -58,19 +58,20 @@ class ReadReceipt:
     self.date = ""
     self.store = ""
     self.special_discount = []
-    # Init full_text. if not exec_type is production, cause error no full_text argument
-    full_text = ""
+    # Init recognition_result. if not exec_type is production, cause error no recognition_result argument
+    recognition_result = ""
     # If exec_type is not production, analysed text is already prepared
     if exec_type == "production":
       # Get receipt path from receipt_name
       image_path =os.path.abspath(receipt_name)
-      # Get full text in receipt. format is JSON
-      full_text = self.readReceipt(image_path)
+      # Get text and coordinates of it from receipt. format is like JSON
+      recognition_result = self.do_character_recogition(image_path)
       
     # Analyse receipt to get item, purchase store etc...
-    self.analyse(exec_type,full_text)
+    line_text = self.analyse(exec_type,recognition_result)
+    self.search_texts(line_text)
   
-  def readReceipt(self,image_path):
+  def do_character_recogition(self,image_path):
     """ 
     ## Description
       Detects text from receipt image using Google Vision
@@ -78,7 +79,7 @@ class ReadReceipt:
     ## Args:
       `image_path` : Path of receipt image
     ## Returns:
-      `full_text` (str): Full text in receipt. format is JSON and be included position(x,y) of text
+      `recognition_result (str)`: Full text and coordinates for each word in receipt. format is JSON and be included position(x,y) of text
     """
     # Get full text in receipt through Google Vision
     client = vision.ImageAnnotatorClient()
@@ -87,77 +88,195 @@ class ReadReceipt:
     image = vision.Image(content=content)
     response = client.text_detection(image=image)
     # Get text
-    full_text = response.text_annotations
+    recognition_result = response.text_annotations
     # Whether read receipt
-    if full_text==[]:
+    if recognition_result==[]:
       # Cause error can't read receipt and can't get text
       print("ERROR can not read",sys.stderr)
       exit(1)
-    return full_text
+    return recognition_result
 
 
-  def analyse(self, exec_type,full_text):
+  def analyse(self, exec_type, recognition_result):
     """
-    ## Discription
-      This method is to analyse receipt content to get some data such as item name, item detail, purchase date, purchase store and etc...
-      If get some data, store class argument(self.item_list, self.date and etc...)
-
+    ## Discription:
+      To restore sentences based on the results of character recognition.
+      Character recognition may not be possible on each line because there are too many spaces or some characters are unreadable.
+      Therefore, we restore each line based on the coordinates of each word.
 
     ## Args:
       `exec_type (str)`: Type of execution
-      `full_text (str)`: Full text in receipt. format is JSON and be included position(x,y) of text
+      `recognition_result (str)`: Full text in receipt. Format is like JSON and be included position(x,y) of text
     
+    ## Returns:
+      `line_text (str[])`: Text of each restored line from receipt.
     """
-    if exec_type == "production":
-      # First element in full_text is full text and its position. this dosen't need for analyse. Because
-      # we need text and its position word by word.
-      del full_text[0]
-      # Disassembe content for each line and save it for line_texts
-      line_texts = self.combine(full_text)
-      # Sort line_texts by position from top to bottom
-      line_texts = sorted(line_texts, reverse=False, key=lambda x: x[2])
-    else:
-      # TEST_DATA that sample receipt data
-      line_texts = [['aaa', 1303, 244, 34.0, 0], ['aaa', 1353, 417, 23.333333333333332, 4], ['レジ06002023/12/24(日)11:55', 1293, 673, 24.666666666666668, 11], ['6369:180310600:002494296', 1354, 716, 22.0, 17], ['AEON会員:********68499401', 1333, 757, 22.666666666666668, 22], ['LBPチョコ596%', 1343, 845, 18.666666666666668, 27], ['(2個X298)', 1302, 874, 20.666666666666668, 31], ['LBPストロベリ298X', 1341, 928, 19.333333333333332, 37], ['ビオ砂糖脂肪O198X', 1315, 970, 24.0, 39], ['トマト350X', 1346, 1010, 18.666666666666668, 43], ['バナナ200%', 1348, 1052, 19.333333333333332, 29], ['はくさい78%', 1374, 1093, 19.333333333333332, 30], ['れんこん320%', 1377, 1133, 18.666666666666668, 44], ['(2個X160)', 1295, 1164, 21.333333333333332, 45], ['柿の種チョコ1,900X', 1273, 1215, 20.0, 51], ['(19個X単100)', 1290, 1248, 22.0, 55], ['ほうれん草50%', 1408, 1298, 21.333333333333332, 62], ['ピーナッツ218X', 1408, 1338, 19.333333333333332, 63], ['きゅうり432*', 1369, 1380, 18.666666666666668, 64], ['(9個X単48)', 1293, 1411, 21.333333333333332, 70], ['なめこ(GE有機)50%', 1335, 1463, 22.666666666666668, 77], ['小松菜88X', 1304, 1503, 20.666666666666668, 82], ['BPもっちり仕込み8138X', 1296, 1543, 21.333333333333332, 84], ['割引20%-28', 1299, 1585, 20.0, 88], ['雪印北海道バター378X', 1306, 1625, 23.333333333333332, 92], ['エキストラバージンオリ698X', 1399, 1667, 20.666666666666668, 95], ['TVたまご496X', 1323, 1708, 16.666666666666668, 98], ['(2個X248)', 1282, 1739, 20.0, 118], ['BP成分無調整牛乳1L356', 1291, 1784, 22.666666666666668, 124], ['(2個X178)', 1279, 1816, 21.333333333333332, 131], ['キリ10P498X', 1290, 1864, 16.666666666666668, 137], ['おじゃがまる654*', 1260, 1905, 18.666666666666668, 103], ['(3個X単218)', 1274, 1936, 21.333333333333332, 111], ['割引30%-198', 1286, 1985, 20.0, 106], ['絹厚揚げ196X', 1252, 2027, 20.666666666666668, 108], ['(2個X単98)', 1272, 2059, 22.0, 139], ['割引20%-40', 1282, 2109, 22.666666666666668, 146], ['がんもセット476X', 1284, 2149, 20.666666666666668, 148], ['(2個X単238)', 1266, 2184, 22.0, 153], ['割引30%-144', 1280, 2234, 22.666666666666668, 160], ['BP油揚げ98X', 1275, 2278, 22.666666666666668, 151], ['割引20%-20', 1278, 2321, 22.666666666666668, 175], ['国産大豆の田舎がんも356X', 1276, 2363, 23.333333333333332, 179], ['(2個X単178)', 1258, 2396, 23.333333333333332, 185], ['割引50%-178', 1272, 2449, 22.0, 192], ['ブロッコリー296X', 1410, 2492, 22.0, 162], ['(2個X148)', 1256, 2528, 22.666666666666668, 165], ['肉いおでん150X', 1236, 2579, 21.333333333333332, 169], ['昭和贅沢餃子338X', 1269, 2622, 22.666666666666668, 172], ['割引50%-169', 1267, 2663, 20.666666666666668, 163], ['大根60%', 1236, 2705, 20.0, 195], ['グリーンオーク160X', 1340, 2746, 20.666666666666668, 197], ['(2個X単80)', 1254, 2778, 22.666666666666668, 199], ['もやし20X', 1303, 2829, 19.333333333333332, 194], ['小計¥9,369', 1236, 2912, 25.333333333333332, 223], ['クーポンはちべえトマト¥100', 1336, 2954, 21.333333333333332, 225], ['クーポンオリーブオイル¥200', 1337, 2997, 24.0, 228], ['クーポンダノンビオ¥30', 1335, 3039, 24.0, 231], ['外税8%対象額¥9,039', 1248, 3080, 24.0, 233], ['外税8%4723', 1251, 3123, 22.666666666666668, 239], ['合計¥9,762', 1305, 3204, 22.666666666666668, 210], ['AEONPay¥9,762', 1266, 3246, 20.0, 211], ['お釣り40', 1228, 3287, 18.666666666666668, 213], ['お買上商品数:67', 1351, 3328, 23.333333333333332, 282], ['※印は軽減税率8%対象商品', 1226, 3366, 23.333333333333332, 288]]
-    
-    
-    # If not found date, you can't get data. So in secound time, you don't mind date and get all data.
-    # if self.search_texts(line_texts,status= "first"):
-    #   self.search_texts(line_texts,status= "secound")
-      self.search_texts(line_texts)
+    def add_height_border(analysed_text):
+      """
+      ## Discription:
+        Add height area for top and bottom borders because, to determine whether tow words are in the same line.
+        Ranges to be on the same line is the word heights plus half of it.
+      ## Args:
+        analysed_text (disc["text":,"vertices":]): Data is added top and bottom borders
+      """
+      # get half the height
+      height_rigion = (analysed_text["vertices"][2]["y"] - analysed_text["vertices"][1]["y"])*1/2
+      # add top and bottom borders to analysed_text
+      analysed_text["top_border"] = analysed_text["vertices"][1]["y"] - height_rigion
+      analysed_text["bottom_border"] = analysed_text["vertices"][2]["y"] + height_rigion
+  
+    def concat_text(first,second):
+      """
+      ## Discription:
+        This method is to connects argument of first and argument of second in order.
+        If the connecting parts are numbers, add a space to easily judge.
 
+      ## Args:
+        first (str): first text
+        second (str): last text
+
+      Returns:
+          connected text: Pattern is (first + second) or (first +" "+ second)
+      """
+      if first == "" or second == "": # To avoid IndexError
+        return first + second
+      elif first[-1].isdecimal() and second[0].isdecimal(): # add a space
+        return first + " " + second
+      else: # not need a space
+        return first + second
+      
+    def update_coordinates(updated_data ,update_data, position):
+      """
+      ## Description:
+        This method is to update coordinates when find and connect text on the same line
+      ## Args:
+          `updated_data (dict)`: Updated dict 
+          `update_data (dict,google.cloud.vision_v1.types.image_annotator.EntityAnnotation)`: Update dict or Google data
+          If update data first time from result of OCR, the type is Google data.
+          `position (int)`: Where you update, 0, 1, 2 or 3.
+      """
+      # Update coordinates of x and y
+      if type(update_data) is dict: # Type is dict
+        updated_data["vertices"][position]["x"] = update_data["vertices"][position]["x"]
+        updated_data["vertices"][position]["y"] = update_data["vertices"][position]["y"]
+      else: # Type is google.cloud.vision_v1.types.image_annotator.EntityAnnotation
+        updated_data["vertices"][position]["x"] = update_data.bounding_poly.vertices[position].x
+        updated_data["vertices"][position]["y"] = update_data.bounding_poly.vertices[position].y
+        
+        
+      
+    if "develop" in exec_type: # don't analyse
+      # TEST_DATA that sample receipt data
+      line_text = ['そうてつローゼン', '港南台店TEL:045(832)1211', '相鉄ローゼン株式会社', '本社住所:横浜市西区北幸2-9-14', '登録番号:T9020001037881', '*********', '毎度ご来店ありがとうございます', '今月は休まず営業いたします', '**************', '2024年1月27日(土)16:14', '*202005ほうれん草', '¥98 2個 ¥196', '*202004大根', '¥98 2個 ¥196', '*202001なす袋入', '¥198 2個 ¥396', '*101001コウジミリ750g', '¥158 2個 ¥316', '外税8.0% ¥88', '税込小計8点 \\1,192', 'ガチャクーポン1枚 -\\50', '合計', '(税込8.0%対象額 ¥1,142', '¥1,142)', '8.0%消費税等 ¥84', '税額計 ¥84', '*」は軽減税率対象商品です', 'ホット \\1,142', '\\1,142', '顧客コード*********0617', 'カード発行会社ラクテンカード 00056', '****8624I', '会員番号************8624', 'お取扱日2024-01-27 16:14:04', '真番号 取引内容', '410421833 お買上', '取扱区分 承認番号', '(110)00761523', '分割回数処理通番合計額(TOTAL)', '1221 ¥1,142', 'A0000000031010 ATC000d00IC', 'ALVISACREDIT', '加盟店', '相鉄ローゼン港南台店', 'TEL:045-832-1211', '★今月ランクレギュラー', '<<ポイント情報>>', '1,104円', 'ポイント対象金額 1,104円)', '(うち3倍対象', '前回累計ポイント 3,283A', '剪圖 上ポイント 15点', '3,298点', '累計ポイント', '2,172円', '今月買上金額累計', '鍵', '来月ラングレギュラー', '今月あと17828円お買上げで', 'ブロンズにランクUP', '来月5日に50Pプレゼント', 'キャッシャ:鈴木啓', 'R4104-#1221']
+      return line_text
+    # First element in recognition_result is full text. Use this text to judge whether each text is same line or not.
+    # First element is to use '\n'(new line code) so split with '\n' and return type of array
+    full_text = recognition_result[0].description.split('\n')
+    # delete first element 
+    del recognition_result[0]
+    # To save connected text and its infomation of coordinates
+    # To connect text on each line, do 2 step.
+    # STEP1: connect text from full_text data. If full_text show tow word is same line, connect them
+    # STEP2: connect text from word of coordinates. 
+    # So the argument name is ver1 and after two step, name is "line_text_info"
+    line_text_info_ver1 = []
+    # [STEP1]
+    # Point to where it is looking in full_text
+    pointer_for_full_text = 0
+    # Initialize to save line_text_info_ver1
+    # vertices[0] is left top, vertices[1] is right top, vertices[2] is right bottom, vertices[3] is left bottom
+    one_line = {"text": "","vertices":[{"x":-1,"y":-1},{"x":-1,"y":-1},{"x":-1,"y":-1},{"x":-1,"y":-1}]}
+    for word in recognition_result:
+      # Until get some word in full_text 
+      # Coordinates in recognition_result are absolute in full_text order, so you can search in order.
+      while len(full_text) > pointer_for_full_text and not(word.description in full_text[pointer_for_full_text]):
+        if one_line["text"] != "": # Find text data
+          line_text_info_ver1.append(one_line)
+          # Reset one_line to save line_text_info_ver1
+          one_line = {"text": "","vertices":[{"x":-1,"y":-1},{"x":-1,"y":-1},{"x":-1,"y":-1},{"x":-1,"y":-1}]}
+        # Move pointer to point next
+        pointer_for_full_text += 1
+        # Finish to search
+        if len(full_text) <= pointer_for_full_text:
+         break
+      # Delete found word to avoid duplicates
+      full_text[pointer_for_full_text] = full_text[pointer_for_full_text].lstrip(word.description)
+      if one_line["text"] == "": # First new line word and is not connection of words
+        update_coordinates(one_line, word, 0) # Update left top coordinates
+        update_coordinates(one_line, word, 3) # Update left bottom coordinates
+      update_coordinates(one_line, word, 1)   # Update right top coordinates
+      update_coordinates(one_line, word, 2)   # Update right bottom coordinates
+      # Connects text
+      one_line["text"] = concat_text(one_line["text"],word.description)
     
-  def search_texts(self,line_texts):
+    # [STEP2]
+    add_height_border(line_text_info_ver1[0])
+    # This is line_text_info_ver2 and to save connected text and its infomation of coordinates
+    line_text_info = []
+    # Add first text for line_text_info
+    line_text_info.append(line_text_info_ver1[0])
+    # Search matches in the same row
+    for one_line in line_text_info_ver1[1:]:
+      # Search from lines already found in STEP2
+      # Basically, it is likely to be the same line as the last registered line.
+      for one_line_text_info in reversed(line_text_info):
+        # Whether it is within the height range.
+        # Basically found word is connected after the registered text, so compare part of right top and right bottom
+        if one_line["vertices"][1]["y"] > one_line_text_info["top_border"] and one_line["vertices"][2]["y"] < one_line_text_info["bottom_border"]:
+          if one_line_text_info["vertices"][1]["x"] < one_line["vertices"][0]["x"]: # Connects after the registered text
+            # Connect text
+            one_line_text_info["text"] += " " + one_line["text"]
+            update_coordinates(one_line_text_info, one_line,1) # Update right top coordinates
+            update_coordinates(one_line_text_info, one_line,2) # Update right bottom coordinates
+            break
+          elif one_line_text_info["vertices"][0]["x"] > one_line["vertices"][1]["x"]: # Connects before the registered text
+            # Connect text
+            one_line_text_info["text"] = one_line["text"] + " " +one_line_text_info["text"]
+            update_coordinates(one_line_text_info ,one_line,0) # Update left top coordinates
+            update_coordinates(one_line_text_info ,one_line,3) # Update left bottom coordinates
+            break
+      else:
+        # If don't find text in same line, register one_line
+        add_height_border(one_line)
+        line_text_info.append(one_line)
+    # Sort by y coordinate because OCR is not arranged in the order of y coordinate (because it considers x coordinate)
+    # Since the x coordinate is taken into account, if you sort before this timing, the number of joins on the left will increase.
+    line_text_info = sorted(line_text_info, reverse=False, key=lambda x: x["vertices"][0]["y"])
+    # Get only text 
+    line_text = [x["text"] for x in line_text_info]
+    return line_text
+    
+  def search_texts(self,line_text):
     """
     ## Discription
-      This method extracts the purchase date, purchase store, item and item-related data such as price, amount etc... from line_texts.
+      This method extracts the purchase date, purchase store, item and item-related data such as price, amount etc... from line_text.
       If the date is not found, this method can't determine where item stert, so read all data from top to bottom.
       
     ## Args:
-      `line_texts (str[][])`: Include text line by line
+      `line_text (str[][])`: Include text line by line
       `status (str)`: Type is "first" or "secound". If the date is not found, this method is called again and the status argument is "secound"
 
     # Returns:
         # `_ (bool)`: Whether date is found. In first time it is called, if date is not found, it returns False and is called again to set the date to "sample" as a dummy.
     """
-    # Whether line_texts[] has price
-    # line_texts[] is included about item, discount,total price etc....
-    # So some line_texts[] is not for item. Then has_item_price is false.
+    # Whether line_text[] has price
+    # line_text[] is included about item, discount,total price etc....
+    # So some line_text[] is not for item. Then has_item_price is false.
     has_item_price = True
-    # End reading line_texts. If find "小計(subtotal)", the flag is True 
+    # End reading line_text. If find "小計(subtotal)", the flag is True 
     isFinish = False
     
-    # Search line_texts to find item
-    for text in line_texts:
+    # Search line_text to find item
+    for text in line_text:
       # Use dictionary type for each line.
-      item_info={"item": text[0],"registed_name": "---","genre": "---","price":-1,"amount":0,"discount":0}
+      item_info={"item": text,"registed_name": "---","genre": "---","price":-1,"amount":0,"discount":0}
       # Get purchase store, if it is not found yet
       if self.store == "":
-        self.find_store(text[0])
+        self.find_store(text)
       # Get purchase date, if it is not found yet
       if self.date=="":
         # Date type is yyyy/mm/dd
-        result_date = re.search('(20[0-9]{2})(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text[0])
+        result_date = re.search('(20[0-9]{2})(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text)
         if result_date:
           self.date = str(dt.date(int(result_date.group(1)),int(result_date.group(3)),int(result_date.group(5))))
           # Delete item_list before date
@@ -165,56 +284,61 @@ class ReadReceipt:
           continue
 
         # Date type is mm/dd/yyyy
-        result_date = re.search('(日)([1-3][0-9]|[1-9])(月)(1[0-2]|0[1-9]|[1-9])(年)(20[0-9]{2})',text[0])
+        result_date = re.search('(日)([1-3][0-9]|[1-9])(月)(1[0-2]|0[1-9]|[1-9])(年)(20[0-9]{2})',text)
         if result_date:
           self.date = str(dt.date(int(result_date.group(6)),int(result_date.group(4)),int(result_date.group(2))))
           # Delete item_list before date
           self.item_list.clear()
           continue
       
-      # Check text[0] is keyword of starting point for its item
-      # If keyword is ""(empty characters), keyword in text[0] is always true, so keyword is necessary
-      if self.store != "" and sDB.keyword[self.store] != "" and sDB.keyword[self.store] in text[0]: # whether store keyword is included for text
+      # Check text is keyword of starting point for its item
+      # If keyword is ""(empty characters), keyword in text is always true, so keyword is necessary
+      if self.store != "" and sDB.keyword[self.store] != "" and sDB.keyword[self.store] in text: # whether store keyword is included for text
         # Delete item_list before date
         self.item_list.clear()
         continue
       
       # Find total then finish search
-      if "合計" in text[0]:
+      if "合計" in text:
         break
 
       # Sometime, discount exist after "小計"(subtotal)
       if isFinish: # After find "小計"(subtotal)
         # Find discount
-        if "クーポン" in text[0]:
+        if "クーポン" in text:
           # get price
-          result_discount= re.search('[0-9]+$',text[0])
+          result_discount= re.search('[0-9]+$',text)
           if result_discount:
             # Get discount price
-            self.special_discount.append([text[0][:result_discount.start()-1],int(result_discount.group())])
+            self.special_discount.append([text[:result_discount.start()-1],int(result_discount.group())])
       else: # Before find "小計"(subtotal)
-        if "小計" in text[0]: # quit to read item in receipt
+        if "小計" in text: # quit to read item in receipt
           isFinish = True
           continue
-        elif re.search('(割引|値引|クーポン)',text[0]): # Find discount line
-          if text[0][-1] == '%': # Last character is '%' then calcurate discount price from item price
-            text[0]=text[0][:-1] # Delete "%"
-            price = re.search('[0-9]+$',text[0]) # Get discount rate
+        elif re.search('(割引|値引|クーポン)',text): # Find discount line
+          if text[-1] == '%': # Last character is '%' then calcurate discount price from item price
+            text=text[:-1] # Delete "%"
+            price = re.search('[0-9]+$',text) # Get discount rate
             # Add discount to previous item. Calcurate discount price because price is discount rate
             if(price):
               self.item_list[-1]["discount"] = int(self.item_list[-1]["price"]*(1-(int(price.group())/100))) 
           else: # Last character is not "%"
-            price = re.search('[0-9]+$',text[0]) # Get discount price
+            price = re.search('[0-9]+$',text) # Get discount price
             # Add discount to previous item
             if(price):
               self.item_list[-1]["discount"] = int(price.group())
-        elif re.search('[0-9]+個',text[0]): # text line is not discount and it is related quantity
+        elif re.search('[0-9]+個',text): # text line is not discount and it is related quantity
           try:
             if has_item_price: # Previous line is related item and it was purchased multiple items
               ## 注意お店によって、計算式が違う
               ## 一列に(1つあたりの金額)*(個数)=(合計)がある場合のみ
               ## 1つの値段があって次の行に合計がある場合には不可
-              self.item_list[-1]["amount"]=re.search('([0-9]+)個',text[0]).group()[:-1] # get quantity
+              # print(line_text)
+              # print("===========")
+              # print(self.item_list)
+              # print("===========")
+              # print(text)
+              self.item_list[-1]["amount"]=re.search('([0-9]+)個',text).group()[:-1] # get quantity
               self.item_list[-1]["price"]=int((self.item_list[-1]["price"])/int(self.item_list[-1]["amount"])) # add price per one item
             else: # don't have item yet but find quantity
               print("can't find item",sys.stderr)
@@ -223,8 +347,8 @@ class ReadReceipt:
           except AttributeError:
             print("AttributeError in finding quantity",sys.stderr)
         else: # find item name
-          item_info = self.findItem(text[0],item_info) # whether item is register for DB
-          # if text[0] == "", item_info is False
+          item_info = self.findItem(text,item_info) # whether item is register for DB
+          # if text == "", item_info is False
           if not(item_info):
             continue
           has_item_price = (item_info["price"] != "") # use has_item_price to search amount
@@ -305,43 +429,44 @@ class ReadReceipt:
             itemConvert=mojimoji.zen_to_han(itemConvert) # change type of word for Half Katakana
     return item_info 
 
-  def combine(self,full_text):
-    """ search each text in full_text. Get and Combine word. Return words by each line. 2nd argument is all text infomation in receipt. """
-    def addNewLine(text):
-      """ 1st argument is one line text infomation. """
-      data_array=[] # store word info
-      data_array.append(text.description) # stored one word
-      data_array.append(text.bounding_poly.vertices[1].x) # get word position about x
-      data_array.append(text.bounding_poly.vertices[1].y) # get word position about y
-      data_array.append((text.bounding_poly.vertices[2].y-text.bounding_poly.vertices[1].y)*2/3) # save range that is need to combine other words
-      data_array.append(full_text.index(text)) # save index to sort
-      return data_array
+  # def combine(self,full_text):
+  #   """ search each text in full_text. Get and Combine word. Return words by each line. 2nd argument is all text infomation in receipt. """
+  #   def addNewLine(text):
+  #     """ 1st argument is one line text infomation. """
+  #     data_array=[] # store word info
+  #     data_array.append(text.description) # stored one word
+  #     data_array.append(text.bounding_poly.vertices[1].x) # get word position about x
+  #     data_array.append(text.bounding_poly.vertices[1].y) # get word position about y
+  #     data_array.append(text.bounding_poly.vertices[2].y) # get word position about y
+  #     data_array.append((text.bounding_poly.vertices[2].y-text.bounding_poly.vertices[1].y)*2/3) # save range that is need to combine other words
+  #     # data_array.append(full_text.index(text)) # save index to sort
+  #     return data_array
 
-    lineInfo=[]
-    for text in full_text:
-      if lineInfo==[]: # first roop
-        lineInfo.append(addNewLine(text)) # save for lineInfo array
-      else: # secound time onwards roop 
-        if(text.bounding_poly.vertices[0].y >lineInfo[-1][2]-lineInfo[-1][3] and text.bounding_poly.vertices[0].y <lineInfo[-1][2]+lineInfo[-1][3]):
-          """ Whethrer this text is included preve word's range """
-          if lineInfo[-1][1]<text.bounding_poly.vertices[1].x: # Whther position of this text is after prev word.
-            lineInfo[-1][0]+=text.description # connect prev word and this word
-          else:
-            lineInfo[-1][0]=text.description+lineInfo[-1][0] # connect prev word and this word
-          lineInfo[-1][2]=text.bounding_poly.vertices[1].y # update position y
-        else:
-          for line in reversed(lineInfo): # search word form last word
-            if(text.bounding_poly.vertices[0].y >line[2]-line[3] and text.bounding_poly.vertices[0].y <line[2]+line[3]):
-              """ Whethrer this text is included preve word's range """
-              if line[1]<text.bounding_poly.vertices[1].x: # Whther position of this text is after prev word.
-                line[0]+=text.description # connect prev word and this word
-              else:
-                line[0]=text.description+line[0] # connect prev word and this word
-              line[2]=text.bounding_poly.vertices[1].y # update position y
-              break
-          else: # can't find some position word in lineInfo
-            lineInfo.append(addNewLine(text)) # save for lineInfo array
-    return lineInfo
+  #   lineInfo=[]
+  #   for text in full_text:
+  #     if lineInfo==[]: # first roop
+  #       lineInfo.append(addNewLine(text)) # save for lineInfo array
+  #     else: # secound time onwards roop 
+  #       if(text.bounding_poly.vertices[0].y >lineInfo[-1][2]-lineInfo[-1][4] and text.bounding_poly.vertices[0].y <lineInfo[-1][3]+lineInfo[-1][4]):
+  #         """ Whethrer this text is included preve word's range """
+  #         if lineInfo[-1][1]<text.bounding_poly.vertices[1].x: # Whther position of this text is after prev word.
+  #           lineInfo[-1][0]+=text.description # connect prev word and this word
+  #         else:
+  #           lineInfo[-1][0]=text.description+lineInfo[-1][0] # connect prev word and this word
+  #         lineInfo[-1][2]=text.bounding_poly.vertices[1].y # update position y
+  #       else:
+  #         for line in reversed(lineInfo): # search word form last word
+  #           if(text.bounding_poly.vertices[0].y >line[2]-line[4] and text.bounding_poly.vertices[0].y <line[3]+line[4]):
+  #             """ Whethrer this text is included preve word's range """
+  #             if line[1]<text.bounding_poly.vertices[1].x: # Whther position of this text is after prev word.
+  #               line[0]+=text.description # connect prev word and this word
+  #             else:
+  #               line[0]=text.description+line[0] # connect prev word and this word
+  #             line[2]=text.bounding_poly.vertices[1].y # update position y
+  #             break
+  #         else: # can't find some position word in lineInfo
+  #           lineInfo.append(addNewLine(text)) # save for lineInfo array
+  #   return lineInfo
   
 
   def getItemLine(self):
@@ -350,5 +475,4 @@ class ReadReceipt:
     return self.date
   def getStore(self):
     return self.store
-
 
