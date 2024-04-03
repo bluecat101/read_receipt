@@ -65,13 +65,12 @@ class ReadReceipt:
       # Get receipt path from receipt_name
       image_path =os.path.abspath(receipt_name)
       # Get text and coordinates of it from receipt. format is like JSON
-      recognition_result = self.do_character_recogition(image_path)
+      recognition_result = self.do_OCR(image_path)
     # Analyse receipt to get item, purchase store etc...
     line_text = self.analyse(exec_type,recognition_result)
-    print(line_text)
     self.search_texts(line_text)
   
-  def do_character_recogition(self,image_path):
+  def do_OCR(self,image_path):
     """ 
     ## Description
       Detects text from receipt image using Google Vision
@@ -174,7 +173,7 @@ class ReadReceipt:
     full_text = recognition_result[0].description.split('\n')
     # delete first element 
     del recognition_result[0]
-    # To save connected text and its infomation of coordinates
+    # To save connected text and its infomation of coordinates.
     # To connect text on each line, do 2 step.
     # STEP1: connect text from full_text data. If full_text show tow word is same line, connect them
     # STEP2: connect text from word of coordinates. 
@@ -186,13 +185,10 @@ class ReadReceipt:
     # Initialize to save line_text_info_ver1
     # vertices[0] is left top, vertices[1] is right top, vertices[2] is right bottom, vertices[3] is left bottom
     one_line = {"text": "","vertices":[{"x":-1,"y":-1},{"x":-1,"y":-1},{"x":-1,"y":-1},{"x":-1,"y":-1}]}
-    print(full_text)
     for word in recognition_result:
       # Until get some word in full_text 
       # Coordinates in recognition_result are absolute in full_text order, so you can search in order.
-      print("%d ,full_text[%s] [%s]"%(pointer_for_full_text,full_text[pointer_for_full_text],word.description))
       while len(full_text) > pointer_for_full_text and not(word.description in full_text[pointer_for_full_text]):
-        print(full_text[pointer_for_full_text]," is not found ",)
         if one_line["text"] != "": # Find text data
           line_text_info_ver1.append(one_line)
           # Reset one_line to save line_text_info_ver1
@@ -385,7 +381,7 @@ class ReadReceipt:
     # Get item from DataBase and search by changing the notation method
     for item_genre,item_value in iDB.itemDB.items(): # Roop from DB
       for db_item in item_value: # Roop in each item name
-        item_convert=db_item # get DB item name to change Kanji, Hiragana, Katakana and Half Katakana.
+        item_convert=db_item # Get DB item name to change Kanji, Hiragana, Katakana and Half Katakana.
         # Check type of item name in DB whether Kanji, Hiragana, Katakana and Half Katakana and change status.
         if re.match('^\p{Script=Han}+$', item_convert): # Kanji
           itemTypeStatus = 4
