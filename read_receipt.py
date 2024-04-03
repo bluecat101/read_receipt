@@ -276,17 +276,17 @@ class ReadReceipt:
       # Get purchase date, if it is not found yet
       if self.date=="":
         # Date type is yyyy/mm/dd, yyyy年mm月dd
-        result_date = re.search('(20[0-9]{2})(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text)
-        if result_date:
-          self.date = str(dt.date(int(result_date.group(1)),int(result_date.group(3)),int(result_date.group(5))))
+        searched_date = re.search('(20[0-9]{2})(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text)
+        if searched_date:
+          self.date = str(dt.date(int(searched_date.group(1)),int(searched_date.group(3)),int(searched_date.group(5))))
           # Delete item_list before date
           self.item_list.clear()
           continue
 
         # Date type is mm/dd/yyyy, 日mm月dd年yyyy
-        result_date = re.search('(日)([1-3][0-9]|[1-9])(月)(1[0-2]|0[1-9]|[1-9])(年)(20[0-9]{2})',text)
-        if result_date:
-          self.date = str(dt.date(int(result_date.group(6)),int(result_date.group(4)),int(result_date.group(2))))
+        searched_date = re.search('(日)([1-3][0-9]|[1-9])(月)(1[0-2]|0[1-9]|[1-9])(年)(20[0-9]{2})',text)
+        if searched_date:
+          self.date = str(dt.date(int(searched_date.group(6)),int(searched_date.group(4)),int(searched_date.group(2))))
           # Delete item_list before date
           self.item_list.clear()
           continue
@@ -305,10 +305,10 @@ class ReadReceipt:
         # Find discount
         if "クーポン" in text:
           # get price
-          result_discount= re.search('[0-9]+$',text)
-          if result_discount:
+          searched_discount= re.search('[0-9]+$',text)
+          if searched_discount:
             # Get discount price
-            self.special_discount.append([text[:result_discount.start()-1],int(result_discount.group())])
+            self.special_discount.append([text[:searched_discount.start()-1],int(searched_discount.group())])
       else: # Before find "小計"(subtotal)
         if "小計" in text: # quit to read item in receipt
           isFinish = True
@@ -316,15 +316,15 @@ class ReadReceipt:
         elif re.search('(割引|値引|クーポン)',text): # Find discount line
           if text[-1] == '%': # Last character is '%' then calcurate discount price from item price
             text=text[:-1] # Delete "%"
-            price = re.search('[0-9]+$',text) # Get discount rate
+            searched_price = re.search('[0-9]+$',text) # Get discount rate
             # Add discount to previous item. Calcurate discount price because price is discount rate
-            if(price):
-              self.item_list[-1]["discount"] = int(self.item_list[-1]["price"]*(1-(int(price.group())/100))) 
+            if(searched_price):
+              self.item_list[-1]["discount"] = int(self.item_list[-1]["price"]*(1-(int(searched_price.group())/100))) 
           else: # Last character is not "%"
-            price = re.search('[0-9]+$',text) # Get discount price
+            searched_price = re.search('[0-9]+$',text) # Get discount price
             # Add discount to previous item
-            if(price):
-              self.item_list[-1]["discount"] = int(price.group())
+            if(searched_price):
+              self.item_list[-1]["discount"] = int(searched_price.group())
         elif re.search('[0-9]+個',text): # Text line is not related discount but it is related quantity
           if len(self.item_list) != 0: # Previous line exist
             # Get quantity and set to previous line
