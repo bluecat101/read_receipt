@@ -1,62 +1,129 @@
-import copy as cp
-import tkinter as tk
-from  tkinter import ttk
-import item_db as db
-import store_db as sdb
-import re
-from googletrans import Translator
+################################################
+# ------------------ README ------------------ #
+# Display waht was recognized as an item.      #
+# Sometime, OCR misstake so you can fix it.    #
+#                                              #
+################################################
+
+import copy as cp        # To prevent it from being reflected after copying
+import tkinter as tk     # To dispaly GUI
+from  tkinter import ttk # To dispaly GUI
+import item_db as db     # To access item DataBase
+import store_db as sdb   # To access store DataBase
+import re                # To check whether input is integer or percentage display
+from googletrans import Translator # To translate Japanese to English to make category in English
 
 # hasIssue = True # Whether System behavior is nomal
 class ComfirmReceipt(tk.Frame):
-  root = tk.Tk() # make display
+  """
+  ## Description:
+    This class is related GUI. You can comfirm OCR is correct or not.
+    You add some new data, delete extra data and fix data
+  ## Attributes:
+    `root () `: The base frame for gui
+    `date () `: To store purchase date
+    `store () `: To store purchase store
+    `discount () `: To store special discount like coupon
+    `canvas () `: 
+    `tableFrame () `: 
+    `itemList () `: 
+    `result_tk_value () `: 
+    `result_tk_value () `: 
+    `discount_detail () `: 
+    `allItem () `: 
+    `newCategory () `: 
+  
+  """
+  root = tk.Tk() # Make display
   def __init__(self,items,date,store,discount): 
+    """
+    ## Description:
+      Set class argument and set frame and input recognized item
+
+    ## Args:
+        items (_type_): _description_
+        date (_type_): _description_
+        store (_type_): _description_
+        discount (_type_): _description_
+    """
     super().__init__(self.root)
     
-    self.root.title("comfirm detail") # title 
-    self.root.geometry("800x1000")    # size
-    self.root.update_idletasks()      # updadate root size (default is 1x1)
-    self.date=date   # to instance variable
-    self.store=[store,sdb.tax(store)] # to instance variable
-    self.discount = discount
-    self.discount_total = sum(list(zip(*discount))[1]) if len(discount) > 0 else 0
-
-    storeHeaderFrame=tk.Frame(self.root,height=27) # Frame for store name and date 
-    storeHeaderFrame.pack(pady=0)                  # set position
+    self.root.title("comfirm detail") # Set gui title 
+    self.root.geometry("800x1000")    # Set size
+    self.root.update_idletasks()      # Update root size (default is 1x1)
     
-    storeNameLabel=tk.Label(storeHeaderFrame,text="店舗名: ") # Label for "店舗名: "
-    storeNameLabel.place(relx=0.0)                         # set position
-    self.storeNameEntry=tk.Entry(storeHeaderFrame,width=20) # Entry for store name
-    self.storeNameEntry.insert(0,self.store[0])              # set store name
-    self.storeNameEntry.place(relx=0.08)                  # set position
+    self.date=date                    
+    self.store=[store,sdb.tax(store)] # Get purchase store and whether tax is included or excluded from store name
+    self.discount = discount
+    self.discount_total = sum(list(zip(*discount))[1]) if len(discount) > 0 else 0 # Total discount, self.discount is duplicate list so calculate this way
 
-
-    purposeLabel=tk.Label(storeHeaderFrame,text="目的: ") # Label for "店舗名: "
-    purposeLabel.place(relx=0.43)                         # set position
-    self.purposeCombobox=ttk.Combobox(storeHeaderFrame,value=["家族","父"]) # Entry for store name
-    self.setStyle(self.purposeCombobox)
-    self.purposeCombobox.set("家族")                                                              # set item category 
-    self.purposeCombobox.place(relx=0.48)                  # set position
-
-    dateLabel=tk.Label(storeHeaderFrame,text="日付: ") # Label for date
-    self.dateEntry=tk.Entry(storeHeaderFrame) # Label for date
-    self.dateEntry.insert(0,self.date)              
-    dateLabel.place(relx=0.75)                                 # set position
-    self.dateEntry.place(relx=0.8)                                 # set position
-
-
+    # Make frame for part of header and set purchase store,purpose and date.
+    self.header={"Frame":tk.Frame(self.root,height=27)}
+    storeHeaderFrame=tk.Frame(self.root,height=27)
+    self.header["Frame"].pack(pady = 0)
+    # Add necessary elements
+    print(self.header["Frame"].winfo_x(),self.header["Frame"].winfo_y())
+    print(storeHeaderFrame.winfo_x(),storeHeaderFrame.winfo_y())
+    print(self.root.geometry())
+    self.header.update(
+      store_Label      = tk.Label(self.header["Frame"],text="店舗名: "),
+      store_Entry      = tk.Entry(self.header["Frame"],width=20),
+      purpose_Label    = tk.Label(self.header["Frame"],text="目的: "),
+      purpose_Combobox = ttk.Combobox(self.header["Frame"],value=["家族","父"]),
+      date_Label       = tk.Label(self.header["Frame"],text="日付: "),
+      date_Entry       = tk.Entry(self.header["Frame"])
+    )
+    # Setting for store name
+    self.header["store_Entry"].insert(0,self.store[0]) # Set store name
+    self.header["store_Label"].place(relx=0.0)         # Set position for label
+    self.header["store_Entry"].place(relx=0.08)        # Set position for entry
+    # Setting for purpose
+    self.header["purpose_Label"].place(relx=0.43)    # Set position for label
+    self.setStyle(self.header["purpose_Combobox"])   # Set style
+    self.header["purpose_Combobox"].set("家族")       # Set item category 
+    self.header["purpose_Combobox"].place(relx=0.48) # Set position for combobox
+    # Setting for date
+    self.header["date_Entry"].insert(0,self.date) # Set date             
+    self.header["date_Label"].place(relx=0.75)    # Set position for label
+    self.header["date_Entry"].place(relx=0.8)     # Set position for entry
+    
+    # print(self.header["Frame"].winfo_x(),self.header["Frame"].winfo_y())
+    # make frame for item list(called main)
+    # self.main_table = {"Frame":ttk.LabelFrame(self.root)}
     parentFrame=ttk.LabelFrame(self.root) # Frame for item list
-    parentFrame.pack(pady=1)              # set position
+    # self.main_table["Frame"].pack(pady=1)              # set position
 
+    # self.main_table.update(
+    #   haed_Frame = tk.Frame(self.main_table["Frame"]),
+    #   _list_Frame = tk.Frame(self.main_table["Frame"]),
+    # )
+
+    # columnHaedFrame=tk.Frame(self.main_table["Frame"]) # Frame for header of item
     columnHaedFrame=tk.Frame(parentFrame) # Frame for header of item
     columnHaedFrame.pack(pady=0)          # set position
+    # self.main_table["head_Frame"].pack(pady=0)
 
 
     listFrame=tk.Frame(parentFrame) # Frame for body of item
     listFrame.pack(pady=1)          # set position
+    # self.main_table["_list_Frame"].pack(pady=1)          # set position
 
     
+    # self.main_table["Canvas"] = tk.Canvas(self.main_table["list_Frame"],width=100,height=10,scrollregion=(0,0,0,0), bg='white') # to use scroll bar 
+    # ######### self.canvas=tk.Canvas(listFrame,width=100,height=10,scrollregion=(0,0,0,0), bg='white') # to use scroll bar 
+    # self.main_table["table_Frame"]=tk.Frame(self.canvas,bg="#3A3A3A",borderwidth=20,highlightbackground="red",relief="flat") # this Frame is put item 
+    # ######### self.tableFrame=tk.Frame(self.canvas,bg="#3A3A3A",borderwidth=20,highlightbackground="red",relief="flat") # this Frame is put item 
+    # self.canvas.create_window(0,0, window=self.tableFrame,anchor="nw") # put canvas for Frame
+    # self.canvas.grid(row=0,column=0) # decide position
 
+    # ybar = tk.Scrollbar(listFrame,orient=tk.VERTICAL,command=self.canvas.yview,jump=1) # Scrollbar for y-axis direction
+    # ybar.grid(row=0, column=1,sticky=tk.N + tk.S) # decide position and expand y-axis direction
+    # self.canvas.config(yscrollcommand = ybar.set)
+    # columns=["商品","登録名","カテゴリー","金額","数量","割引","合計"] # header of item
+
+    # self.canvas = tk.Canvas(parentFrame,width=100,height=10,scrollregion=(0,0,0,0), bg='white') # to use scroll bar 
     self.canvas=tk.Canvas(listFrame,width=100,height=10,scrollregion=(0,0,0,0), bg='white') # to use scroll bar 
+    # self.tableFrame=tk.Frame(self.canvas,bg="#3A3A3A",borderwidth=20,highlightbackground="red",relief="flat") # this Frame is put item 
     self.tableFrame=tk.Frame(self.canvas,bg="#3A3A3A",borderwidth=20,highlightbackground="red",relief="flat") # this Frame is put item 
     self.canvas.create_window(0,0, window=self.tableFrame,anchor="nw") # put canvas for Frame
     self.canvas.grid(row=0,column=0) # decide position
@@ -64,6 +131,8 @@ class ComfirmReceipt(tk.Frame):
     ybar = tk.Scrollbar(listFrame,orient=tk.VERTICAL,command=self.canvas.yview,jump=1) # Scrollbar for y-axis direction
     ybar.grid(row=0, column=1,sticky=tk.N + tk.S) # decide position and expand y-axis direction
     self.canvas.config(yscrollcommand = ybar.set)
+
+
     columns=["商品","登録名","カテゴリー","金額","数量","割引","合計"] # header of item
     ### display header of item ###
     for i,column in enumerate(columns): 
@@ -191,7 +260,7 @@ class ComfirmReceipt(tk.Frame):
     # print(functionFrame.winfo_width(),functionFrame.winfo_height())
     # print(resultFrame.winfo_width(),resultFrame.winfo_height())
 
-    storeHeaderFrame.configure(width=parentFrame.winfo_width()) # update parentFrame width
+    self.header["Frame"].configure(width=parentFrame.winfo_width()) # update parentFrame width
 
 
     self.root.bind_class("Entry", "<FocusOut>", self.calculateEvent) # Add Event for Entry
@@ -356,19 +425,19 @@ class ComfirmReceipt(tk.Frame):
     """ Called when decide button is clicked. check all item is validation and class new category GUI """
     elements = self.tableFrame.winfo_children()
     isOk = (elements!=[]) # if item is null = false
-    if self.storeNameEntry.get() == "": # Check store name is entered
-      self.storeNameEntry.configure(highlightbackground="red") # if enpty, change Style
+    if self.header["store_Entry"].get() == "": # Check store name is entered
+      self.header["store_Entry"].configure(highlightbackground="red") # if enpty, change Style
       isOk=False # error
     else: # entered
-      self.store[0]=self.storeNameEntry.get() 
-      self.storeNameEntry.configure(highlightbackground="#565656") # cahnge Style
+      self.store[0]=self.header["store_Entry"].get() 
+      self.header["store_Entry"].configure(highlightbackground="#565656") # cahnge Style
     
-    if self.dateEntry.get() == "": # Check store name is entered
-      self.dateEntry.configure(highlightbackground="red") # if enpty, change Style
+    if self.self.header["date_Entry"].get() == "": # Check store name is entered
+      self.self.header["date_Entry"].configure(highlightbackground="red") # if enpty, change Style
       isOk=False # error
     else: # entered
-      self.data=self.dateEntry.get()
-      self.dateEntry.configure(highlightbackground="#565656") # cahnge Style
+      self.data=self.self.header["date_Entry"].get()
+      self.self.header["date_Entry"].configure(highlightbackground="#565656") # cahnge Style
     for i,element in enumerate(elements):
       if type(element) == ttk.Combobox: # check for Combobox
         if "---" in element.get(): # if entered "---""
@@ -389,7 +458,7 @@ class ComfirmReceipt(tk.Frame):
     if isOk == True: # no error
       self.allItem=[] # for all item 
       for i in range(int(len(elements)/8)):
-        oneLine = {"store":self.store[0],"date":self.date,"purpose":self.purposeCombobox.get(),"item": elements[i*8].get(),"registed_name": elements[i*8+1].get(),"genre": elements[i*8+2].get(),"price":elements[i*8+3].get(),"amount":elements[i*8+4].get(),"discount":0,"total":0} # for each row
+        oneLine = {"store":self.store[0],"date":self.date,"purpose":self.self.header["purpose_Combobox"].get(),"item": elements[i*8].get(),"registed_name": elements[i*8+1].get(),"genre": elements[i*8+2].get(),"price":elements[i*8+3].get(),"amount":elements[i*8+4].get(),"discount":0,"total":0} # for each row
         line_discount = elements[i*8+5].get()
         line_total = elements[i*8+6].get()
         if line_discount.isdecimal(): # whether discount is included "%" or string or not
