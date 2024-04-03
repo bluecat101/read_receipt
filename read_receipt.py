@@ -66,9 +66,9 @@ class ReadReceipt:
       image_path =os.path.abspath(receipt_name)
       # Get text and coordinates of it from receipt. format is like JSON
       recognition_result = self.do_character_recogition(image_path)
-      
     # Analyse receipt to get item, purchase store etc...
     line_text = self.analyse(exec_type,recognition_result)
+    print(line_text)
     self.search_texts(line_text)
   
   def do_character_recogition(self,image_path):
@@ -167,7 +167,7 @@ class ReadReceipt:
       
     if "develop" in exec_type: # don't analyse
       # TEST_DATA that sample receipt data
-      line_text = ['そうてつローゼン', '港南台店TEL:045(832)1211', '相鉄ローゼン株式会社', '本社住所:横浜市西区北幸2-9-14', '登録番号:T9020001037881', '*********', '毎度ご来店ありがとうございます', '今月は休まず営業いたします', '**************', '2024年1月27日(土)16:14', '*202005ほうれん草', '¥98 2個 ¥196', '*202004大根', '¥98 2個 ¥196', '*202001なす袋入', '¥198 2個 ¥396', '*101001コウジミリ750g', '¥158 2個 ¥316', '外税8.0% ¥88', '税込小計8点 \\1,192', 'ガチャクーポン1枚 -\\50', '合計', '(税込8.0%対象額 ¥1,142', '¥1,142)', '8.0%消費税等 ¥84', '税額計 ¥84', '*」は軽減税率対象商品です', 'ホット \\1,142', '\\1,142', '顧客コード*********0617', 'カード発行会社ラクテンカード 00056', '****8624I', '会員番号************8624', 'お取扱日2024-01-27 16:14:04', '真番号 取引内容', '410421833 お買上', '取扱区分 承認番号', '(110)00761523', '分割回数処理通番合計額(TOTAL)', '1221 ¥1,142', 'A0000000031010 ATC000d00IC', 'ALVISACREDIT', '加盟店', '相鉄ローゼン港南台店', 'TEL:045-832-1211', '★今月ランクレギュラー', '<<ポイント情報>>', '1,104円', 'ポイント対象金額 1,104円)', '(うち3倍対象', '前回累計ポイント 3,283A', '剪圖 上ポイント 15点', '3,298点', '累計ポイント', '2,172円', '今月買上金額累計', '鍵', '来月ラングレギュラー', '今月あと17828円お買上げで', 'ブロンズにランクUP', '来月5日に50Pプレゼント', 'キャッシャ:鈴木啓', 'R4104-#1221']
+      line_text = ['そうてつローゼン', '港南台店TEL:045(832)1211', '相鉄ローゼン株式会社', '本社住所:横浜市西区北幸2-9-14', '登録番号:T9020001037881', '*********', '毎度ご来店ありがとうございます', '今月は休まず営業いたします', '**************', '2024年1月27日(土)16:14', 'つぶグミP濃厚ぶどう', '¥98 2個 ¥196', '*202004大根', '¥98 2個 ¥196', '*202001なす袋入', '¥198 2個 ¥396', '*101001コウジミリ750g', '¥158 2個 ¥316', '外税8.0% ¥88', '税込小計8点 \\1,192', 'ガチャクーポン1枚 -\\50', '合計', '(税込8.0%対象額 ¥1,142', '¥1,142)', '8.0%消費税等 ¥84', '税額計 ¥84', '*」は軽減税率対象商品です', 'ホット \\1,142', '\\1,142', '顧客コード*********0617', 'カード発行会社ラクテンカード 00056', '****8624I', '会員番号************8624', 'お取扱日2024-01-27 16:14:04', '真番号 取引内容', '410421833 お買上', '取扱区分 承認番号', '(110)00761523', '分割回数処理通番合計額(TOTAL)', '1221 ¥1,142', 'A0000000031010 ATC000d00IC', 'ALVISACREDIT', '加盟店', '相鉄ローゼン港南台店', 'TEL:045-832-1211', '★今月ランクレギュラー', '<<ポイント情報>>', '1,104円', 'ポイント対象金額 1,104円)', '(うち3倍対象', '前回累計ポイント 3,283A', '剪圖 上ポイント 15点', '3,298点', '累計ポイント', '2,172円', '今月買上金額累計', '鍵', '来月ラングレギュラー', '今月あと17828円お買上げで', 'ブロンズにランクUP', '来月5日に50Pプレゼント', 'キャッシャ:鈴木啓', 'R4104-#1221']
       return line_text
     # First element in recognition_result is full text. Use this text to judge whether each text is same line or not.
     # First element is to use '\n'(new line code) so split with '\n' and return type of array
@@ -186,10 +186,13 @@ class ReadReceipt:
     # Initialize to save line_text_info_ver1
     # vertices[0] is left top, vertices[1] is right top, vertices[2] is right bottom, vertices[3] is left bottom
     one_line = {"text": "","vertices":[{"x":-1,"y":-1},{"x":-1,"y":-1},{"x":-1,"y":-1},{"x":-1,"y":-1}]}
+    print(full_text)
     for word in recognition_result:
       # Until get some word in full_text 
       # Coordinates in recognition_result are absolute in full_text order, so you can search in order.
+      print("%d ,full_text[%s] [%s]"%(pointer_for_full_text,full_text[pointer_for_full_text],word.description))
       while len(full_text) > pointer_for_full_text and not(word.description in full_text[pointer_for_full_text]):
+        print(full_text[pointer_for_full_text]," is not found ",)
         if one_line["text"] != "": # Find text data
           line_text_info_ver1.append(one_line)
           # Reset one_line to save line_text_info_ver1
@@ -197,10 +200,14 @@ class ReadReceipt:
         # Move pointer to point next
         pointer_for_full_text += 1
         # Finish to search
-        if len(full_text) <= pointer_for_full_text:
-         break
+      if len(full_text) <= pointer_for_full_text:
+        break
       # Delete found word to avoid duplicates
-      full_text[pointer_for_full_text] = full_text[pointer_for_full_text].lstrip(word.description)
+      # Get first index found. If using re.search(), when "(" is search word you must escape.
+      # If using removeprefix, it will not work when a space is present
+      index = full_text[pointer_for_full_text].index(word.description)
+      full_text[pointer_for_full_text] = full_text[pointer_for_full_text][:index]+full_text[pointer_for_full_text][index+len(word.description):]
+
       if one_line["text"] == "": # First new line word and is not connection of words
         update_coordinates(one_line, word, 0) # Update left top coordinates
         update_coordinates(one_line, word, 3) # Update left bottom coordinates
@@ -242,8 +249,8 @@ class ReadReceipt:
     # Sort by y coordinate because OCR is not arranged in the order of y coordinate (because it considers x coordinate)
     # Since the x coordinate is taken into account, if you sort before this timing, the number of joins on the left will increase.
     line_text_info = sorted(line_text_info, reverse=False, key=lambda x: x["vertices"][0]["y"])
-    # Get only text 
-    line_text = [x["text"] for x in line_text_info]
+    # Get only text and delete "," as it gets in the way when searching for the amount.
+    line_text = [x["text"].replace(",","") for x in line_text_info]
     return line_text
     
   def search_texts(self,line_text):
@@ -253,16 +260,13 @@ class ReadReceipt:
       If the date is not found, this method can't determine where item stert, so read all data from top to bottom.
       
     ## Args:
-      `line_text (str[][])`: Include text line by line
+      `line_text (str[])`: Include text line by line
       `status (str)`: Type is "first" or "secound". If the date is not found, this method is called again and the status argument is "secound"
 
     # Returns:
         # `_ (bool)`: Whether date is found. In first time it is called, if date is not found, it returns False and is called again to set the date to "sample" as a dummy.
     """
-    # Whether line_text[] has price
-    # line_text[] is included about item, discount,total price etc....
-    # So some line_text[] is not for item. Then has_item_price is false.
-    has_item_price = True
+
     # End reading line_text. If find "小計(subtotal)", the flag is True 
     isFinish = False
     
@@ -275,7 +279,7 @@ class ReadReceipt:
         self.find_store(text)
       # Get purchase date, if it is not found yet
       if self.date=="":
-        # Date type is yyyy/mm/dd
+        # Date type is yyyy/mm/dd, yyyy年mm月dd
         result_date = re.search('(20[0-9]{2})(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text)
         if result_date:
           self.date = str(dt.date(int(result_date.group(1)),int(result_date.group(3)),int(result_date.group(5))))
@@ -283,7 +287,7 @@ class ReadReceipt:
           self.item_list.clear()
           continue
 
-        # Date type is mm/dd/yyyy
+        # Date type is mm/dd/yyyy, 日mm月dd年yyyy
         result_date = re.search('(日)([1-3][0-9]|[1-9])(月)(1[0-2]|0[1-9]|[1-9])(年)(20[0-9]{2})',text)
         if result_date:
           self.date = str(dt.date(int(result_date.group(6)),int(result_date.group(4)),int(result_date.group(2))))
@@ -297,11 +301,9 @@ class ReadReceipt:
         # Delete item_list before date
         self.item_list.clear()
         continue
-      
       # Find total then finish search
       if "合計" in text:
         break
-
       # Sometime, discount exist after "小計"(subtotal)
       if isFinish: # After find "小計"(subtotal)
         # Find discount
@@ -327,152 +329,100 @@ class ReadReceipt:
             # Add discount to previous item
             if(price):
               self.item_list[-1]["discount"] = int(price.group())
-        elif re.search('[0-9]+個',text): # text line is not discount and it is related quantity
-          try:
-            if has_item_price: # Previous line is related item and it was purchased multiple items
-              ## 注意お店によって、計算式が違う
-              ## 一列に(1つあたりの金額)*(個数)=(合計)がある場合のみ
-              ## 1つの値段があって次の行に合計がある場合には不可
-              # print(line_text)
-              # print("===========")
-              # print(self.item_list)
-              # print("===========")
-              # print(text)
-              self.item_list[-1]["amount"]=re.search('([0-9]+)個',text).group()[:-1] # get quantity
-              self.item_list[-1]["price"]=int((self.item_list[-1]["price"])/int(self.item_list[-1]["amount"])) # add price per one item
-            else: # don't have item yet but find quantity
-              print("can't find item",sys.stderr)
-          except TypeError:
-            print("TypeError in finding quantity",sys.stderr)
-          except AttributeError:
-            print("AttributeError in finding quantity",sys.stderr)
-        else: # find item name
-          item_info = self.findItem(text,item_info) # whether item is register for DB
-          # if text == "", item_info is False
-          if not(item_info):
-            continue
-          has_item_price = (item_info["price"] != "") # use has_item_price to search amount
+        elif re.search('[0-9]+個',text): # Text line is not related discount but it is related quantity
+          if len(self.item_list) != 0: # Previous line exist
+            # Get quantity and set to previous line
+            self.item_list[-1]["amount"] = re.search('([0-9]+)個',text).group()[:-1] 
+            # Set price when item is found but price is not found
+            if self.item_list[-1]["price"] == -1: 
+              searched_price = re.search("([0-9]+)(?!.*g$)?$",text)
+              if searched_price:
+                self.item_list[-1]["price"] = int(searched_price.group(1))
+            # Update price per one item
+            self.item_list[-1]["price"] = int((self.item_list[-1]["price"])/int(self.item_list[-1]["amount"])) 
+        elif(text != ""): # Other type may be item, so record the line
+          # Whether item is registed for DB and store data for item_info
+          self.find_item(text,item_info) 
           self.item_list.append(item_info)
-    # if date is not found, return false and search secound time 
-    # if status == "first":
-    #   if self.date == "": self.date = "sample"
-    #   # if self.store == "": self.store = "sample"
-    # if status == "secound":
-    #   if self.date == "sample": self.date = ""
-      # if self.store == "sample": self.store = ""
-    # print(status,self.date,self.store,self.item_list) 
-    # return self.item_list == []
+
   def find_store(self,text):
-    """ find Store name form DataBase """
+    """
+    ## Discription
+      Search for purchase locations registered in store DB from text and store to self.store
+      
+    ## Args:
+      `text (str)`: each line text
+    """
     for storeName in sDB.storeDB: 
       if storeName in text: # whether store name is included for text
         self.store=storeName
-        return True
-    return False
 
-  def findItem(self,text,item_info):
-    # change data for each store
+  def find_item(self,text,item_info):
+    """
+    ## Description:
+      Search for registered item in item_db.
+      item in item_db is registered as Hiragara or Katakana but some receipts are written differently, so search while converting registered item names to other notation methods
+    ## Args:
+        text (str): For searching line text
+        item_info (dict): To store searched data
+    """
+    # Change data by each store
+    # Some receipt has characteristics such as having extra characters then delete it
     text = sDB.setting(self.store,text)
-    item_info["item"] = text
-    if text == "":
-      return False
-    # print(text)
-    kks = kakasi()
-    # get boarder line between item and price
-    price = re.search("([0-9]+).?$",text)
-    # devide item and price
-    if price:
-      text = text[:price.start()]
+    item_info["item"] = text # Store processed text
+    kks = kakasi() # Make instance to convert for HIragana and Katakana
+    # Get boarder line between item and price
+    searched_price = re.search("([0-9]+)(?!.*g$).?$",text)
+    # Devide item and searched_price
+    if searched_price:
+      text = text[:searched_price.start()]
       item_info["item"] = text
-      price = int(price.group(1))
-      item_info["price"] = int(price)
+      item_info["price"] = int(searched_price.group(1))
+      # Leave it at one for now.
       item_info["amount"] = 1
 
-    """ find item name from DataBase. 2nd argument is word maybe it become item name. """
-    for itemGenre,itemValue in iDB.itemDB.items(): # roop from DB
-      for dbItem in itemValue: # roop in each item name
-        itemConvert=dbItem # get DB item name to change Kanji, Hiragana, Katakana and Half Katakana.
-        ### check type of item name in DB whether Kanji, Hiragana, Katakana and Half Katakana and change status. ###
-        if re.match('^\p{Script=Han}+$', itemConvert): # Kanji
+    # Find item name from DataBase
+    # Get item from DataBase and search by changing the notation method
+    for item_genre,item_value in iDB.itemDB.items(): # Roop from DB
+      for db_item in item_value: # Roop in each item name
+        item_convert=db_item # get DB item name to change Kanji, Hiragana, Katakana and Half Katakana.
+        # Check type of item name in DB whether Kanji, Hiragana, Katakana and Half Katakana and change status.
+        if re.match('^\p{Script=Han}+$', item_convert): # Kanji
           itemTypeStatus = 4
-        elif re.match('[あ-ん]+', itemConvert): # Hiragana
+        elif re.match('[あ-ん]+', item_convert): # Hiragana
           itemTypeStatus = 3
-        elif re.match('[ア-ン]+', itemConvert): # Katakana
+        elif re.match('[ア-ン]+', item_convert): # Katakana
           itemTypeStatus = 2
-        elif re.match('[ｱ-ﾝ]+', itemConvert): # Half Katakana
+        elif re.match('[ｱ-ﾝ]+', item_convert): # Half Katakana
           itemTypeStatus = 1
         else: # English, Other language or combination of tow character type
           itemTypeStatus=0
         while itemTypeStatus != -1:
-          regular=re.escape(itemConvert)  # make regular expression object.
-          if re.search(regular,text) or text in iDB.special_name.keys(): # if itemConvert is included in text
-            item_info["item"] = text
-            if any(map(lambda key: text in key, iDB.special_name.keys())):
-              for key in iDB.special_name.keys():
-                if text in key:
-                  registed_name = iDB.special_name[key][0]
-                  genre = iDB.special_name[key][1]
-                  break
-            else:
-              registed_name = dbItem
-              genre = itemGenre
-            # set registed_name and genre
+          regular=re.escape(item_convert)  # Make regular expression object.
+          if any(map(lambda key: text in key, list(iDB.special_name.keys()))): # Find text in special name
+            # Find which matches
+            # Save time by first using any instead of for statement
+            for key in iDB.special_name.keys():
+              if text in key:
+                # Get registed_name and genre
+                registed_name = iDB.special_name[key][0]
+                genre = iDB.special_name[key][1]
+                item_info["registed_name"] = registed_name
+                item_info["genre"] = genre
+                return
+          elif(re.search(regular,text)): # Find text
+            # Get registed_name and genre
+            registed_name = db_item
+            genre = item_genre
             item_info["registed_name"] = registed_name
             item_info["genre"] = genre
-            return item_info
-          itemTypeStatus -= 1 # change type
-          if itemTypeStatus ==3:
-            itemConvert = kks.convert(itemConvert)[0]['hira'] # change type of word for Hiragana
-          elif itemTypeStatus ==2:
-            itemConvert = kks.convert(itemConvert)[0]['kana'] # change type of word for Katakana
-          elif itemTypeStatus ==1:
-            itemConvert=mojimoji.zen_to_han(itemConvert) # change type of word for Half Katakana
-    return item_info 
-
-  # def combine(self,full_text):
-  #   """ search each text in full_text. Get and Combine word. Return words by each line. 2nd argument is all text infomation in receipt. """
-  #   def addNewLine(text):
-  #     """ 1st argument is one line text infomation. """
-  #     data_array=[] # store word info
-  #     data_array.append(text.description) # stored one word
-  #     data_array.append(text.bounding_poly.vertices[1].x) # get word position about x
-  #     data_array.append(text.bounding_poly.vertices[1].y) # get word position about y
-  #     data_array.append(text.bounding_poly.vertices[2].y) # get word position about y
-  #     data_array.append((text.bounding_poly.vertices[2].y-text.bounding_poly.vertices[1].y)*2/3) # save range that is need to combine other words
-  #     # data_array.append(full_text.index(text)) # save index to sort
-  #     return data_array
-
-  #   lineInfo=[]
-  #   for text in full_text:
-  #     if lineInfo==[]: # first roop
-  #       lineInfo.append(addNewLine(text)) # save for lineInfo array
-  #     else: # secound time onwards roop 
-  #       if(text.bounding_poly.vertices[0].y >lineInfo[-1][2]-lineInfo[-1][4] and text.bounding_poly.vertices[0].y <lineInfo[-1][3]+lineInfo[-1][4]):
-  #         """ Whethrer this text is included preve word's range """
-  #         if lineInfo[-1][1]<text.bounding_poly.vertices[1].x: # Whther position of this text is after prev word.
-  #           lineInfo[-1][0]+=text.description # connect prev word and this word
-  #         else:
-  #           lineInfo[-1][0]=text.description+lineInfo[-1][0] # connect prev word and this word
-  #         lineInfo[-1][2]=text.bounding_poly.vertices[1].y # update position y
-  #       else:
-  #         for line in reversed(lineInfo): # search word form last word
-  #           if(text.bounding_poly.vertices[0].y >line[2]-line[4] and text.bounding_poly.vertices[0].y <line[3]+line[4]):
-  #             """ Whethrer this text is included preve word's range """
-  #             if line[1]<text.bounding_poly.vertices[1].x: # Whther position of this text is after prev word.
-  #               line[0]+=text.description # connect prev word and this word
-  #             else:
-  #               line[0]=text.description+line[0] # connect prev word and this word
-  #             line[2]=text.bounding_poly.vertices[1].y # update position y
-  #             break
-  #         else: # can't find some position word in lineInfo
-  #           lineInfo.append(addNewLine(text)) # save for lineInfo array
-  #   return lineInfo
-  
-
-  def getItemLine(self):
-    return self.item_list
-  def getDate(self):
-    return self.date
-  def getStore(self):
-    return self.store
-
+            return
+          else:
+            # Change type of the notation method
+            itemTypeStatus -= 1
+            if itemTypeStatus ==3:
+              item_convert = kks.convert(item_convert)[0]['hira'] # Change type of word for Hiragana
+            elif itemTypeStatus ==2:
+              item_convert = kks.convert(item_convert)[0]['kana'] # Change type of word for Katakana
+            elif itemTypeStatus ==1:
+              item_convert=mojimoji.zen_to_han(item_convert) # Change type of word for Half Katakana

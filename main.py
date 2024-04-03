@@ -5,7 +5,7 @@ import gui as ui
 import record_receipt as recordre
 from tkinter import filedialog
 
-exec_type = "production" # select type of execution： production,develop_receipt,develop_noreceipt
+exec_type = "develop_receipt" # select type of execution： production,develop_receipt,develop_noreceipt
 
 """
 # TODO
@@ -40,11 +40,11 @@ def main(image_name):
     # Make ReadRecipt instance and read receipt
     receipt_info=readre.ReadReceipt(image_name,exec_type)
     # Get product details  line by line 
-    item_line=receipt_info.getItemLine()
+    item_line=receipt_info.item_list
     # Get store name from receipt
-    store=receipt_info.getStore()
+    store=receipt_info.store
     # Get Date from receipt
-    date=receipt_info.getDate()
+    date=receipt_info.date
     # Get special discount data from receipt because
     # special discout does not belong to any product
     special_discount = receipt_info.special_discount
@@ -55,11 +55,11 @@ def main(image_name):
     # Make ReadRecipt instance and read receipt
     receipt_info=readre.ReadReceipt(image_name)
     # Get product details  line by line 
-    item_line=receipt_info.getItemLine()
+    item_line=receipt_info.item_list
     # Get store name from receipt
-    store=receipt_info.getStore()
+    store=receipt_info.store
     # Get Date from receipt
-    date=receipt_info.getDate()
+    date=receipt_info.date
     # Get special discount data from receipt because
     # special discout does not belong to any product
     special_discount = receipt_info.special_discount
