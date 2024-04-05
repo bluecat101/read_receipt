@@ -2,7 +2,7 @@
 # ------------------ README ------------------ #
 # do character recognition with Google Coloud  #
 # read receipt and analyse                     #
-# get name, genre, price, descount and quantity#
+# get name, category, price, descount and quantity#
 #                                              #
 ################################################
 
@@ -30,8 +30,8 @@ class ReadReceipt:
   ## Attributes:
     `item_list (dictionary[])`: Store item data line by line 
     ex) [{'item': read item text(str), 
-        'registed_name': general item name(str),
-        'genre': genre(str),
+        'registered_name': general item name(str),
+        'category': category(str),
         'amount': item amount(int),
         'discount': discount amount },
     ]
@@ -269,7 +269,7 @@ class ReadReceipt:
     # Search line_text to find item
     for text in line_text:
       # Use dictionary type for each line.
-      item_info={"item": text,"registed_name": "---","genre": "---","price":-1,"amount":0,"discount":0}
+      item_info={"item": text,"registered_name": "---","category": "---","price":-1,"amount":0,"discount":0}
       # Get purchase store, if it is not found yet
       if self.store == "":
         self.find_store(text)
@@ -304,10 +304,9 @@ class ReadReceipt:
       if isFinish: # After find "小計"(subtotal)
         # Find discount
         if "クーポン" in text:
-          # get price
+          # Get price
           searched_discount= re.search('[0-9]+$',text)
-          if searched_discount:
-            # Get discount price
+          if searched_discount: # Get discount price
             self.special_discount.append([text[:searched_discount.start()-1],int(searched_discount.group())])
       else: # Before find "小計"(subtotal)
         if "小計" in text: # quit to read item in receipt
@@ -400,18 +399,18 @@ class ReadReceipt:
             # Save time by first using any instead of for statement
             for key in iDB.special_name.keys():
               if text in key:
-                # Get registed_name and genre
-                registed_name = iDB.special_name[key][0]
-                genre = iDB.special_name[key][1]
-                item_info["registed_name"] = registed_name
-                item_info["genre"] = genre
+                # Get registered_name and category
+                registered_name = iDB.special_name[key][0]
+                category = iDB.special_name[key][1]
+                item_info["registered_name"] = registered_name
+                item_info["category"] = category
                 return
           elif(re.search(regular,text)): # Find text
-            # Get registed_name and genre
-            registed_name = db_item
-            genre = item_genre
-            item_info["registed_name"] = registed_name
-            item_info["genre"] = genre
+            # Get registered_name and category
+            registered_name = db_item
+            category = item_genre
+            item_info["registered_name"] = registered_name
+            item_info["category"] = category
             return
           else:
             # Change type of the notation method
