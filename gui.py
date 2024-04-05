@@ -20,15 +20,15 @@ class ComfirmReceipt(tk.Frame):
     This class is related GUI. You can comfirm OCR is correct or not.
     You add some new data, delete extra data and fix data
   ## Attributes:
-    `root () `: The base frame for gui
-    `date () `: To store purchase date
-    `store () `: To store purchase store
-    `discount () `: To store special discount like coupon
-    `main_table () `: 
-    `shopping_results () `: 
-    `allItem () `: 
-    `new_category () `: 
-  
+    `root () `            : The base frame for gui
+    `date () `            : To store purchase date
+    `store () `           : To store purchase store
+    `discount () `        : To store special discount like coupon
+    `main_table () `      : Display information related to products
+    `boolean_Checkbox ()` : To refer to whether the reduced tax rate is applicable or not between different methods without registering in the widget
+    `shopping_results () `: Display subtotal, special discount, total
+    `all_item () `        : To pass all data
+    `new_category () `    : To record new category with Japanese and English
   """
   root = tk.Tk() # Make display
   def __init__(self,items,date,store,discount): 
@@ -37,9 +37,9 @@ class ComfirmReceipt(tk.Frame):
       Set class argument and set frame and input recognized item
 
     ## Args:
-        `items (str[][])`: All item
-        `date (str)`: Purchase date
-        `store (str)`: Purchase store
+        `items (str[][])`   : All item
+        `date (str)`        : Purchase date
+        `store (str)`       : Purchase store
         `discount (str[][])`: Special discount
     """
     super().__init__(self.root)
@@ -52,29 +52,35 @@ class ComfirmReceipt(tk.Frame):
     self.store=[store,sdb.tax(store)] # Get purchase store and whether tax is included or excluded from store name
     self.discount = discount
     self.discount_total = sum(list(zip(*discount))[1]) if len(discount) > 0 else 0 # Total discount, self.discount is duplicate list so calculate this way
-
+    self.boolean_Checkbox = []
     # Make frame for part of header and set purchase store,purpose and date.
     self.header={"Frame":tk.Frame(self.root,height=40)}
     self.header["Frame"].pack(pady = 0)
     self.header.update(
-      store_Label      = tk.Label(self.header["Frame"],text="店舗名: "),
-      store_Entry      = tk.Entry(self.header["Frame"],width=20),
-      purpose_Label    = tk.Label(self.header["Frame"],text="目的: "),
-      purpose_Combobox = ttk.Combobox(self.header["Frame"],value=["家族","父"]),
-      date_Label       = tk.Label(self.header["Frame"],text="日付: "),
-      date_Entry       = tk.Entry(self.header["Frame"],width=15)
+      store_Label      = tk.Label(self.header["Frame"], text="店舗名: "),
+      store_Entry      = tk.Entry(self.header["Frame"], width=20),
+      purpose_Label    = tk.Label(self.header["Frame"], text="目的: "),
+      purpose_Combobox = ttk.Combobox(self.header["Frame"], value=["家族","父"], width=3),
+      tax_Label        = tk.Label(self.header["Frame"], text="税: "),
+      tax_Combobox     = ttk.Combobox(self.header["Frame"], value=["内税","外税"], width=3),
+      date_Label       = tk.Label(self.header["Frame"], text="日付: "),
+      date_Entry       = tk.Entry(self.header["Frame"], width=15)
     )
     # Inisialize data
-    self.header["store_Entry"].insert(0,self.store[0]) # Set store name
-    self.header["date_Entry"].insert(0,self.date)      # Set date             
-    self.set_style(self.header["purpose_Combobox"])     # Set style
-    self.header["purpose_Combobox"].set("家族")        # Set item category 
+    self.header["store_Entry"].insert(0,self.store[0])  # Set store name
+    self.header["purpose_Combobox"].set("家族")          # Set item category 
+    self.header["tax_Combobox"].set(self.store[1])      # Set item category
+    self.header["tax_Combobox"].bind("<<ComboboxSelected>>",self.calculate_event)
+    self.header["date_Entry"].insert(0,self.date)       # Set date
+
     
     # Set up things
     self.header["store_Label"].place(relx=0.0)         
     self.header["store_Entry"].place(relx=0.08)        
-    self.header["purpose_Label"].place(relx=0.43)      
-    self.header["purpose_Combobox"].place(relx=0.48)   
+    self.header["purpose_Label"].place(relx=0.40)      
+    self.header["purpose_Combobox"].place(relx=0.45)
+    self.header["tax_Label"].place(relx=0.55)      
+    self.header["tax_Combobox"].place(relx=0.58)   
     self.header["date_Label"].place(relx=0.7)         
     self.header["date_Entry"].place(relx=0.75)          
     
@@ -83,33 +89,36 @@ class ComfirmReceipt(tk.Frame):
     self.main_table["Frame"].pack(pady=1)  # Set position
 
     # Make table head and body and canvas to use scrollbar 
-    self.main_table["head_Frame"]= tk.Frame(self.main_table["Frame"])
+    self.main_table["head_Frame"]= tk.Frame(self.main_table["Frame"],width=750)
     self.main_table["Canvas"]=tk.Canvas(self.main_table["Frame"],width=100,height=10,scrollregion=(0,0,0,0), bg='white') # to use scroll bar 
     self.main_table["body_Frame"]=tk.Frame(self.main_table["Canvas"],bg="#3A3A3A",borderwidth=20,highlightbackground="red",relief="flat" ) # this Frame is put item 
     self.main_table["Canvas"].create_window(0,0, window=self.main_table["body_Frame"],anchor="nw") # put canvas for Frame
     self.main_table["Scrollbar"] = tk.Scrollbar(self.main_table["Frame"],orient=tk.VERTICAL,command=self.main_table["Canvas"].yview) # Scrollbar for y-axis direction
-
+    
+    
     # set up things 
     self.main_table["head_Frame"].grid(row=0,column=0)
     self.main_table["Canvas"].grid(row=1,column=0,sticky=tk.N + tk.S)     # Expand y-axis direction 
     self.main_table["Scrollbar"].grid(row=1, column=1,sticky=tk.N + tk.S) # Expand y-axis direction
     self.main_table["Canvas"].config(yscrollcommand = self.main_table["Scrollbar"].set)
+    
 
-    columns=["商品","登録名","カテゴリー","金額","数量","割引","合計"] # Item for table header
-
+    columns=["軽","商品","登録名","カテゴリー","金額","数量","割引","合計"] # Item for table header
     # display table header
-    for i,column in enumerate(columns): 
+    for i,column in enumerate(columns):
       column_Label=tk.Label(self.main_table["head_Frame"],text=column)
-      self.set_style(column_Label) # Set Style
-      if i == 1 or i == 2: # Change width of label whether element of table body is tk.Entry or ttk.Combobox 
+      if i == 0: # For tax labe;
         column_Label.configure(padx=5)
-        column_Label.grid(row=0,column=i,ipadx=6)
+        column_Label.grid(row=0,column=i)
+      elif i == 2 or i == 3: # Change width of label whether element of table body is tk.Entry or ttk.Combobox 
+        column_Label.configure(width=7,padx=10)
+        column_Label.grid(row=0,column=i) 
       else:
-        column_Label.configure(padx=1)
+        column_Label.configure(width=7,padx=3)
         column_Label.grid(row=0,column=i)
     # For delete button head
-    column_Label=tk.Label(self.main_table["head_Frame"],width=8,padx=3,bg="#3A3A3A") # Label for delete Button
-    column_Label.grid(row=0,column=7,ipadx=17)
+    column_Label=tk.Label(self.main_table["head_Frame"],width=5,padx=3,bg="#3A3A3A") # Label for delete Button
+    column_Label.grid(row=0,column=8,ipadx=20)
 
     # Make list of registered name
     # Connect category name(key) and item name(value)
@@ -121,28 +130,26 @@ class ComfirmReceipt(tk.Frame):
 
     # Add each line with item, registered name, category etc...
     for i,item in enumerate(items): # For all items
-      self.addItem(item=item["item"], registered_name=item["registered_name"], category=item["category"], price=item["price"], amount=item["amount"], discount=item["discount"])
+      self.add_item(item=item["item"], registered_name=item["registered_name"], category=item["category"], price=item["price"], amount=item["amount"], discount=item["discount"])
     # Update self.main_table["Frame"] size because tableFrame is added many item and to change size of scrollbar in canvas
     self.main_table["Frame"].update_idletasks()
 
     # Include decide, add button and total label
     footer=tk.Frame(self.root)
     decide_Button=ttk.Button(footer,text="決定",command=self.decide) # Button for decide function
-    add_Button=ttk.Button(footer,text="+",command=self.addItem)     # Button for add function
+    add_Button=ttk.Button(footer,text="+",command=self.add_item)     # Button for add function
     shopping_results_Frame = tk.Frame(footer,relief=tk.SOLID)
 
     # Label for shopping results
     shopping_results_Label={
-      "subtotal": tk.Label(shopping_results_Frame,text="小計"),
+      "subtotal": tk.Label(shopping_results_Frame,text="小計(税)"),
       "discount": tk.Label(shopping_results_Frame,text="割引"),
-      # tax      = ttk.Combobox(shopping_results_Frame,value=["内税","外税"],width=3),
       "total"   : tk.Label(shopping_results_Frame,text="合計"),
     }
     # Value for shopping results
     self.shopping_results = {
       "subtotal" :tk.Label(shopping_results_Frame,text=0),
       "discount" :tk.Entry(shopping_results_Frame,width=5, justify=tk.RIGHT,bg="#4B4B4B"),
-      # "tax"      :tk.Label(shopping_results_Frame,text=0),
       "total"    :tk.Label(shopping_results_Frame,text=0)
     }
     # add style setting and function
@@ -152,13 +159,8 @@ class ComfirmReceipt(tk.Frame):
     self.shopping_results["discount"].insert(0,self.discount_total)
     self.shopping_results["discount"].bind("<Enter>", self.display_discount_detail)
     self.shopping_results["discount"].bind("<Leave>", self.leave_discount_detail)
-    self.shopping_results["discount"].bind("<Return>",self.calculateEvent)
-    
-    
-    # shopping_results_Label["tax"].set(self.store[1])        
-    # shopping_results_Label["tax"].bind("<<ComboboxSelected>>",lambda event: self.change_tax(event,shopping_results_Label["tax"].get()))
-    # shopping_results_Label["tax"].bind("<<ComboboxSelected>>",self.change_tax)
-    
+    self.shopping_results["discount"].bind("<Return>",self.calculate_event)
+
     # Setting up
     footer.pack() 
     decide_Button.place(relx=0.35)
@@ -176,20 +178,8 @@ class ComfirmReceipt(tk.Frame):
     self.calculate()    # calculate total
 
     self.header["Frame"].configure(width=self.main_table["Frame"].winfo_width()) # update self.main_table["Frame"] width because the width was changed by added item
-    self.root.bind_class("Entry", "<FocusOut>", self.calculateEvent) # Add Event for Entry
+    self.root.bind_class("Entry", "<FocusOut>", self.calculate_event) # Add Event for Entry
 
-
-  # def change_tax(self,event,kind_of_tax):
-  #   """
-  #   ## Description:
-
-
-  #   Args:
-  #       event (_type_): _description_
-  #       kind_of_tax (_type_): _description_
-  #   """
-  #   self.store[1] = kind_of_tax
-  #   self.calculate()
   def display_discount_detail(self,_event):
     """
     ## Description:
@@ -212,6 +202,7 @@ class ComfirmReceipt(tk.Frame):
       # Setting up
       name_Label.grid(row = i, column = 0)
       value_Label.grid(row = i, column = 1)
+
   def leave_discount_detail(self,_event): 
     """
     ## Description:
@@ -224,19 +215,8 @@ class ComfirmReceipt(tk.Frame):
     # delete widget
     if tw:
       tw.destroy()
-  
-  # def caculate_result(self,event):
-  #   self.shopping_results["subtotal"].configure(text=subtotal)                        # insert subtotal num and "yesn"
-  #   discount = int(self.shopping_results["discount"].get())
-  #   tax = int((subtotal-discount)*0.08)
-  #   self.shopping_results["tax"].configure(text = tax)                        # insert tax num and "yesn"
-  #   self.shopping_results["total"].configure(text = subtotal - discount + tax)                        # insert total num and "yesn"
-  # def calculate(self,event): # execute when tk.Entry FocusOut
-  #   print("aaa")
-  #   self.calculate()              # call calculate function
 
   def category_event(self,event): # When mouse enter one_line["category_Combobox"]
-    # subtotal = 0     # total 
     """
     ## Description:
       When selected or type category, match registered name to the category
@@ -249,7 +229,7 @@ class ComfirmReceipt(tk.Frame):
     else: # New registered category name
       elements[elements.index(event.widget)-1].configure(value="")
     
-  def calculateEvent(self,_event):
+  def calculate_event(self,_event):
     """
     ## Description:
       To overload method of calculate
@@ -265,30 +245,51 @@ class ComfirmReceipt(tk.Frame):
       And Check item whether type of item is int or not
     """
     elements = self.main_table["body_Frame"].winfo_children() # Get all item in tableFrame
-    subtotal = 0
-    for i in range(int(len(elements)/8)):
-      row_elements = elements[i*8:i*8+7]
+    subtotal = [0,0] # [0] is total include tax and [1] is only tax. Don't mind internal or external taxes
+    for i in range(int(len(elements)/9)):
+      row_elements = elements[i*9:i*9+8]
       has_error = self.check_for_error(row_elements,i) # Item price, amount and discount are the right type
       if not(has_error):
-        total_element = row_elements[6]
-        total_element.delete(0,tk.END)                                           # Delete the value already entered
-        total = int(row_elements[3].get())*int(row_elements[4].get())          # Get total from item price and amount
-        if row_elements[5].get().isdecimal():                                 # Discount is only integer
-          total -= int(row_elements[5].get())                                
-        elif re.match("^[0-9]+%$",row_elements[5].get()):                    # Discount has "%"
-          total = int(total*(1-int(re.match("^[0-9]+",row_elements[5].get()).group())/100))
-        total_element.insert(0,total)         
-    self.shopping_results["subtotal"].configure(text=subtotal)               # Insert subtotal
-    # discount = int(self.shopping_results["discount"].get())
-    # if self.store[1] == "内税":
-    #   # tax = int(((subtotal-discount)/1.08)*0.08)
-    #   # self.shopping_results["tax"].configure(text = tax)                        # insert tax num and "yesn"
-    #   self.shopping_results["total"].configure(text = subtotal - discount)                        # insert total num and "yesn"
-    # else:
-    #   self.shopping_results["total"].configure(text = subtotal - discount)                        # insert total num and "yesn"
-    #   # tax = int((subtotal-discount)*0.08)
-    #   # self.shopping_results["tax"].configure(text = tax)                        # insert tax num and "yesn"
-    #   # self.shopping_results["total"].configure(text = subtotal - discount + tax)                        # insert total num and "yesn"
+        total_element = row_elements[7]
+        total_element.delete(0,tk.END)                                        # Delete the value already entered
+        total = [int(row_elements[4].get())*int(row_elements[5].get()),0]     # Get total from item price and amount. [0] is total include tax and [1] is total don't include tax
+        if row_elements[6].get().isdecimal():                                 # Discount is only integer
+          total[0] -= int(row_elements[6].get())                                
+        elif re.match("^[0-9]+%$",row_elements[6].get()):                    # Discount has "%"
+          total[0] = int(total[0]*(1-int(re.match("^[0-9]+",row_elements[6].get()).group())/100))
+        # Calculate the total by dividing into cases including tax and excluding tax.
+        if self.is_external_tax(): # External tax
+          total[1] = total[0]
+          if self.boolean_Checkbox[i]: # Not eligible for reduced tax rate(軽減税率対象外)
+            total[0] = int(total[0] * 1.1)
+          else:                        # Eligible for reduced tax rate(軽減税率対象)
+            total[0] = int(total[0] * 1.08)
+          subtotal[1] += (total[0] - total[1])
+          total_element.insert(0,"%d(%d)"%(total[0],total[1]))
+        else:                      # Internal tax
+          # Calculate internal tax
+          if self.boolean_Checkbox[i]: # Not eligible for reduced tax rate(軽減税率対象外)
+            subtotal[1] += total[0]*(1/11)
+          else:                        # Eligible for reduced tax rate(軽減税率対象)
+            subtotal[1] += total[0]*(8/108)
+          total_element.insert(0,total[0])
+        subtotal[0] += total[0]
+    
+    if self.is_external_tax(): # External tax
+      self.shopping_results["subtotal"].configure(text="%d(%d)"%(subtotal[0],subtotal[1])) # Display total and tax amount
+    else:                      # Internal tax
+      self.shopping_results["subtotal"].configure(text=subtotal[0])
+    discount = int(self.shopping_results["discount"].get())
+    self.shopping_results["total"].configure(text = subtotal[0] - discount)
+  
+  def is_external_tax(self):
+    """
+    ## Description:
+      Whether tax is ecternal or internal
+    ## Retuens:
+      `_(bool)` : Internal tax or external tax
+    """
+    return (self.header["tax_Combobox"].get() == "外税")
   
   def check_for_error(self,elements,row):
     """
@@ -303,13 +304,13 @@ class ComfirmReceipt(tk.Frame):
     has_error = False
     for i,element in enumerate(elements):
       each_has_error = False   # Item price, amount and discount are the right type
-      if i%8 == 0 and element.get() == "": # For item
+      if i%8 == 1 and element.get() == "": # For item
           each_has_error = True
-      elif (i%8 == 1 or i%8==2) and ("---" in element.get() or element.get() == ""): # For registered name and category
+      elif (i%8 == 2 or i%8==3) and ("---" in element.get() or element.get() == ""): # For registered name and category
           each_has_error = True
-      elif (i%8 == 3 or i%8 == 4) and not(element.get().isdecimal()): # For price and amount. Don't want to use not, but isalpha() method judges "◯" to be a number, and int() method causes an error, so I reject it.                                      
+      elif (i%8 == 4 or i%8 == 5) and not(element.get().isdecimal()): # For price and amount. Don't want to use not, but isalpha() method judges "◯" to be a number, and int() method causes an error, so I reject it.                                      
           each_has_error = True
-      elif i%8 == 5 and not(element.get().isdecimal() or re.match("^[0-9]+%$",element.get())): # For discount
+      elif i%8 == 6 and not(element.get().isdecimal() or re.match("^[0-9]+%$",element.get())): # For discount
           each_has_error = True
       # Change styles depending on type and presence/absence of errors
       if type(element) == ttk.Combobox: # For registered name and category
@@ -358,15 +359,18 @@ class ComfirmReceipt(tk.Frame):
     ## Args:
       `event`: what wedget is selected
     """
+    elements = self.main_table["body_Frame"].winfo_children()
     # Where line is deleted
-    elements = self.main_table["body_Frame"].winfo_children() 
+    row = int(elements.index(event.widget)/9 - 1)
+    row_elements = elements[row*9:row*9+9]
     # Delete one line
-    for i in range(8):
-      elements[elements.index(event.widget)-i].destroy()
+    for element in row_elements:
+      element.destroy()
+    del self.boolean_Checkbox[row] # Delete tk.BooleanVar() associated with the Checkbox in this row
     self.calculate()     # Calculate
     self.update_region() # Update region
 
-  def addItem(self,item="",registered_name="---",category="---",price="",amount="",discount=""):
+  def add_item(self,item="",registered_name="---",category="---",price="",amount="",discount=""):
     """
     ## Description
       Add item line when push "+"
@@ -376,17 +380,24 @@ class ComfirmReceipt(tk.Frame):
       row = (self.main_table["body_Frame"].winfo_children())[-1].grid_info()["row"] 
     else:
       row=0
-    one_line={}
-    one_line = {
-      "item_Entry": tk.Entry(self.main_table["body_Frame"]),
-      "registered_name_Combobox": ttk.Combobox(self.main_table["body_Frame"],value=self.item_list),
-      "category_Combobox": ttk.Combobox(self.main_table["body_Frame"],value=[value for value in db.itemDB.keys()]),
-      "price_Entry": tk.Entry(self.main_table["body_Frame"]) ,
-      "amount_Entry": tk.Entry(self.main_table["body_Frame"]),
-      "discount_Entry": tk.Entry(self.main_table["body_Frame"]),
-      "total_Entry": tk.Entry(self.main_table["body_Frame"]),
-      "delete_Button": ttk.Button(self.main_table["body_Frame"],text="delete",width=7)
+    # Add widget for one line
+    self.boolean_Checkbox.append(tk.BooleanVar()) # To get statue of tax Checkbutton 
+    self.boolean_Checkbox[-1].set(True) # Inisialize to True
+    # Not eligible for reduced tax rate(軽減税率対象外)
+    if registered_name in ["酒", "ビール"]  or category in ["others", "gasoline", "Eating_out"]:
+      self.boolean_Checkbox[-1].set(False)
+    one_line={
+      "tax_Checkbutton"          : tk.Checkbutton(self.main_table["body_Frame"], variable=self.boolean_Checkbox[-1]),
+      "item_Entry"               : tk.Entry(self.main_table["body_Frame"]),
+      "registered_name_Combobox" : ttk.Combobox(self.main_table["body_Frame"],value=self.item_list),
+      "category_Combobox"        : ttk.Combobox(self.main_table["body_Frame"],value=[value for value in db.itemDB.keys()]),
+      "price_Entry"              : tk.Entry(self.main_table["body_Frame"]) ,
+      "amount_Entry"             : tk.Entry(self.main_table["body_Frame"]),
+      "discount_Entry"           : tk.Entry(self.main_table["body_Frame"]),
+      "total_Entry"              : tk.Entry(self.main_table["body_Frame"]),
+      "delete_Button"            : ttk.Button(self.main_table["body_Frame"],text="delete",width=7)
     }
+      
     # Set Style
     self.set_style(one_line["item_Entry"])
     self.set_style(one_line["registered_name_Combobox"])
@@ -395,7 +406,7 @@ class ComfirmReceipt(tk.Frame):
     self.set_style(one_line["amount_Entry"])
     self.set_style(one_line["discount_Entry"])
     self.set_style(one_line["total_Entry"])
-    one_line["category_Combobox"].bind("<<ComboboxSelected>>",self.category_event)                                        # set Enter Event
+    one_line["category_Combobox"].bind("<<ComboboxSelected>>",self.category_event)
     one_line["delete_Button"].bind("<ButtonPress>",self.delete_item)
 
     # Inisialize and link functions
@@ -409,17 +420,16 @@ class ComfirmReceipt(tk.Frame):
       one_line["total_Entry"].insert(0,int(price)*int(amount)-int(discount))
 
     # Setting up position
-    one_line["item_Entry"].grid(row=row+1,column=0)
-    one_line["registered_name_Combobox"].grid(row=row+1,column=1)
-    one_line["category_Combobox"].grid(row=row+1,column=2)
-    one_line["price_Entry"].grid(row=row+1,column=3)
-    one_line["amount_Entry"].grid(row=row+1,column=4)
-    one_line["discount_Entry"].grid(row=row+1,column=5)
-    one_line["total_Entry"].grid(row=row+1,column=6)
-    one_line["delete_Button"].grid(row=row+1,column=7)
+    one_line["tax_Checkbutton"].grid(row=row+1,column=0)
+    one_line["item_Entry"].grid(row=row+1,column=1)
+    one_line["registered_name_Combobox"].grid(row=row+1,column=2)
+    one_line["category_Combobox"].grid(row=row+1,column=3)
+    one_line["price_Entry"].grid(row=row+1,column=4)
+    one_line["amount_Entry"].grid(row=row+1,column=5)
+    one_line["discount_Entry"].grid(row=row+1,column=6)
+    one_line["total_Entry"].grid(row=row+1,column=7)
+    one_line["delete_Button"].grid(row=row+1,column=8)
     self.update_region() # pdate region
-
-
 
   def decide(self):
     """
@@ -450,33 +460,35 @@ class ComfirmReceipt(tk.Frame):
       
     
     # Check whether has error in item table
-    for i in range(int(len(elements)/8)):
-      has_error = self.check_for_error(elements[i*8:i*8+7],i)
+    for i in range(int(len(elements)/9)):
+      has_error = self.check_for_error(elements[i*9:i*9+8],i)
       if has_error:
         is_ok = False
         break
     # No error
     if is_ok == True:
-      self.allItem=[] # To save for csv file
-      for i in range(int(len(elements)/8)):
-        row_elements = elements[i*8:i*8+7] # Get row elements
-        oneLine = {"store":self.store[0],"date":self.date,"purpose":self.header["purpose_Combobox"].get(),"item": row_elements[0].get(),"registered_name": row_elements[1].get(),"category": row_elements[2].get(),"price":row_elements[3].get(),"amount":row_elements[4].get(),"discount":0,"total":0} # Do not inisialize "discount" and "total" now because the calculation formula changes depending on the type of discount.
-        line_discount = row_elements[5].get()
-        line_total = row_elements[6].get()
+      self.all_item=[] # To save for csv file
+      for i in range(int(len(elements)/9)):
+        row_elements = elements[i*9:i*9+8] # Get row elements
+        one_line = {"store": self.store[0],"date": self.date,"purpose": self.header["purpose_Combobox"].get(),"item":  row_elements[1].get(),"registered_name":  row_elements[2].get(),"category":  row_elements[3].get(),"price": row_elements[4].get(),"amount": row_elements[5].get(),"discount": 0,"total": 0} # Do not inisialize "discount" and "total" now because the calculation formula changes depending on the type of discount.
+        if one_line["registered_name"] in ["酒", "ビール"]: # If the registered name is related to alcohol, change purpose
+          one_line["purpose"] = "父"
+        line_discount = row_elements[6].get()
+        line_total = re.search("^\d+",row_elements[7].get()).group()
         if line_discount.isdecimal(): # Whether discount is included "%" or string or not
-          oneLine["discount"] = int(line_discount)
+          one_line["discount"] = int(line_discount)
         elif line_discount != "" and line_discount[-1] == "%" and re.match("[0-9]+",line_discount): # Included "%"
-          total_without_discount=int(row_elements[3].get())*int(row_elements[4].get()) # Calcurate discount amount from "%"
-          oneLine["discount"] = int(total_without_discount*int(re.match("[0-9]+",line_discount).group())/100) # Add dicount amount 
+          total_without_discount=int(row_elements[4].get())*int(row_elements[5].get()) # calculate discount amount from "%"
+          one_line["discount"] = int(total_without_discount*int(re.match("[0-9]+",line_discount).group())/100) # Add dicount amount 
         elif line_discount == "":
-          oneLine["discount"] = 0
-        oneLine["total"] = line_total
-        self.allItem.append(cp.copy(oneLine)) # Add row for all item with copy()
+          one_line["discount"] = 0
+        one_line["total"] = line_total
+        self.all_item.append(cp.copy(one_line)) # Add row for all item with copy()
               
       # To has new category
       translator = Translator()
       self.new_category={}
-      for item in self.allItem:
+      for item in self.all_item:
         if not(item["category"] in db.itemDB): # Whether category name is not included register category name
           en_text = translator.translate(item["category"], dest='en').text # Store category name in English
           # If en_text already exist, change name
