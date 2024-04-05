@@ -41,15 +41,15 @@ class RecordReceipt:
   def addDB(self):
     """ update DataBase(item_db, store_db) """
     for lineItem in self.allItem:
-      if not(lineItem["registed_name"] in lineItem["item"]): # whether lineItem is special_name
+      if not(lineItem["registered_name"] in lineItem["item"]): # whether lineItem is special_name
         # print(lineItem)
-        iDB.special_name[lineItem["item"]] = [lineItem["registed_name"],str(lineItem["genre"])]
-      if not(lineItem["genre"] in self.itemDB): # whether it is new category (no infomation for DataBase)
-        self.itemDB[lineItem["genre"]] = [] # add new key for itemDB
-        self.itemDB[lineItem["genre"]].append(lineItem["registed_name"]) # add item for new key as value
-        self.categoryDB[lineItem["genre"]] = self.newCategoryEn[lineItem["genre"]] # add new key and English value name for category
-      elif not(lineItem["registed_name"] in self.itemDB[lineItem["genre"]]): # not new category but it is new item
-        self.itemDB[lineItem["genre"]].append(lineItem["registed_name"]) # add item for new key as value
+        iDB.special_name[lineItem["item"]] = [lineItem["registered_name"],str(lineItem["category"])]
+      if not(lineItem["category"] in self.itemDB): # whether it is new category (no infomation for DataBase)
+        self.itemDB[lineItem["category"]] = [] # add new key for itemDB
+        self.itemDB[lineItem["category"]].append(lineItem["registered_name"]) # add item for new key as value
+        self.categoryDB[lineItem["category"]] = self.newCategoryEn[lineItem["category"]] # add new key and English value name for category
+      elif not(lineItem["registered_name"] in self.itemDB[lineItem["category"]]): # not new category but it is new item
+        self.itemDB[lineItem["category"]].append(lineItem["registered_name"]) # add item for new key as value
     
     replaceContent= "" # make sentence to write
 
