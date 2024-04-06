@@ -123,7 +123,7 @@ class ComfirmReceipt(tk.Frame):
     # Make list of registered name
     # Connect category name(key) and item name(value)
     self.item_list=[] 
-    for key,value in db.itemDB.items():
+    for key,value in db.item_DB.items():
       self.item_list+=["---"+key+"---"]
       for item_name in value: 
         self.item_list+=[item_name]
@@ -224,8 +224,8 @@ class ComfirmReceipt(tk.Frame):
       `event`: what wedget is selected
     """
     elements=self.main_table["body_Frame"].winfo_children()  # get all item in tableFrame
-    if event.widget.get() in db.itemDB.keys(): # selected category exist in DB
-      elements[elements.index(event.widget)-1].configure(value=[value for value in db.itemDB[event.widget.get()]]) # change text of register item name 
+    if event.widget.get() in db.item_DB.keys(): # selected category exist in DB
+      elements[elements.index(event.widget)-1].configure(value=[value for value in db.item_DB[event.widget.get()]]) # change text of register item name 
     else: # New registered category name
       elements[elements.index(event.widget)-1].configure(value="")
     
@@ -390,7 +390,7 @@ class ComfirmReceipt(tk.Frame):
       "tax_Checkbutton"          : tk.Checkbutton(self.main_table["body_Frame"], variable=self.boolean_Checkbox[-1]),
       "item_Entry"               : tk.Entry(self.main_table["body_Frame"]),
       "registered_name_Combobox" : ttk.Combobox(self.main_table["body_Frame"],value=self.item_list),
-      "category_Combobox"        : ttk.Combobox(self.main_table["body_Frame"],value=[value for value in db.itemDB.keys()]),
+      "category_Combobox"        : ttk.Combobox(self.main_table["body_Frame"],value=[value for value in db.item_DB.keys()]),
       "price_Entry"              : tk.Entry(self.main_table["body_Frame"]) ,
       "amount_Entry"             : tk.Entry(self.main_table["body_Frame"]),
       "discount_Entry"           : tk.Entry(self.main_table["body_Frame"]),
@@ -489,12 +489,12 @@ class ComfirmReceipt(tk.Frame):
       translator = Translator()
       self.new_category={}
       for item in self.all_item:
-        if not(item["category"] in db.itemDB): # Whether category name is not included register category name
+        if not(item["category"] in db.item_DB): # Whether category name is not included register category name
           en_text = translator.translate(item["category"], dest='en').text # Store category name in English
           # If en_text already exist, change name
           tmp_text = en_text
           i = 2
-          while tmp_text in db.itemDB.values():
+          while tmp_text in db.item_DB.values():
             tmp_text = en_text + str(i)
             i += 1
           en_text = tmp_text

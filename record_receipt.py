@@ -16,9 +16,9 @@ ITEMDB_PATH_NAME = "item_db.py"   # reference item infomation and write for new 
 STOREDB_PATH_NAME = "store_db.py" # reference store name infomation and write for new it
 
 class RecordReceipt:
-  itemDB = iDB.itemDB         # read item from DataBase
-  categoryDB = iDB.categoryDB # read category name from DataBase
-  storeDB=sDB.storeDB         # read store name from DataBase
+  item_DB = iDB.item_DB         # read item from DataBase
+  category_DB = iDB.category_DB # read category name from DataBase
+  store_DB=sDB.store_DB         # read store name from DataBase
 
   def __init__(self,allItem,newCategoryEn):
     self.allItem = allItem              # to instance argument
@@ -44,36 +44,36 @@ class RecordReceipt:
       if not(lineItem["registered_name"] in lineItem["item"]): # whether lineItem is special_name
         # print(lineItem)
         iDB.special_name[lineItem["item"]] = [lineItem["registered_name"],str(lineItem["category"])]
-      if not(lineItem["category"] in self.itemDB): # whether it is new category (no infomation for DataBase)
-        self.itemDB[lineItem["category"]] = [] # add new key for itemDB
-        self.itemDB[lineItem["category"]].append(lineItem["registered_name"]) # add item for new key as value
-        self.categoryDB[lineItem["category"]] = self.newCategoryEn[lineItem["category"]] # add new key and English value name for category
-      elif not(lineItem["registered_name"] in self.itemDB[lineItem["category"]]): # not new category but it is new item
-        self.itemDB[lineItem["category"]].append(lineItem["registered_name"]) # add item for new key as value
+      if not(lineItem["category"] in self.item_DB): # whether it is new category (no infomation for DataBase)
+        self.item_DB[lineItem["category"]] = [] # add new key for item_DB
+        self.item_DB[lineItem["category"]].append(lineItem["registered_name"]) # add item for new key as value
+        self.category_DB[lineItem["category"]] = self.newCategoryEn[lineItem["category"]] # add new key and English value name for category
+      elif not(lineItem["registered_name"] in self.item_DB[lineItem["category"]]): # not new category but it is new item
+        self.item_DB[lineItem["category"]].append(lineItem["registered_name"]) # add item for new key as value
     
     replaceContent= "" # make sentence to write
 
-    for key,val in self.itemDB.items(): # write category name and content of it
-      replaceContent += self.categoryDB[key] + " = " +str(val)+'\n'
+    for key,val in self.item_DB.items(): # write category name and content of it
+      replaceContent += self.category_DB[key] + " = " +str(val)+'\n'
     replaceContent += "special_name = " +str(iDB.special_name)+'\n'
 
-    ### make itemDB and categoryDB argument ###
-    replaceContent+= "itemDB = {"
-    for key in self.categoryDB:
-      replaceContent += "'" + key + "': " + self.categoryDB[key] +", "
+    ### make item_DB and category_DB argument ###
+    replaceContent+= "item_DB = {"
+    for key in self.category_DB:
+      replaceContent += "'" + key + "': " + self.category_DB[key] +", "
     replaceContent=replaceContent[:-2] # delete space and comma
     replaceContent += '}\n'
-    replaceContent += "categoryDB = " + str(self.categoryDB) + '\n'
+    replaceContent += "category_DB = " + str(self.category_DB) + '\n'
 
     with open(ITEMDB_PATH_NAME,"w") as f: # write for item_DB.py
       f.write(replaceContent)
     
-    if not(self.store in self.storeDB): # Whether new store name or not
-      self.storeDB.append(self.store)
+    if not(self.store in self.store_DB): # Whether new store name or not
+      self.store_DB.append(self.store)
       sDB.keyword[self.store] = ""
       with open(STOREDB_PATH_NAME) as file:
         contents = file.readlines()
-      contents[1] = "storeDB = " + str(self.storeDB) + '\n'
+      contents[1] = "store_DB = " + str(self.store_DB) + '\n'
       contents[2] = "keyword = " + str(sDB.keyword) + '\n'
       with open(STOREDB_PATH_NAME, mode="w") as file:
         # print(type(contents))
@@ -83,5 +83,5 @@ class RecordReceipt:
 
 
       # with open(STOREDB_PATH_NAME,"w") as f:  # write for item_DB.py
-      #   f.write("storeDB = " + str(self.storeDB))
+      #   f.write("store_DB = " + str(self.store_DB))
 

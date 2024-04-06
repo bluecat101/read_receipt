@@ -348,7 +348,7 @@ class ReadReceipt:
     ## Args:
       `text (str)`: each line text
     """
-    for storeName in sDB.storeDB: 
+    for storeName in sDB.store_DB: 
       if storeName in text: # whether store name is included for text
         self.store=storeName
 
@@ -378,7 +378,7 @@ class ReadReceipt:
 
     # Find item name from DataBase
     # Get item from DataBase and search by changing the notation method
-    for item_genre,item_value in iDB.itemDB.items(): # Roop from DB
+    for item_genre,item_value in iDB.item_DB.items(): # Roop from DB
       for db_item in item_value: # Roop in each item name
         item_convert=db_item # Get DB item name to change Kanji, Hiragana, Katakana and Half Katakana.
         # Check type of item name in DB whether Kanji, Hiragana, Katakana and Half Katakana and change status.
