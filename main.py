@@ -13,6 +13,7 @@ exec_type = "develop_noreceipt" # select type of execution： production,develop
   - (specail discount を計算させる)
   - グラフを２ヶ月分横に表示したりする
   - グラフに対して目的、ジャンルを追加する。
+  - 縦グラフにおいて色で分けて比率を比べられるようにする
 """
 def main(image_name):
   """ 
