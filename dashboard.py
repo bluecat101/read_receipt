@@ -70,8 +70,7 @@ def get_data_for_purpose(data = None,purpose = None,):
 
 
 
-right_bar = get_data_for_period(period = "先月").groupby(["月","ジャンル"])[["金額"]].sum().reset_index(level="ジャンル")
-fig_right_bar = px.bar(right_bar,x=right_bar.index, y="金額",color="ジャンル") # x軸のラベルを変えると思う
+
 # fig_right_bar = px.bar(year_bar,x=list(map(lambda x: str(x)+"月",right_bar.index)), y="金額",color="ジャンル")
 
 right_pie = get_data_for_period(period = "先月").groupby("ジャンル")["金額"].sum()
@@ -147,12 +146,9 @@ dashboard.layout = dbc.Container([
       ),
     ],width=6),
     dbc.Col([ ## 右側
-      html.Div(
-        
-      ),
       dcc.Graph(
-        id = "right-bar-grath",
-        figure = fig_right_bar
+        id = "genre_bar_chart",
+        
       ),
       dbc.Row([
         html.Table([
@@ -262,36 +258,38 @@ def get_triggered_element_for_period(*args):
   #   elif trigger_id == "calender_period_custom":
   #     return [args[1],args[2]]
   return selected_period # default値
-
 @dashboard.callback(
-  dash.dependencies.Output("expense","children"),
-  dash.dependencies.Output("genre_pie_chart_and_ranking_table","children"),
   dash.dependencies.Output("calender_period_custom","start_date"),
   dash.dependencies.Output("calender_period_custom","end_date"),
   dash.dependencies.Input("radio_period_standard","value"),
   dash.dependencies.Input("calender_period_custom","start_date"),
   dash.dependencies.Input("calender_period_custom","end_date"),
+)
+def update_period(radio_period, start_date, end_date):
+  if dash.callback_context.triggered and dash.callback_context.triggered_id == "radio_period_standard":
+    return get_period_from_word(radio_period)
+  else:
+    return [start_date,end_date]
+  
+@dashboard.callback(
+  dash.dependencies.Output("expense","children"),
+  dash.dependencies.Output("genre_pie_chart_and_ranking_table","children"),
+  dash.dependencies.Input("radio_period_standard","value"),
+  dash.dependencies.Input("calender_period_custom","start_date"),
+  dash.dependencies.Input("calender_period_custom","end_date"),
   dash.dependencies.Input("dropdown_purpose","value"),
 )
-def update_genre_chart_at_left_side(radio_period, start_date, end_date, purpose):
-  if dash.callback_context.triggered and dash.callback_context.triggered_id == "radio_period_standard":
-    period = get_period_from_word(radio_period)
-  else:
-    period = [start_date,end_date]
-  # global selected_period ## 目的を更新したときにperiodを保管しておかないとどちらが最後に選択されているのかがわからないため
-  # selected_period = get_triggered_element_for_period(radio_period, start_date, end_date)
-
-  # print(purpose,selected_period)
-  total = get_data_for_period(data = get_data_for_purpose(purpose = purpose),period = period)["金額"].sum()
+def update_genre_chart_at_left_side(_,start_date, end_date, purpose):
+  total = get_data_for_period(data = get_data_for_purpose(purpose = purpose),period = [start_date, end_date])["金額"].sum()
   expense_html = html.Div(
             html.P("支出: "+str(total)),
             # style={"hight"}
             # className="px-auto"
           )
   
-  data = get_data_for_period(data = get_data_for_purpose(purpose = purpose),period = period).groupby("ジャンル")["金額"].sum()
+  data = get_data_for_period(data = get_data_for_purpose(purpose = purpose),period = [start_date, end_date]).groupby("ジャンル")["金額"].sum()
   if data.empty:
-    return expense_html, html.Div(html.P("データがありません",className="border border-4 border-dark",style={"margin-top":"100px"}),style={"height":"250px"}), period[0], period[1]
+    return expense_html, html.Div(html.P("データがありません",className="border border-4 border-dark",style={"margin-top":"100px"}),style={"height":"250px"})
   fig_pie = genre_pie_chart_at_left_side(data)
   table = genre_ranking_table_at_left_side(data)
   graph_html = dbc.Row([
@@ -303,7 +301,7 @@ def update_genre_chart_at_left_side(radio_period, start_date, end_date, purpose)
               table
             ],width = 5,id="genre_ranking_table",className="offset-md-3"),
           ])
-  return expense_html, graph_html, period[0], period[1]
+  return expense_html, graph_html
 
 @dashboard.callback(
   dash.dependencies.Output("year_bar","figure"),
@@ -330,9 +328,6 @@ def update_year_bar_chart_at_left_side(year,purpose):
   for i in range(1,13):
     if not(i in data.index):
      data.loc[i] = [data["ジャンル"].iloc[0],0] 
-  # print(data)
-  # if year == 2022: print(data)
-  # data = pd.concat([data,added_year])
   data = data.sort_index()
   # list(map(lambda x: str(x)+"月",data.index))
   fig_bar = px.bar(data,x=data.index, y="金額",color="ジャンル")
@@ -348,6 +343,18 @@ def update_year_bar_chart_at_left_side(year,purpose):
     fig_bar.add_annotation(x=month, y=total_amount+2000, text=str(total_amount), showarrow=False)
   return fig_bar
 
+@dashboard.callback(
+  dash.dependencies.Output("genre_bar_chart","figure"),
+  dash.dependencies.Input("radio_period_standard","value"),
+  dash.dependencies.Input("calender_period_custom","start_date"),
+  dash.dependencies.Input("calender_period_custom","end_date"),
+  dash.dependencies.Input("dropdown_purpose","value"),
+)
+def update_genre_bar_chart(_,start_date, end_date, purpose):
+  data = get_data_for_purpose(purpose = purpose)
+  right_bar = get_data_for_period(data = data, period = [start_date, end_date]).groupby(["月","ジャンル"])[["金額"]].sum().reset_index(level="ジャンル")
+  fig_right_bar = px.bar(right_bar,x=right_bar.index, y="金額",color="ジャンル") # x軸のラベルを変えると思う
+  return fig_right_bar
 
 
 if __name__=='__main__':
