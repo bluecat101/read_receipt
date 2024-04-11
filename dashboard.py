@@ -144,7 +144,7 @@ dashboard.layout = dbc.Container([
         ]),
       dcc.Graph(
         id = "year_bar",
-        # figure = fig_bar
+        figure = go.Figure(layout=dict(template='plotly')) # 初期化しないと最初のcallでエラーが出る
       ),
     ],width=6),
     dbc.Col([ ## 右側
@@ -321,32 +321,55 @@ def update_year_bar_chart_at_left_side(year,purpose):
   if year is None: # 未入力時
     return dash.no_update
   # globalのdataとは期間が異なるので新しく生成している。
-  data = get_data_for_purpose(purpose = purpose)
-  data = data[data["年"] == year].groupby(["月","ジャンル"])[["金額"]].sum()
-  # if year == 2023: print(data)
+  data_year = get_data_for_purpose(purpose = purpose)
+  data_year = data_year[data_year["年"] == year].groupby(["月","ジャンル"])[["金額"]].sum()
+  # if year == 2023: print(data_year)
   is_empty = False
-  if data.empty:
+  if data_year.empty:
     is_empty = True
     # return dash.no_update
   if is_empty:
-    data = pd.DataFrame([{"ジャンル":"","金額":0}],index=[1])
+    data_year = pd.DataFrame([{"ジャンル":"","金額":0}],index=[1])
   else:
-    data = data.reset_index(level="ジャンル")
+    data_year = data_year.reset_index(level="ジャンル")
   #　足りない月を追加する
   # year_bar["ジャンル"][0]をダミー要素として他の月を生成する。もしyear_bar["ジャンル"][0]が表示しない設定の場合には表示する中で一番上のものを表示するようにする。
   for i in range(1,13):
-    if not(i in data.index):
-     data.loc[i] = [data["ジャンル"].iloc[0],0] 
-  data = data.sort_index()
-  # list(map(lambda x: str(x)+"月",data.index))
+    if not(i in data_year.index):
+     data_year.loc[i] = [data_year["ジャンル"].iloc[0],0] 
+  data_year = data_year.sort_index()
+  # list(map(lambda x: str(x)+"月",data_year.index))
   # print("year",year)
-  fig_bar = px.bar(data, x=data.index, y="金額", color="ジャンル")
+  # pd.set_option('display.max_rows', None)
+  # pd.set_option('display.max_columns', None)
+  # print(data_year,data_year.index,data_year.columns)
+  # x_values = data_year.index
+  # y_values = data_year["金額"]
+  # colors = data_year["ジャンル"]
+  # bars = []
+  # for x, y, color in zip(x_values, y_values, colors):
+  #     bars.append(go.Bar(
+  #         x=[x],
+  #         y=[y],
+  #         marker=dict(color=color),
+  #         hoverinfo='y+name',
+  #     ))
+  # layout = go.Layout(
+  #     title='Monthly Expenses by Genre',
+  #     xaxis=dict(title='Month'),
+  #     yaxis=dict(title='Amount'),
+  #     barmode='stack'
+  # )
+
+  # グラフオブジェクトの作成
+  # fig_bar = go.Figure(data=bars, layout=layout)
+  fig_bar = px.bar(data_year, x=data_year.index, y="金額", color="ジャンル")
   fig_bar.update_yaxes(tickformat=',d', ticksuffix=' 円')
   if is_empty:
     fig_bar.update_yaxes(range=[0,100000],tickformat=',d', ticksuffix=' 円')
-  fig_bar.update_xaxes(title = "月",tickvals=data.index,)
+  fig_bar.update_xaxes(title = "月",tickvals=data_year.index,)
   fig_bar.update_layout(margin=dict(t=0))
-  monthly_total = data.groupby(level=0)["金額"].sum()
+  monthly_total = data_year.groupby(level=0)["金額"].sum()
   for month, total_amount in monthly_total.items():
     if total_amount == 0:
       continue
