@@ -2,10 +2,6 @@ p{
   font-size: 30px;
   /* color: yellow; */
 }
-.scroller{
-  /* height: 300px; */
-  overflow-y: auto;
-}
 th{
   position: sticky;
   top: 0;
