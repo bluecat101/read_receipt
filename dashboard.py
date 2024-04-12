@@ -1,7 +1,9 @@
-import dash
-import dash_core_components as dcc
+from dash import Dash, Input, Output,State, ctx, html, dcc, callback
+
+# import dash
+# import dash_core_components as dcc
 import dash_bootstrap_components as dbc
-import dash_html_components as html
+# import dash_html_components as html
 import dash_table
 import plotly.graph_objects as go
 import plotly.express as px
@@ -30,7 +32,7 @@ df["年"] = df["日付"].str.split("-").apply(lambda row: int(row[0]))
 df["月"] = df["日付"].str.split("-").apply(lambda row: int(row[1]))
 df["日"] = df["日付"].str.split("-").apply(lambda row: int(row[2]))
 
-dashboard = dash.Dash(__name__, external_stylesheets = [dbc.themes.BOOTSTRAP,'./assets/stylesheet.css'])
+dashboard = Dash(__name__, external_stylesheets = [dbc.themes.BOOTSTRAP,'./assets/stylesheet.css'])
 def get_data_for_period(data = None,period = None,):
   today = d.today()
   if data is None:
@@ -212,27 +214,27 @@ def get_period_from_word(period):
     end_date = str(today)
   return [start_date,end_date]
 
-def get_triggered_element_for_period(*args):
-  if dash.callback_context.triggered:
-    trigger_id = dash.callback_context.triggered[0]['prop_id'].split('.')[0] # "triggered_name.value"という形で格納されているのでtriggeredの部分を取得
-    # print(dash.callback_context.triggered_id)
-    if trigger_id == "radio_period_standard":
-      # return get_period_from_word(args[0])
-      return args[0]
-  #   elif trigger_id == "calender_period_custom":
-  #     return [args[1],args[2]]
-  return selected_period # default値
+# def get_triggered_element_for_period(*args):
+#   if ctx.triggered:
+#     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0] # "triggered_name.value"という形で格納されているのでtriggeredの部分を取得
+#     # print(ctx.triggered_id)
+#     if trigger_id == "radio_period_standard":
+#       # return get_period_from_word(args[0])
+#       return args[0]
+#   #   elif trigger_id == "calender_period_custom":
+#   #     return [args[1],args[2]]
+#   return selected_period # default値
 
 @dashboard.callback(
-  [dash.dependencies.Output("calender_period_custom","start_date"),
-  dash.dependencies.Output("calender_period_custom","end_date")],
-  dash.dependencies.Input("radio_period_standard","value"),
-  dash.dependencies.Input("calender_period_custom","start_date"),
-  dash.dependencies.Input("calender_period_custom","end_date"),
-  dash.dependencies.Input("dropdown_purpose","value"),
+  [Output("calender_period_custom","start_date"),
+  Output("calender_period_custom","end_date")],
+  Input("radio_period_standard","value"),
+  Input("calender_period_custom","start_date"),
+  Input("calender_period_custom","end_date"),
+  Input("dropdown_purpose","value"),
 )
 def update_data(radio_period, start_date, end_date, purpose):
-  if dash.callback_context.triggered and dash.callback_context.triggered_id == "radio_period_standard":
+  if ctx.triggered and ctx.triggered_id == "radio_period_standard":
     start_date, end_date = get_period_from_word(radio_period)
     # print(start_date,end_date)
   global data
@@ -240,12 +242,12 @@ def update_data(radio_period, start_date, end_date, purpose):
   return [start_date, end_date]
   
 @dashboard.callback(
-  dash.dependencies.Output("expense","children"),
-  dash.dependencies.Output("genre_pie_chart_and_ranking_table","children"),
-  dash.dependencies.Input("radio_period_standard","value"),
-  dash.dependencies.Input("calender_period_custom","start_date"),
-  dash.dependencies.Input("calender_period_custom","end_date"),
-  dash.dependencies.Input("dropdown_purpose","value"),
+  Output("expense","children"),
+  Output("genre_pie_chart_and_ranking_table","children"),
+  Input("radio_period_standard","value"),
+  Input("calender_period_custom","start_date"),
+  Input("calender_period_custom","end_date"),
+  Input("dropdown_purpose","value"),
 )
 def update_genre_chart_at_left_side(*_args): # 上のコールバックでselected_periodを更新しているため
   total = data["金額"].sum()
@@ -278,9 +280,9 @@ def update_genre_chart_at_left_side(*_args): # 上のコールバックでselect
   return expense_html, graph_html
 
 @dashboard.callback(
-  dash.dependencies.Output("year_bar","figure"),
-  dash.dependencies.Input("input_year","value"),
-  dash.dependencies.Input("dropdown_purpose","value"),
+  Output("year_bar","figure"),
+  Input("input_year","value"),
+  Input("dropdown_purpose","value"),
 )
 def update_year_bar_chart_at_left_side(year,purpose):
   if year is None: # 未入力時
@@ -320,26 +322,27 @@ def update_year_bar_chart_at_left_side(year,purpose):
 
 
 @dashboard.callback(
-  dash.dependencies.Output("type_of_x_axis","value"),
-  dash.dependencies.Output("genre_bar_chart","figure"),
-  dash.dependencies.Input("radio_period_standard","value"),
-  dash.dependencies.Input("calender_period_custom","start_date"),
-  dash.dependencies.Input("calender_period_custom","end_date"),
-  dash.dependencies.Input("dropdown_purpose","value"),
+  Output("type_of_x_axis","value"),
+  Output("genre_bar_chart","figure"),
+  Input("type_of_x_axis","value"),
+  Input("radio_period_standard","value"),
+  Input("calender_period_custom","start_date"),
+  Input("calender_period_custom","end_date"),
+  Input("dropdown_purpose","value"),
 )
-def update_genre_bar_chart(_radio_value, start_date, end_date, _purpose,unit=None):
+def update_genre_bar_chart(unit, _radio_value, start_date, end_date, _purpose):
+  triggered_id = ctx.triggered_id
+  print(triggered_id) # 起動時はcalender_period_customを受け取る(上のcallbackで値を変えるため)
+  if triggered_id != "type_of_x_axis":
+    unit = ""
   def get_week_number(day, offset):
-    # print(type((day + offset) // 7 + 1),(day + offset) // 7 + 1)
     return (day + offset) // 7 + 1
-  # def get_week_number
-  # 年、月、日を使いたいので、
+    
   data_by_genre = data
-  # print(data_by_genre)
-
   # fig_right_bar = px.bar(data_by_genre,x=data_by_genre.index, y="金額",color="ジャンル") # x軸のラベルを変えると思う
   start_date = list(map(int,start_date.split("-")))
   end_date = list(map(int,end_date.split("-")))
-  if unit == "週" or (unit is None and start_date[0] == end_date[0] and start_date[1] == end_date[1]):
+  if unit == "週" or (unit == "" and start_date[0] == end_date[0] and start_date[1] == end_date[1]):
     unit= "週"
     first_day = pd.to_datetime("%s-%s-1"%(start_date[0],start_date[1])).weekday()
     start_week_number = get_week_number(start_date[2], first_day)
@@ -370,38 +373,26 @@ def update_genre_bar_chart(_radio_value, start_date, end_date, _purpose,unit=Non
   # unit_for_x_axis = html.P("data for x axis is "+unit)
   return unit, fig_bar
 
-@dashboard.callback(
-  dash.dependencies.Output("genre_bar_chart","figure"),
-  dash.dependencies.Input("type_of_x_axis","value"),
-  dash.dependencies.State("calender_period_custom","start_date"),
-  dash.dependencies.State("calender_period_custom","end_date"),
-)
-def update_genre_bar_chart_by_unit(unit,start_date, end_date):
-  _,fig_bar = update_genre_bar_chart("",start_date, end_date,"",unit)
-  return fig_bar
-
-
-
 
 
 
 
 @dashboard.callback(
-  dash.dependencies.Output("dropdown_genre","options"),
-  dash.dependencies.Input("radio_period_standard","value"),
-  dash.dependencies.Input("calender_period_custom","start_date"),
-  dash.dependencies.Input("calender_period_custom","end_date"),
-  dash.dependencies.Input("dropdown_purpose","value"),
+  Output("dropdown_genre","options"),
+  Input("radio_period_standard","value"),
+  Input("calender_period_custom","start_date"),
+  Input("calender_period_custom","end_date"),
+  Input("dropdown_purpose","value"),
 )
 def update_dropdown_summry(*_args):
   return [{"label": "全て", "value": "全て"}] + [{"label": genre, "value": genre} for genre in data["ジャンル"].unique()] if not data.empty else [{"label": "No results", "value": "",'disabled': True}]
 
 
 @dashboard.callback(
-  dash.dependencies.Output("item_table","children"),
-  dash.dependencies.Input("button_decide","n_clicks"),
-  [dash.dependencies.State("dropdown_genre","value"),
-  dash.dependencies.State("dropdown_summary","value"),]
+  Output("item_table","children"),
+  Input("button_decide","n_clicks"),
+  [State("dropdown_genre","value"),
+  State("dropdown_summary","value"),]
 )
 def update_item_table(_, genre, summary_value):
   data_item = data
