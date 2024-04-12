@@ -51,7 +51,7 @@ def get_data_for_period(data = None,period = None,):
   elif period == "昨年":
     return data[(data["年"] == today.year-1)]
   else:
-    # 配列で受け取る[start_day,end_day]
+    # 配列で受け取る[start_day,end_day
     start_day = dt.strptime(period[0],"%Y-%m-%d")
     end_day = dt.strptime(period[1],"%Y-%m-%d")
   return data[(start_day <= pd.to_datetime(data["日付"])) & (pd.to_datetime(data["日付"]) <= end_day)]
@@ -68,42 +68,6 @@ def get_data_for_purpose(data = None,purpose = None,):
   elif purpose == "全て":
     return data
   
-## 今月のデータがないときに”データなし”と表示させる
-
-
-
-
-# fig_right_bar = px.bar(year_bar,x=list(map(lambda x: str(x)+"月",right_bar.index)), y="金額",color="ジャンル")
-
-right_pie = get_data_for_period(period = "先月").groupby("ジャンル")["金額"].sum()
-fig_right_pie = go.Figure(
-    data=[go.Pie(labels=list(right_pie.index),
-      values=right_pie.values,
-      hole=.1,
-      marker=dict(colors=['#bad6eb', '#2b7bba']),
-      textinfo = "label+percent",
-      direction='clockwise'
-      )])
-fig_right_pie.update_layout(
-    width=500,
-    height=250,
-    margin=dict(l=30, r=10, t=10, b=10),
-    paper_bgcolor='rgba(0,0,0,0)',
-    uniformtext_minsize = 10,
-    uniformtext_mode='hide',
-    showlegend=False,
-)
-fig_right_pie.update_traces(textposition='inside')
-# サンプルのデータを作成
-df_sample = {
-    '名前': ['Alice', 'Bob', 'Charlie', 'David', 'Emma'],
-    'スコア': [90, 85, 80, 95, 88]
-}
-df_sample = pd.DataFrame(df_sample)
-
-# スコアで降順にソートしてランキングを作成
-df_ranked = df_sample.sort_values(by='スコア', ascending=False).reset_index(drop=True)
-df_ranked.index += 1  # ランキングは1から始まる
 
 period_options =[{"label": x,"value": x} for x in period]
 purpose_options =[{"label": x,"value": x} for x in purpose]
@@ -122,59 +86,61 @@ dashboard.layout = dbc.Container([
         width = 6),
         dbc.Col([dcc.RadioItems(options=period_options,value=period_options[0]["value"],inline=True, id = "radio_period_standard"),
           dcc.DatePickerRange(id='calender_period_custom',
-             max_date_allowed = d.today(),
-             start_date = d(d.today().year,d.today().month,1),
-             end_date= d.today()
+            max_date_allowed = d.today(),
+            #  start_date = d(d.today().year,d.today().month,1),
+            #  end_date= d.today()
+            start_date = d(d.today().year,d.today().month-1,1),
+            end_date = d(d.today().year,d.today().month-1,31),
           )
          
       ]),
       ]),
       html.Div(id="genre_pie_chart_and_ranking_table"),
       dbc.Row([
-        html.Label([
-          dcc.Input(
-          id="input_year",
-          placeholder="2024",
-          type="number",
-          value= d.today().year,
-          style={"width": "100px"}
-          ),
-          html.Span("年"),
-        ],htmlFor="input_year"),
+      html.Label([
+        dcc.Input(
+        id="input_year",
+        placeholder="2024",
+        type="number",
+        value= d.today().year,
+        style={"width": "100px"}
+        ),
+        html.Span("年"),
+      ],htmlFor="input_year"),
         ]),
       dcc.Graph(
         id = "year_bar",
         figure = go.Figure(layout=dict(template='plotly')) # 初期化しないと最初のcallでエラーが出る
+        ,style={"height": "370px"}
       ),
     ],width=6),
     dbc.Col([ ## 右側
-      dcc.Graph(
-        id = "genre_bar_chart",
-        
-      ),
+      dbc.Row(dcc.RadioItems(options=[{"label":x,"value":x} for x in ["週","月"]],inline=True, id="type_of_x_axis")),
+      dbc.Row(dcc.Graph(
+        id = "genre_bar_chart"
+        ,style={"height": "370px"}
+      ),),
       dbc.Row([
-        html.Div([
-          html.Label(
-            dcc.Dropdown(
+          dbc.Col(html.Span("ジャンル: "),width="auto",class_name="py-atuo mx-0 px-0"),
+          dbc.Col(dcc.Dropdown(
             id = 'dropdown_genre',
-            # options = purpose_options,
             options =[{"label": genre, "value": genre } for genre in data["ジャンル"].unique()] if not(data.empty) else [],
-            style={"width": "200px"}
-          ),),
-          html.Label(          
-            dcc.Dropdown(
+          style={"width": "150px"} 
+          ),width="auto",className="mx-0 px-2"),
+          dbc.Col(html.Span("まとめて表示する: "),width="auto",class_name="py-atuo mx-0 px-2"),
+          dbc.Col(dcc.Dropdown(
             id = 'dropdown_summary',
             options = [{"label":x,"value":x} for x in ["","日付", "場所", "商品名"]],
             style={"width": "100px"}
-          ),),
-          html.Label(
+          ),width="auto",className="mx-0 px-0"),
+          dbc.Col(
             html.Button("決定",id = 'button_decide',
-            style={"width": "100px"}
-          ),
-          ),
+            style={"width": "100px","margin":"auto", 'display':'inline-block'},
+           
+          ), width="auto",className="mx-0 px-2")
         ]),
         html.Div(id="item_table")
-      ])
+      # ])
     ],
     width=6)
   ])
@@ -271,7 +237,6 @@ def update_data(radio_period, start_date, end_date, purpose):
     # print(start_date,end_date)
   global data
   data = get_data_for_period(get_data_for_purpose(purpose = purpose), period = [start_date, end_date])
-  # print(data)
   return [start_date, end_date]
   
 @dashboard.callback(
@@ -309,7 +274,7 @@ def update_genre_chart_at_left_side(*_args): # 上のコールバックでselect
             
           ] )
   # return expense_html
-  # print("aaa")
+  # print()
   return expense_html, graph_html
 
 @dashboard.callback(
@@ -321,72 +286,105 @@ def update_year_bar_chart_at_left_side(year,purpose):
   if year is None: # 未入力時
     return dash.no_update
   # globalのdataとは期間が異なるので新しく生成している。
-  data_year = get_data_for_purpose(purpose = purpose)
-  data_year = data_year[data_year["年"] == year].groupby(["月","ジャンル"])[["金額"]].sum()
-  # if year == 2023: print(data_year)
+  data = get_data_for_purpose(data= df, purpose = purpose)
+  data = data[data["年"] == year].groupby(["月","ジャンル"])[["金額"]].sum()
+  # if year == 2023: print(data)
   is_empty = False
-  if data_year.empty:
+  if data.empty:
     is_empty = True
     # return dash.no_update
   if is_empty:
-    data_year = pd.DataFrame([{"ジャンル":"","金額":0}],index=[1])
+    data = pd.DataFrame([{"ジャンル":"","金額":0}],index=[1])
   else:
-    data_year = data_year.reset_index(level="ジャンル")
+    data = data.reset_index(level="ジャンル")
   #　足りない月を追加する
   # year_bar["ジャンル"][0]をダミー要素として他の月を生成する。もしyear_bar["ジャンル"][0]が表示しない設定の場合には表示する中で一番上のものを表示するようにする。
   for i in range(1,13):
-    if not(i in data_year.index):
-     data_year.loc[i] = [data_year["ジャンル"].iloc[0],0] 
-  data_year = data_year.sort_index()
-  # list(map(lambda x: str(x)+"月",data_year.index))
-  # print("year",year)
-  # pd.set_option('display.max_rows', None)
-  # pd.set_option('display.max_columns', None)
-  # print(data_year,data_year.index,data_year.columns)
-  # x_values = data_year.index
-  # y_values = data_year["金額"]
-  # colors = data_year["ジャンル"]
-  # bars = []
-  # for x, y, color in zip(x_values, y_values, colors):
-  #     bars.append(go.Bar(
-  #         x=[x],
-  #         y=[y],
-  #         marker=dict(color=color),
-  #         hoverinfo='y+name',
-  #     ))
-  # layout = go.Layout(
-  #     title='Monthly Expenses by Genre',
-  #     xaxis=dict(title='Month'),
-  #     yaxis=dict(title='Amount'),
-  #     barmode='stack'
-  # )
-
-  # グラフオブジェクトの作成
-  # fig_bar = go.Figure(data=bars, layout=layout)
-  fig_bar = px.bar(data_year, x=data_year.index, y="金額", color="ジャンル")
+    if not(i in data.index):
+     data.loc[i] = [data["ジャンル"].iloc[0],0] 
+  data = data.sort_index()
+  fig_bar = px.bar(data, x=data.index, y="金額", color="ジャンル")
   fig_bar.update_yaxes(tickformat=',d', ticksuffix=' 円')
   if is_empty:
     fig_bar.update_yaxes(range=[0,100000],tickformat=',d', ticksuffix=' 円')
-  fig_bar.update_xaxes(title = "月",tickvals=data_year.index,)
+  fig_bar.update_xaxes(title = "月",tickvals=data.index,)
   fig_bar.update_layout(margin=dict(t=0))
-  monthly_total = data_year.groupby(level=0)["金額"].sum()
+  monthly_total = data.groupby(level=0)["金額"].sum()
   for month, total_amount in monthly_total.items():
     if total_amount == 0:
       continue
     fig_bar.add_annotation(x=month, y=total_amount+2000, text=str(total_amount), showarrow=False)
   return fig_bar
 
+
+
+
 @dashboard.callback(
+  dash.dependencies.Output("type_of_x_axis","value"),
   dash.dependencies.Output("genre_bar_chart","figure"),
   dash.dependencies.Input("radio_period_standard","value"),
   dash.dependencies.Input("calender_period_custom","start_date"),
   dash.dependencies.Input("calender_period_custom","end_date"),
   dash.dependencies.Input("dropdown_purpose","value"),
 )
-def update_genre_bar_chart(*_args):
-  data_by_genre = data.groupby(["月","ジャンル"])["金額"].sum().reset_index(level="ジャンル")
-  fig_right_bar = px.bar(data_by_genre,x=data_by_genre.index, y="金額",color="ジャンル") # x軸のラベルを変えると思う
-  return fig_right_bar
+def update_genre_bar_chart(_radio_value, start_date, end_date, _purpose,unit=None):
+  def get_week_number(day, offset):
+    # print(type((day + offset) // 7 + 1),(day + offset) // 7 + 1)
+    return (day + offset) // 7 + 1
+  # def get_week_number
+  # 年、月、日を使いたいので、
+  data_by_genre = data
+  # print(data_by_genre)
+
+  # fig_right_bar = px.bar(data_by_genre,x=data_by_genre.index, y="金額",color="ジャンル") # x軸のラベルを変えると思う
+  start_date = list(map(int,start_date.split("-")))
+  end_date = list(map(int,end_date.split("-")))
+  if unit == "週" or (unit is None and start_date[0] == end_date[0] and start_date[1] == end_date[1]):
+    unit= "週"
+    first_day = pd.to_datetime("%s-%s-1"%(start_date[0],start_date[1])).weekday()
+    start_week_number = get_week_number(start_date[2], first_day)
+    end_week_number = get_week_number(end_date[2], first_day)
+    x_label = list(range(start_week_number,end_week_number+1))
+    data_by_genre["週"] = data_by_genre["日"].apply(get_week_number,args=(first_day,))
+    data_by_genre = data.groupby(["週","ジャンル"])["金額"].sum().reset_index(level="ジャンル")
+    #それぞれの第何週がm/d~m/dまでかを示す
+    # week_period = []
+    # for i in x_label:
+    #   sunday_date = (offset+1)+(i-2)*7 if (offset+1)+(i-2)*7 > 0 else 1 # 曜日から日にちを計算する際に0または負の値は1とする
+    #   saturday_date = offset+(i-1)*7
+    #   week_period.append([sunday_date, saturday_date]) # 日~土
+    # データの加工
+  else:
+    unit= "月"
+    start_month_number = start_date[1]
+    end_month_number = end_date[1]
+    # print(start_month_number,type(start_month_number),end_month_number,type(end_month_number))
+    x_label = list(range(start_month_number,end_month_number+1))
+    data_by_genre = data.groupby(["月","ジャンル"])["金額"].sum().reset_index(level="ジャンル")
+  fig_bar = px.bar(data_by_genre,x=data_by_genre.index, y="金額",color="ジャンル") # x軸のラベルを変えると思う
+  total_by_each_x = data_by_genre.groupby(level=0)["金額"].sum()
+  for x, total_amount in total_by_each_x.items():
+    if total_amount == 0:
+      continue
+    fig_bar.add_annotation(x=x, y=total_amount+2000, text=str(total_amount), showarrow=False)
+  # unit_for_x_axis = html.P("data for x axis is "+unit)
+  return unit, fig_bar
+
+@dashboard.callback(
+  dash.dependencies.Output("genre_bar_chart","figure"),
+  dash.dependencies.Input("type_of_x_axis","value"),
+  dash.dependencies.State("calender_period_custom","start_date"),
+  dash.dependencies.State("calender_period_custom","end_date"),
+)
+def update_genre_bar_chart_by_unit(unit,start_date, end_date):
+  _,fig_bar = update_genre_bar_chart("",start_date, end_date,"",unit)
+  return fig_bar
+
+
+
+
+
+
 
 @dashboard.callback(
   dash.dependencies.Output("dropdown_genre","options"),
