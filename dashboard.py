@@ -1,4 +1,4 @@
-from dash import Dash, ALL, Input, Output,State, ctx, html, dcc, callback
+from dash import dash, Dash, ALL, Input, Output,State, ctx, html, dcc, callback
 # import copy
 # import dash
 # import dash_core_components as dcc
@@ -75,34 +75,47 @@ def get_data_for_purpose(data = None,purpose = None,):
 period_options =[{"label": x,"value": x} for x in period]
 purpose_options =[{"label": x,"value": x} for x in purpose]
 def make_category(i):
-  new_id_for_input = {"type": "input", "index": i}
-  new_id_for_dropdown = {"type": "dropdown", "index": i}
+  id_for_input = {"type": "input", "index": i}
+  id_for_dropdown = {"type": "dropdown", "index": i}
+  id_for_delete_button = {"type": "button", "index": i}
   category_name = "カテゴリー"+str(i+1)
-  category =dbc.Row([ dbc.Row([
-        dbc.Col(html.Span('カテゴリー名:  '),width = 5),
-        dbc.Col(dcc.Input(
-          id = new_id_for_input,
-          placeholder=category_name,
-          value = "",
-          style={"width": "150px"}
-        ),width = "auto")])
-      ,dbc.Row(dcc.Dropdown(
-            id = new_id_for_dropdown,
-            options = [{"label":x,"value":x} for x in df["ジャンル"].unique().tolist()],
-            multi = True,
-            value = None,
-            # style={"width": "500px"}
-          ))],style={"padding": "10px 5px","display": "inline","height":"50px"})
+  category = dbc.Row([ 
+              dbc.Col([
+                dbc.Row([
+                  dbc.Col(html.Span('カテゴリー名:  '),width = 7),
+                  dbc.Col(dcc.Input(
+                    id = id_for_input,
+                    placeholder=category_name,
+                    value = "",
+                    style={"width": "170%"}
+                  ),style={"margin-left": "-20%"},
+                width = 5)]),
+                dbc.Row(
+                  dcc.Dropdown(
+                    id = id_for_dropdown,
+                    options = [{"label":x,"value":x} for x in df["ジャンル"].unique().tolist()],
+                    multi = True,
+                    value = None,
+                  )
+                )],width=10)
+                ,
+              dbc.Col(dbc.Button(html.I(className= "bi bi-x-circle"),className="rounded-circle" ,id = id_for_delete_button,style={"margin":"10px 0 0 0"}),width=2)
+             ],style={"padding": "10px 0 10px 5px"})
   return category
 new_categories = []
 for _ in range(4):
   new_categories.append(make_category(len(new_categories)))
-sidebar = dbc.Col([
-            html.P("Slider"),
-            dbc.Row(new_categories,id="new_categories",style={"height":"500px","display": "block"},className="overflow-auto"),
-            dbc.Row(dbc.Button(html.I(className= "bi bi-plus-circle-dotted"),id = 'button_add_new_category'))
+sidebar = dbc.Col(
+  html.Div(
+  [
+            html.P("独自のカテゴリー"),
+            dbc.Row(new_categories,id="new_categories",style={"height":"650px","display": "block"},className="overflow-auto"),
+            dbc.Row(dbc.Button(html.I(className= "bi bi-plus-circle-dotted"),id = 'button_add_new_category')),
+            dcc.Store(id='hidden_score', data={'hidden': False}),
             ],
-            className="bg-info opacity-25", 
+            id="div_for_hidden_statue"),
+            className="bg-info opacity-25",
+            id="sidebar",
             width=3
           )
 dashboard.layout = dbc.Container([
@@ -111,7 +124,9 @@ dbc.Row([
     dbc.Col([
       dbc.Row([
         dbc.Col([
-          dbc.Row(id = "expense"),
+          dbc.Row([
+            dbc.Button(html.I(className= "bi bi-arrow-left-square-fill",id = "icon_display_hide"),style={"width": "40px"} ,id = "button_display_hide"),
+            dbc.Row(id = "expense")]),
           dcc.Dropdown(
             id = 'dropdown_purpose',
             options = purpose_options,
@@ -181,11 +196,11 @@ dbc.Row([
   ]),width=9
 
 
-  )])
+  ,id="main")])
   
 ],style={"margin":"0"})
 
-def genre_pie_chart_at_left_side(data):
+def genre_pie_chart_at_left_side(data,is_hidden_sidebar):
   fig_pie = go.Figure(
       data=[go.Pie(labels=list(data.index),
         values=data.values,
@@ -195,14 +210,17 @@ def genre_pie_chart_at_left_side(data):
         direction='clockwise'
         )])
   fig_pie.update_layout(
-      width=500,
+      width=300,
       height=250,
-      margin=dict(l=30, r=10, t=10, b=10),
       paper_bgcolor='rgba(0,0,0,0)',
       uniformtext_minsize = 10,
       uniformtext_mode='hide',
       showlegend=False,
   )
+  if is_hidden_sidebar:
+    fig_pie.update_layout(margin=dict(l=100, r=0, t=10, b=10),)    
+  else:
+    fig_pie.update_layout(margin=dict(l=0, r=0, t=10, b=10),)
   fig_pie.update_traces(textposition='inside')
   return fig_pie
 
@@ -279,6 +297,27 @@ def update_self_categories(labels, value):
   global self_categories
   self_categories = {labels[i]: value[i] for i in range(len(new_categories))} # 追加だと過去のが残ってしまう
 
+@callback(
+    # Output("sidebar", "width"),
+          Output("div_for_hidden_statue", "hidden"),
+          Output("hidden_score", "data"),
+          Output("icon_display_hide", "className"),
+          Output("sidebar", "width"),
+          Output("main", "width"),
+          # Output("genre_pie_chart", "style"),
+          Input("button_display_hide", "n_clicks"),
+          State("hidden_score", "data"), 
+          )
+def sidebar(n_clicks,data):
+  if n_clicks is None:
+    return dash.no_update
+  data["hidden"] = not data["hidden"]
+  class_name= "bi bi-arrow-right-square-fill" if data["hidden"] else "bi bi-arrow-left-square-fill"
+  width_sidebar = 0 if data["hidden"] else 3
+  width_main = 12 if data["hidden"] else 9
+  # update_genre_chart_at_left_side(data)
+  return data["hidden"], data, class_name, width_sidebar,width_main
+
 @dashboard.callback(
     Output({'type':'dropdown', 'index':ALL}, 'options'),
     Input({'type':'dropdown', 'index':ALL}, 'value'),
@@ -313,12 +352,13 @@ def update_categories(value,start_date, end_date, purpose, labels):
       options = [[{"label":x,"value":x} for x in df["ジャンル"].unique().tolist()] for i in range(len(new_categories))]
       return options
 @dashboard.callback(
-  Output("new_categories", 'children'),
+  Output("new_categories", 'style'),
   Input("button_add_new_category", 'n_clicks'),
 )
 def add_new_category(n_clicks):
-  if n_clicks is not None:
-    new_categories.append(make_category(len(new_categories)))
+  if n_clicks is None:
+    return dash.no_update
+  new_categories.append(make_category(len(new_categories)))
   return new_categories
 
 @dashboard.callback(
@@ -345,6 +385,8 @@ def update_data(radio_period, start_date, end_date, purpose, labels, categories_
   Input("calender_period_custom","start_date"),
   Input("calender_period_custom","end_date"),
   Input("dropdown_purpose","value"),
+  Input("button_display_hide", "n_clicks"),
+  State("hidden_score", "data"), 
 )
 def update_genre_chart_at_left_side(*_args): # 上のコールバックでselected_periodを更新しているため
   total = data["金額"].sum()
@@ -360,7 +402,10 @@ def update_genre_chart_at_left_side(*_args): # 上のコールバックでselect
     # return expense_html
     return expense_html, html.P("データがありません")
   # return expense_html, html.Div(html.P("データがありません",className="border border-4 border-dark",style={"margin-top":"100px"}),style={"height":"250px"})
-  fig_pie = genre_pie_chart_at_left_side(data_by_genre)
+  # print("fig",_args[-1]["hidden"])
+  is_hidden_sidebar = not(_args[-1]["hidden"]) if ctx.triggered_id == "button_display_hide" else _args[-1]["hidden"]
+    
+  fig_pie = genre_pie_chart_at_left_side(data_by_genre,is_hidden_sidebar)
   table = genre_ranking_table_at_left_side(data_by_genre)
   graph_html = dbc.Row([
             dbc.Col([
@@ -383,7 +428,7 @@ def update_genre_chart_at_left_side(*_args): # 上のコールバックでselect
 )
 def update_year_bar_chart_at_left_side(year,purpose):
   if year is None: # 未入力時
-    return Dash.no_update
+    return dash.no_update
   # globalのdataとは期間が異なるので新しく生成している。
   data = get_data_for_purpose(data= df, purpose = purpose)
   data = data[data["年"] == year].groupby(["月","ジャンル"])[["金額"]].sum()
