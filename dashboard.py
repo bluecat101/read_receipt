@@ -1,5 +1,5 @@
-from dash import Dash, Input, Output,State, ctx, html, dcc, callback
-
+from dash import Dash, ALL, Input, Output,State, ctx, html, dcc, callback
+# import copy
 # import dash
 # import dash_core_components as dcc
 import dash_bootstrap_components as dbc
@@ -19,6 +19,7 @@ period  = ["今月", "先月", "今年", "昨年", "累計"]
 purpose = ["家族", "父", "全て"]
 selected_period = period[0]
 data = pd.DataFrame()
+self_categories = {}
 # 付け加え　色
 # colors = {
 #   'background': 'lightblue  ',
@@ -32,7 +33,7 @@ df["年"] = df["日付"].str.split("-").apply(lambda row: int(row[0]))
 df["月"] = df["日付"].str.split("-").apply(lambda row: int(row[1]))
 df["日"] = df["日付"].str.split("-").apply(lambda row: int(row[2]))
 
-dashboard = Dash(__name__, external_stylesheets = [dbc.themes.BOOTSTRAP,'./assets/stylesheet.css'])
+dashboard = Dash(__name__, external_stylesheets = [dbc.themes.BOOTSTRAP,'./assets/stylesheet.css', dbc.icons.BOOTSTRAP])
 def get_data_for_period(data = None,period = None,):
   today = d.today()
   if data is None:
@@ -73,8 +74,40 @@ def get_data_for_purpose(data = None,purpose = None,):
 
 period_options =[{"label": x,"value": x} for x in period]
 purpose_options =[{"label": x,"value": x} for x in purpose]
+def make_category(i):
+  new_id_for_input = {"type": "input", "index": i}
+  new_id_for_dropdown = {"type": "dropdown", "index": i}
+  category_name = "カテゴリー"+str(i+1)
+  category =dbc.Row([ dbc.Row([
+        dbc.Col(html.Span('カテゴリー名:  '),width = 5),
+        dbc.Col(dcc.Input(
+          id = new_id_for_input,
+          placeholder=category_name,
+          value = "",
+          style={"width": "150px"}
+        ),width = "auto")])
+      ,dbc.Row(dcc.Dropdown(
+            id = new_id_for_dropdown,
+            options = [{"label":x,"value":x} for x in df["ジャンル"].unique().tolist()],
+            multi = True,
+            value = None,
+            # style={"width": "500px"}
+          ))],style={"padding": "10px 5px","display": "inline","height":"50px"})
+  return category
+new_categories = []
+for _ in range(4):
+  new_categories.append(make_category(len(new_categories)))
+sidebar = dbc.Col([
+            html.P("Slider"),
+            dbc.Row(new_categories,id="new_categories",style={"height":"500px","display": "block"},className="overflow-auto"),
+            dbc.Row(dbc.Button(html.I(className= "bi bi-plus-circle-dotted"),id = 'button_add_new_category'))
+            ],
+            className="bg-info opacity-25", 
+            width=3
+          )
 dashboard.layout = dbc.Container([
-  dbc.Row([
+  dbc.Row([sidebar,dbc.Col(
+dbc.Row([
     dbc.Col([
       dbc.Row([
         dbc.Col([
@@ -145,7 +178,11 @@ dashboard.layout = dbc.Container([
       # ])
     ],
     width=6)
-  ])
+  ]),width=9
+
+
+  )])
+  
 ],style={"margin":"0"})
 
 def genre_pie_chart_at_left_side(data):
@@ -224,6 +261,65 @@ def get_period_from_word(period):
 #   #   elif trigger_id == "calender_period_custom":
 #   #     return [args[1],args[2]]
 #   return selected_period # default値
+def set_data(start_date, end_date, purpose):
+  def classify_category(genre):
+    for label, category in self_categories.items():
+      if genre in category:
+        return label
+    return genre # 見つからなかった場合、区分をジャンル名を同じにして返す
+  # print("self_categories",self_categories)
+  global data
+  data= df.copy()
+  data["ジャンル"] = data["ジャンル"].apply(classify_category) # ジャンルの名前を変更
+  data = get_data_for_period(get_data_for_purpose(data = data, purpose = purpose), period = [start_date, end_date]) #dfから取得
+
+def update_self_categories(labels, value):
+  labels = ["カテゴリー"+str(i+1) if x == "" else x for i,x in enumerate(labels)]# 未入力のlabelを変換(カテゴリーn)する
+  value  = [x if x is not None else [] for x in value]
+  global self_categories
+  self_categories = {labels[i]: value[i] for i in range(len(new_categories))} # 追加だと過去のが残ってしまう
+
+@dashboard.callback(
+    Output({'type':'dropdown', 'index':ALL}, 'options'),
+    Input({'type':'dropdown', 'index':ALL}, 'value'),
+    State("calender_period_custom","start_date"),
+    State("calender_period_custom","end_date"),
+    State("dropdown_purpose","value"),
+    State({'type':'input', 'index':ALL},"value"),
+)
+def update_categories(value,start_date, end_date, purpose, labels):
+    if ctx.triggered_id is not None:
+        # この時点で押されたnew_categoryに値が格納されているので、押されたindexを取得してそれだけ例外で押された要素等から生成する必要なdし
+        genre_no_selected = df["ジャンル"].unique().tolist()
+        for i in range(len(new_categories)):
+          # Noneは値が挿入されていないことを意味するので、空の配列とみなす
+          if value[i] is None:
+            value[i] = []
+          genre_no_selected = [x for x in genre_no_selected if x not in value[i]]
+        options = [] # return用
+        for i in range(len(new_categories)):
+          # genre_no_selected + 各new_categoryの今の値をoprionsとする。もし今の値をoptionsに入れないと値が候補に無い扱いになり消される
+          # i番目の値が無い(None)の時にlist+Noneはエラーとなるので注意
+          options.append([{"label":x,"value":x} for x in genre_no_selected + value[i]])
+        update_self_categories(labels,value)
+        set_data(start_date, end_date, purpose)
+        print("update_categories")
+        # print("aaa",data)
+        return options
+    # データの加工
+    # inputの値をdropdownのlabelの値にしても良かったが、そのような設計であるとinputの値を決める必要があるため、デフォルト値としてcategory1等を入れる必要があるため今回は不採用
+    else:
+      # default値
+      options = [[{"label":x,"value":x} for x in df["ジャンル"].unique().tolist()] for i in range(len(new_categories))]
+      return options
+@dashboard.callback(
+  Output("new_categories", 'children'),
+  Input("button_add_new_category", 'n_clicks'),
+)
+def add_new_category(n_clicks):
+  if n_clicks is not None:
+    new_categories.append(make_category(len(new_categories)))
+  return new_categories
 
 @dashboard.callback(
   [Output("calender_period_custom","start_date"),
@@ -232,13 +328,14 @@ def get_period_from_word(period):
   Input("calender_period_custom","start_date"),
   Input("calender_period_custom","end_date"),
   Input("dropdown_purpose","value"),
+  Input({'type':'input', 'index':ALL},"value"),
+  Input({'type':'dropdown', 'index':ALL}, 'value'),
 )
-def update_data(radio_period, start_date, end_date, purpose):
-  if ctx.triggered and ctx.triggered_id == "radio_period_standard":
+def update_data(radio_period, start_date, end_date, purpose, labels, categories_name):
+  if ctx.triggered_id == "radio_period_standard":
     start_date, end_date = get_period_from_word(radio_period)
-    # print(start_date,end_date)
-  global data
-  data = get_data_for_period(get_data_for_purpose(purpose = purpose), period = [start_date, end_date])
+  update_self_categories(labels,categories_name) # label,カテゴリーの内訳の更新を反映
+  set_data(start_date, end_date, purpose)
   return [start_date, end_date]
   
 @dashboard.callback(
@@ -286,7 +383,7 @@ def update_genre_chart_at_left_side(*_args): # 上のコールバックでselect
 )
 def update_year_bar_chart_at_left_side(year,purpose):
   if year is None: # 未入力時
-    return dash.no_update
+    return Dash.no_update
   # globalのdataとは期間が異なるので新しく生成している。
   data = get_data_for_purpose(data= df, purpose = purpose)
   data = data[data["年"] == year].groupby(["月","ジャンル"])[["金額"]].sum()
@@ -332,7 +429,7 @@ def update_year_bar_chart_at_left_side(year,purpose):
 )
 def update_genre_bar_chart(unit, _radio_value, start_date, end_date, _purpose):
   triggered_id = ctx.triggered_id
-  print(triggered_id) # 起動時はcalender_period_customを受け取る(上のcallbackで値を変えるため)
+  #起動時はcalender_period_customを受け取る(上のcallbackで値を変えるため)
   if triggered_id != "type_of_x_axis":
     unit = ""
   def get_week_number(day, offset):
