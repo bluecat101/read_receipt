@@ -18,6 +18,6 @@
 /.rosen.png
 /__pycache__
 /.vscode
-/output
+/output.csv
 /item_db.py
 /store_db.py
