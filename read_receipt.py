@@ -298,7 +298,7 @@ class ReadReceipt:
         self.item_list.clear()
         continue
       # Find total then finish search
-      if "合計" in text:
+      if re.search("合計|(合[ ]*計)",text):
         break
       # Sometime, discount exist after "小計"(subtotal)
       if isFinish: # After find "小計"(subtotal)
@@ -309,7 +309,7 @@ class ReadReceipt:
           if searched_discount: # Get discount price
             self.special_discount.append([text[:searched_discount.start()-1],int(searched_discount.group())])
       else: # Before find "小計"(subtotal)
-        if "小計" in text: # quit to read item in receipt
+        if re.search("小計|(小[ ]*計)",text): # quit to read item in receipt
           isFinish = True
           continue
         elif re.search('(割引|値引|クーポン)',text): # Find discount line
