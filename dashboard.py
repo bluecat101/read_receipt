@@ -1,4 +1,5 @@
 from dash import dash, Dash, ALL, Input, Output,State, ctx, html, dcc, callback
+from dash._utils import AttributeDict
 # import copy
 # import dash
 # import dash_core_components as dcc
@@ -74,10 +75,12 @@ def get_data_for_purpose(data = None,purpose = None,):
 
 period_options =[{"label": x,"value": x} for x in period]
 purpose_options =[{"label": x,"value": x} for x in purpose]
-def make_category(i):
-  id_for_input = {"type": "input", "index": i}
-  id_for_dropdown = {"type": "dropdown", "index": i}
-  id_for_delete_button = {"type": "button", "index": i}
+def make_category(i,options=None):
+  if options is None:
+    options = [{"label":x,"value":x} for x in df["ジャンル"].unique().tolist()]
+  id_for_input = {"type": "input", "index": i,'someattr': "category name"}
+  id_for_dropdown = {"type": "dropdown", "index": i,'someattr': "selected category"}
+  id_for_delete_button = {"type": "button", "index": i,'someattr': "delete category"}
   category_name = "カテゴリー"+str(i+1)
   category = dbc.Row([ 
               dbc.Col([
@@ -93,7 +96,7 @@ def make_category(i):
                 dbc.Row(
                   dcc.Dropdown(
                     id = id_for_dropdown,
-                    options = [{"label":x,"value":x} for x in df["ジャンル"].unique().tolist()],
+                    options = options,
                     multi = True,
                     value = None,
                   )
@@ -103,7 +106,7 @@ def make_category(i):
              ],style={"padding": "10px 0 10px 5px"})
   return category
 new_categories = []
-for _ in range(4):
+for _ in range(7):
   new_categories.append(make_category(len(new_categories)))
 sidebar = dbc.Col(
   html.Div(
@@ -292,9 +295,11 @@ def set_data(start_date, end_date, purpose):
   data = get_data_for_period(get_data_for_purpose(data = data, purpose = purpose), period = [start_date, end_date]) #dfから取得
 
 def update_self_categories(labels, value):
+  # print("labels",labels)
   labels = ["カテゴリー"+str(i+1) if x == "" else x for i,x in enumerate(labels)]# 未入力のlabelを変換(カテゴリーn)する
   value  = [x if x is not None else [] for x in value]
   global self_categories
+  # print("self_categories",self_categories)
   self_categories = {labels[i]: value[i] for i in range(len(new_categories))} # 追加だと過去のが残ってしまう
 
 @callback(
@@ -309,7 +314,9 @@ def update_self_categories(labels, value):
           State("hidden_score", "data"), 
           )
 def sidebar(n_clicks,data):
-  if n_clicks is None:
+  # n_clicksはどんどん加算されていくので、起動時の実行かどうかしか判定できない
+  # ctx.triggered_idには押されたinputが入るためこっちの方が確実かな
+  if ctx.triggered_id != "button_display_hide":
     return dash.no_update
   data["hidden"] = not data["hidden"]
   class_name= "bi bi-arrow-right-square-fill" if data["hidden"] else "bi bi-arrow-left-square-fill"
@@ -318,48 +325,79 @@ def sidebar(n_clicks,data):
   # update_genre_chart_at_left_side(data)
   return data["hidden"], data, class_name, width_sidebar,width_main
 
+def return_placeholder(num):
+  return ['カテゴリー'+str(i+1) for i in range(num)]
+
+
+
 @dashboard.callback(
-    Output({'type':'dropdown', 'index':ALL}, 'options'),
-    Input({'type':'dropdown', 'index':ALL}, 'value'),
+    Output("new_categories", 'children'),
+    Output({'type':'dropdown', 'index':ALL,'someattr': "selected category"}, 'value'),
+    Output({'type':'dropdown', 'index':ALL,'someattr': "selected category"}, 'options'),
+    Output({'type':'input', 'index':ALL,'someattr': "category name"},"placeholder"),
+    # dropdownのvalueの値はglobalのnew_categoriesに反映されているわけではなく、new_categoriesを更新するためvalueの値も更新する必要がある
+    Input({'type':'dropdown', 'index':ALL,'someattr': "selected category"}, 'value'),
+    Input("button_add_new_category", 'n_clicks'),
+    Input({'type':'button', 'index':ALL,'someattr': "delete category"}, 'n_clicks'),
     State("calender_period_custom","start_date"),
     State("calender_period_custom","end_date"),
     State("dropdown_purpose","value"),
-    State({'type':'input', 'index':ALL},"value"),
+    State({'type':'input', 'index':ALL,'someattr': "category name"},"value"),
+    State({'type':'input', 'index':ALL,'someattr': "category name"},"id"), # 現在のidを取得するためにinput_idでなくても良いが1つ必要
+    State({'type':'dropdown', 'index':ALL,'someattr': "selected category"}, 'options'), # 再読み込み時にplaceholderの値がid参照になっており、idは毎回連番に振り直さないので再読み込み時にplaceholderの値がおかしくなるため再読み込み時にplaceholerを振り直す用
+
 )
-def update_categories(value,start_date, end_date, purpose, labels):
-    if ctx.triggered_id is not None:
-        # この時点で押されたnew_categoryに値が格納されているので、押されたindexを取得してそれだけ例外で押された要素等から生成する必要なdし
-        genre_no_selected = df["ジャンル"].unique().tolist()
-        for i in range(len(new_categories)):
-          # Noneは値が挿入されていないことを意味するので、空の配列とみなす
-          if value[i] is None:
-            value[i] = []
-          genre_no_selected = [x for x in genre_no_selected if x not in value[i]]
-        options = [] # return用
-        for i in range(len(new_categories)):
-          # genre_no_selected + 各new_categoryの今の値をoprionsとする。もし今の値をoptionsに入れないと値が候補に無い扱いになり消される
-          # i番目の値が無い(None)の時にlist+Noneはエラーとなるので注意
-          options.append([{"label":x,"value":x} for x in genre_no_selected + value[i]])
-        update_self_categories(labels,value)
-        set_data(start_date, end_date, purpose)
-        print("update_categories")
-        # print("aaa",data)
-        return options
-    # データの加工
-    # inputの値をdropdownのlabelの値にしても良かったが、そのような設計であるとinputの値を決める必要があるため、デフォルト値としてcategory1等を入れる必要があるため今回は不採用
+def update_categories(value, add_click, delete_click, start_date, end_date, purpose, labels,input_id,options):
+    if ctx.triggered_id is None:
+      return dash.no_update,value,options,return_placeholder(len(value))
+      # optionsを指定しないとdfから作成するためすでにカテゴリーに分類されている値を入れてしまう。
+      # そのため、何もない状態で生成し他のカテゴリーと一緒にoptionsが変更される
+  
+    elif isinstance(ctx.triggered_id, AttributeDict) and ctx.triggered_id["someattr"] == "delete category":
+      id = ctx.triggered_id["index"]
+      for i in range(len(input_id)):
+        if input_id[i]["index"] == id:
+          index = i
+          break
+      else:
+        index = -1
+        print("error")
+        return dash.no_update
+      
+      global new_categories
+      del new_categories[index]
+      del labels[index]
+      del value[index]
+    # この時点で押されたnew_categoryに値が格納されているので、押されたindexを取得してそれだけ例外で押された要素等から生成する必要なし
+
+    genre_no_selected = df["ジャンル"].unique().tolist()
+    for i in range(len(new_categories)):
+      # Noneは値が挿入されていないことを意味するので、空の配列とみなす
+      if value[i] is None:
+        value[i] = []
+      genre_no_selected = [x for x in genre_no_selected if x not in value[i]]
+    options = [] # return用
+    for i in range(len(new_categories)):
+      # genre_no_selected + 各new_categoryの今の値をoprionsとする。もし今の値をoptionsに入れないと値が候補に無い扱いになり消される
+      # i番目の値が無い(None)の時にlist+Noneはエラーとなるので注意
+      options.append([{"label":x,"value":x} for x in genre_no_selected + value[i]])
+    update_self_categories(labels, value)
+    set_data(start_date, end_date, purpose)
+    if ctx.triggered_id == "button_add_new_category":
+      new_categories.append(make_category(input_id[-1]["index"]+1 if len(input_id) > 0 else 0,options = [{"label":x,"value":x} for x in genre_no_selected ]))
+      return new_categories, value, options, return_placeholder(len(value))
+    elif  isinstance(ctx.triggered_id, AttributeDict)and ctx.triggered_id["someattr"] == "delete category":
+      # 出力が元のnew_categoriesの数を求めているため数が合わないのでダミー要素を追加
+      placeholder = return_placeholder(len(value))
+      placeholder.insert(index,"")
+      value.insert(index, [])
+      options.insert(index, [])
+
+      # new_categoriesはchildrenで返しているため個数を気にしないのでlen(new_categories)ではエラーになる
+      return new_categories, value, options, placeholder
     else:
-      # default値
-      options = [[{"label":x,"value":x} for x in df["ジャンル"].unique().tolist()] for i in range(len(new_categories))]
-      return options
-@dashboard.callback(
-  Output("new_categories", 'style'),
-  Input("button_add_new_category", 'n_clicks'),
-)
-def add_new_category(n_clicks):
-  if n_clicks is None:
-    return dash.no_update
-  new_categories.append(make_category(len(new_categories)))
-  return new_categories
+      return dash.no_update, value, options, return_placeholder(len(value))
+   
 
 @dashboard.callback(
   [Output("calender_period_custom","start_date"),
@@ -368,10 +406,11 @@ def add_new_category(n_clicks):
   Input("calender_period_custom","start_date"),
   Input("calender_period_custom","end_date"),
   Input("dropdown_purpose","value"),
-  Input({'type':'input', 'index':ALL},"value"),
-  Input({'type':'dropdown', 'index':ALL}, 'value'),
+  Input({'type':'input', 'index':ALL,'someattr': "category name"},"value"),
+  Input({'type':'dropdown', 'index':ALL,'someattr': "selected category"}, 'value'),
 )
 def update_data(radio_period, start_date, end_date, purpose, labels, categories_name):
+  # print("update_data",ctx.triggered_id)
   if ctx.triggered_id == "radio_period_standard":
     start_date, end_date = get_period_from_word(radio_period)
   update_self_categories(labels,categories_name) # label,カテゴリーの内訳の更新を反映
@@ -389,6 +428,7 @@ def update_data(radio_period, start_date, end_date, purpose, labels, categories_
   State("hidden_score", "data"), 
 )
 def update_genre_chart_at_left_side(*_args): # 上のコールバックでselected_periodを更新しているため
+  # print("update_genre_chart_at_left_side",ctx.triggered_id)
   total = data["金額"].sum()
     # print(data["ジャンル"].unique())
   expense_html = html.Div(
