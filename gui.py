@@ -30,7 +30,6 @@ class ComfirmReceipt(tk.Frame):
     `all_item () `        : To pass all data
     `new_category () `    : To record new category with Japanese and English
   """
-  root = tk.Tk() # Make display
   def __init__(self,items,date,store,discount): 
     """
     ## Description:
@@ -42,6 +41,7 @@ class ComfirmReceipt(tk.Frame):
         `store (str)`       : Purchase store
         `discount (str[][])`: Special discount
     """
+    self.root = tk.Tk() # Make display
     super().__init__(self.root)
     
     self.root.title("comfirm detail") # Set gui title 
@@ -361,7 +361,7 @@ class ComfirmReceipt(tk.Frame):
     """
     elements = self.main_table["body_Frame"].winfo_children()
     # Where line is deleted
-    row = int(elements.index(event.widget)/9 - 1)
+    row = int(elements.index(event.widget)/9)
     row_elements = elements[row*9:row*9+9]
     # Delete one line
     for element in row_elements:
@@ -451,7 +451,7 @@ class ComfirmReceipt(tk.Frame):
       is_ok = False
     
     
-    if re.search('(20[0-9]{2})/(1[0-2]|0[1-9]|[1-9])/([1-3][0-9]|[1-9])',self.header["date_Entry"].get()): # Check purchase date
+    if re.search('(20[0-9]{2})-(1[0-2]|0[1-9]|[1-9])-([1-3][0-9]|[1-9])',self.header["date_Entry"].get()): # Check purchase date
       self.data=self.header["date_Entry"].get()
       self.header["date_Entry"].configure(highlightbackground="#565656") # Change Style
     else: # No entered name
