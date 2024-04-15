@@ -11,7 +11,6 @@ def setting(store_name,text):
     if len(text) >0:
       extra_char = re.match("\*?([A-Z]|[a-z]|[0-9])+",text)
       if not(extra_char):
-        print("NO char")
         return text
       text = text[extra_char.end():]
       idx = text.find("¥")
@@ -35,7 +34,6 @@ def setting(store_name,text):
   elif store_name == "業務スーパー":
     if len(text) >0:
       extra_char = re.search(".?([A-Z]|[a-z]|[0-9])+",text)
-      # print(text,extra_char)
       if extra_char:
         text = text[extra_char.end():]
       idx = text.find("¥")
