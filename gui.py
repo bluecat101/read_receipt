@@ -247,31 +247,31 @@ class ComfirmReceipt(tk.Frame):
     elements = self.main_table["body_Frame"].winfo_children() # Get all item in tableFrame
     subtotal = [0,0] # [0] is total include tax and [1] is only tax. Don't mind internal or external taxes
     for i in range(int(len(elements)/9)):
-      row_elements = elements[i*9:i*9+8]
-      has_error = self.check_for_error(row_elements,i) # Item price, amount and discount are the right type
+      row_element = elements[i*9:i*9+8]
+      has_error = self.check_for_error(row_element,i) # Item price, amount and discount are the right type
       if not(has_error):
-        total_element = row_elements[7]
+        total_element = row_element[7]
         total_element.delete(0,tk.END)                                        # Delete the value already entered
-        total = [int(row_elements[4].get())*int(row_elements[5].get()),0]     # Get total from item price and amount. [0] is total include tax and [1] is total don't include tax
-        if row_elements[6].get().isdecimal():                                 # Discount is only integer
-          total[0] -= int(row_elements[6].get())                                
-        elif re.match("^[0-9]+%$",row_elements[6].get()):                    # Discount has "%"
-          total[0] = int(total[0]*(1-int(re.match("^[0-9]+",row_elements[6].get()).group())/100))
+        total = [int(row_element[4].get())*int(row_element[5].get()),0]     # Get total from item price and amount. [0] is total include tax and [1] is total don't include tax
+        if row_element[6].get().isdecimal():                                 # Discount is only integer
+          total[0] -= int(row_element[6].get())                                
+        elif re.match("^[0-9]+%$",row_element[6].get()):                    # Discount has "%"
+          total[0] = int(total[0]*(1-int(re.match("^[0-9]+",row_element[6].get()).group())/100))
         # Calculate the total by dividing into cases including tax and excluding tax.
         if self.is_external_tax(): # External tax
           total[1] = total[0]
-          if self.boolean_Checkbox[i]: # Not eligible for reduced tax rate(軽減税率対象外)
-            total[0] = int(total[0] * 1.1)
-          else:                        # Eligible for reduced tax rate(軽減税率対象)
+          if self.boolean_Checkbox[i].get(): # Not eligible for reduced tax rate(軽減税率対象外)
             total[0] = int(total[0] * 1.08)
+          else:                        # Eligible for reduced tax rate(軽減税率対象)
+            total[0] = int(total[0] * 1.1)
           subtotal[1] += (total[0] - total[1])
           total_element.insert(0,"%d(%d)"%(total[0],total[1]))
         else:                      # Internal tax
           # Calculate internal tax
-          if self.boolean_Checkbox[i]: # Not eligible for reduced tax rate(軽減税率対象外)
-            subtotal[1] += total[0]*(1/11)
-          else:                        # Eligible for reduced tax rate(軽減税率対象)
+          if self.boolean_Checkbox[i].get(): # Not eligible for reduced tax rate(軽減税率対象外)
             subtotal[1] += total[0]*(8/108)
+          else:                        # Eligible for reduced tax rate(軽減税率対象)
+            subtotal[1] += total[0]*(1/11)
           total_element.insert(0,total[0])
         subtotal[0] += total[0]
     
