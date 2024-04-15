@@ -337,8 +337,8 @@ class ReadReceipt:
             self.item_list[-1]["price"] = int((self.item_list[-1]["price"])/int(self.item_list[-1]["amount"])) 
         elif(text != ""): # Other type may be item, so record the line
           # Whether item is registed for DB and store data for item_info
-          self.find_item(text,item_info) 
-          self.item_list.append(item_info)
+          if self.find_item(text,item_info):
+            self.item_list.append(item_info)
 
   def find_store(self,text):
     """
@@ -347,6 +347,9 @@ class ReadReceipt:
       
     ## Args:
       `text (str)`: each line text
+    
+    ## Returns:
+      `bool` : text is "" or having any character
     """
     for storeName in sDB.store_DB: 
       if storeName in text: # whether store name is included for text
@@ -364,6 +367,9 @@ class ReadReceipt:
     # Change data by each store
     # Some receipt has characteristics such as having extra characters then delete it
     text = sDB.setting(self.store,text)
+    # Don't add row when character is empty after changing the text for each store
+    if text == "":
+      return False
     item_info["item"] = text # Store processed text
     kks = kakasi() # Make instance to convert for HIragana and Katakana
     # Get boarder line between item and price
@@ -404,14 +410,14 @@ class ReadReceipt:
                 category = iDB.special_name[key][1]
                 item_info["registered_name"] = registered_name
                 item_info["category"] = category
-                return
+                return True
           elif(re.search(regular,text)): # Find text
             # Get registered_name and category
             registered_name = db_item
             category = item_genre
             item_info["registered_name"] = registered_name
             item_info["category"] = category
-            return
+            return True
           else:
             # Change type of the notation method
             itemTypeStatus -= 1
@@ -421,3 +427,4 @@ class ReadReceipt:
               item_convert = kks.convert(item_convert)[0]['kana'] # Change type of word for Katakana
             elif itemTypeStatus ==1:
               item_convert=mojimoji.zen_to_han(item_convert) # Change type of word for Half Katakana
+    return True
