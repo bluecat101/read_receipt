@@ -25,27 +25,33 @@ class RecordReceipt:
     item_DB()         : Item already registered such as milk, potato, beef etc...
     category_DB()     : Category name already registered such as dairy products, vegetable, meat etc...
     store_DB()        : Store name already registered
+    store(str)        : Purchace store name
+    tax(str)          : Infomation of tax extarnal or internal tax
     all_item()        : Got Data from receipt such as item, price, amount, discount etc...
     new_category_en() : New category name in English not item name
-    store(str)        : Purchace store name
+    
   """
   item_DB     = iDB.item_DB     # Read item
   category_DB = iDB.category_DB # Read category name
   store_DB    = sDB.store_DB    # Read store name
 
-  def __init__(self,all_item,new_category_en):
+  def __init__(self,store, tax, all_item, new_category_en):
     """
     ## Description:
       This method is constructor and save data.
-    #" Args:
-      all_item (str[][]): Got Data from receipt such as item, price, amount, discount etc...
-      new_category_en (): New category name in English not item name
+    ## Args:
+      `store (str)       `: Purchace store name
+      `tax (str)         `: Infomation of tax extarnal or internal tax
+      `all_item (str[][])`: Got Data from receipt such as item, price, amount, discount etc...
+      `new_category_en ()`: New category name in English not item name
     """
-    self.all_item = all_item                # Instance argument
+    self.store           = store            # Instance argument
+    self.tax             = tax              # Instance argument
+    self.all_item        = all_item         # Instance argument
     self.new_category_en = new_category_en  # Instance argument
-    self.store = all_item[0]["store"]       # Instance argument
     self.write_file() # Record for CSV file
     self.add_DB()     # Update DataBase
+    
 
   def write_file(self):
     """
@@ -94,16 +100,19 @@ class RecordReceipt:
     # Overwrite for item_DB.py
     with open(ITEMDB_PATH_NAME,"w") as f:
       f.write(replace_content)
-    
+    # Update tax infomation in storeDB.py if tax is internal 
+    if self.tax == "内税" and not(self.store in sDB.internal_tax):
+      sDB.internal_tax.append(self.store)
     if not(self.store in self.store_DB): # Whether new store name or not
       self.store_DB.append(self.store)
       sDB.keyword[self.store] = ""
-      # Get contents in store_db.py as sentence
-      with open(STOREDB_PATH_NAME) as file:
-        contents = file.readlines()
-      # Update store name and keyword
-      contents[1] = "store_DB = " + str(self.store_DB) + '\n'
-      contents[2] = "keyword = " + str(sDB.keyword) + '\n'
-      # Overwrite
-      with open(STOREDB_PATH_NAME, mode="w") as file:
-        file.writelines("".join(contents))
+    # Get contents in store_db.py as sentence
+    with open(STOREDB_PATH_NAME) as file:
+      contents = file.readlines()
+    # Update store name, keyword and internal tax
+    contents[1] = "store_DB = " + str(self.store_DB) + '\n'
+    contents[2] = "keyword = " + str(sDB.keyword) + '\n'
+    contents[3] = "internal_tax = " + str(sDB.internal_tax) + '\n'
+    # Overwrite
+    with open(STOREDB_PATH_NAME, mode="w") as file:
+      file.writelines("".join(contents))
