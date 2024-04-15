@@ -113,6 +113,7 @@ class RecordReceipt:
     contents[1] = "store_DB = " + str(self.store_DB) + '\n'
     contents[2] = "keyword = " + str(sDB.keyword) + '\n'
     contents[3] = "internal_tax = " + str(sDB.internal_tax) + '\n'
+    contents[4] = "purpose_for_father = " + str(sDB.purpose_for_father) + '\n'
     # Overwrite
     with open(STOREDB_PATH_NAME, mode="w") as file:
       file.writelines("".join(contents))

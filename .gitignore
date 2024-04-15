@@ -19,3 +19,5 @@
 /__pycache__
 /.vscode
 /output
+/item_db.py
+/store_db.py

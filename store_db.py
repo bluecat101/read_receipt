@@ -1,7 +1,8 @@
 import re
-store_DB = ['ダイエー', 'ローゼン', 'イオン', 'FamilyMart', 'セブン-イレブン', '吉野家', 'まかいの牧場', 'EXCELSIOR CAFFE', '業務スーパー', 'KAMUKURA', 'LAWSON', '業務スーパー', '山安', '文左亭', 'LAWSON', 'KALDI', '世界一のアップルパイ', 'サービスエリア', 'NewDays', 'STARBUCKS', 'アトレ', 'クリエイト', ' くら寿司', 'お菓子のゆりかご', 'ダイソー', 'くら寿司', ' ロイヤル', 'マック', ' EXCELSIOR CAFFE', '博多劇場', 'オーエスドラッグ', 'サンドラック', 'すき家', 'かつや', '駐車場', 'ロイヤルホームセンタ', 'バーミヤン', 'HAC', 'QB', 'Enejet']
-keyword = {'ダイエー': '', 'ローゼン': '', 'イオン': '', 'FamilyMart': '領収証', 'セブン-イレブン': '領収書', '吉野家': '', 'まかいの牧場': '', '業務スーパー': '', 'EXCELSIOR CAFFE': '', 'KAMUKURA': '', 'LAWSON': 'お客様控え', '山安': '', '文左亭': '', 'KALDI': '', '世界一のアップルパイ': '', 'サービスエリア': '', 'NewDays': '', 'STARBUCKS': 'TEL', 'アトレ': '', 'クリエイト': '', ' くら寿司': '', 'お菓子のゆりかご': '', 'ダイソー': '', 'くら寿司': '', 'サンドラック': '', 'すき家': '', 'かつや': '', '駐車場': '', 'ロイヤルホームセンター': '', 'バーミヤン': '', 'HAC': '', 'QB': '', 'Enejet': 'ENEOSカード'}
-internal_tax = ['FamilyMart', 'EXCELSIOR CAFFE', 'LAWSON', 'Enejet']
+store_DB = ['ダイエー', 'ローゼン', 'イオン', 'FamilyMart', 'セブン-イレブン', '吉野家', 'まかいの牧場', 'EXCELSIOR CAFFE', '業務スーパー', 'KAMUKURA', 'LAWSON', '業務スーパー', '山安', '文左亭', 'LAWSON', 'KALDI', '世界一のアップルパイ', 'サービスエリア', 'NewDays', 'STARBUCKS', 'アトレ', 'クリエイト', ' くら寿司', 'お菓子のゆりかご', 'ダイソー', 'くら寿司', ' ロイヤル', 'マック', ' EXCELSIOR CAFFE', '博多劇場', 'オーエスドラッグ', 'サンドラック', 'すき家', 'かつや', '駐車場', 'ロイヤルホームセンタ', 'バーミヤン', 'HAC', 'QB', 'Enejet', 'BRONCOBILLY', 'ライフ', '万葉うどん', 'EXCELSIOR', 'ママン・ラトーナ']
+keyword = {'ダイエー': '', 'ローゼン': '', 'イオン': '会員', 'FamilyMart': '領収証', 'セブン-イレブン': '領収書', '吉野家': '', 'まかいの牧場': '', '業務スーパー': '', 'EXCELSIOR CAFFE': '', 'KAMUKURA': '', 'LAWSON': 'お客様控え', '山安': '', '文左亭': '', 'KALDI': '', '世界一のアップルパイ': '', 'サービスエリア': '', 'NewDays': '', 'STARBUCKS': 'TEL', 'アトレ': '', 'クリエイト': '', ' くら寿司': '', 'お菓子のゆりかご': '', 'ダイソー': '', 'くら寿司': '', 'サンドラック': '', 'すき家': '', 'かつや': '', '駐車場': '', 'ロイヤルホームセンター': '', 'バーミヤン': '', 'HAC': '', 'QB': '', 'Enejet': 'ENEOSカード', 'BRONCOBILLY': '', 'ライフ': '', '万葉うどん': '', 'EXCELSIOR': 'イートイン', 'ママン・ラトーナ': ''}
+internal_tax = ['FamilyMart', 'EXCELSIOR CAFFE', 'LAWSON', 'Enejet', 'BRONCOBILLY', '万葉うどん', 'EXCELSIOR', 'ママン・ラトーナ']
+purpose_for_father = ['FamilyMart', 'EXCELSIOR CAFFE', 'LAWSON','EXCELSIOR CAFFE']
 
 def setting(store_name,text):
   if store_name == "":

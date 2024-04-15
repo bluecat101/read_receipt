@@ -68,7 +68,7 @@ class ComfirmReceipt(tk.Frame):
     )
     # Inisialize data
     self.header["store_Entry"].insert(0,self.store[0])  # Set store name
-    self.header["purpose_Combobox"].set("家族")          # Set item category 
+    self.header["purpose_Combobox"].set("父" if self.store[0] in sdb.purpose_for_father else "家族") # Set item category 
     self.header["tax_Combobox"].set(self.store[1])      # Set item category
     self.header["tax_Combobox"].bind("<<ComboboxSelected>>",self.calculate_event)
     self.header["date_Entry"].insert(0,self.date)       # Set date
@@ -384,7 +384,7 @@ class ComfirmReceipt(tk.Frame):
     self.boolean_Checkbox.append(tk.BooleanVar()) # To get statue of tax Checkbutton 
     self.boolean_Checkbox[-1].set(True) # Inisialize to True
     # Not eligible for reduced tax rate(軽減税率対象外)
-    if registered_name in ["酒", "ビール"]  or category in ["others", "gasoline", "Eating_out"]:
+    if registered_name in ["酒", "ビール"]  or category in ["その他", "車", "外食"]:
       self.boolean_Checkbox[-1].set(False)
     one_line={
       "tax_Checkbutton"          : tk.Checkbutton(self.main_table["body_Frame"], variable=self.boolean_Checkbox[-1]),
@@ -451,7 +451,7 @@ class ComfirmReceipt(tk.Frame):
       is_ok = False
     
     
-    if re.search('(20[0-9]{2})-(1[0-2]|0[1-9]|[1-9])-([1-3][0-9]|[1-9])',self.header["date_Entry"].get()): # Check purchase date
+    if re.search('(20[0-9]{2})-(1[0-2]|0[1-9]|[1-9])-([1-3][0-9]|0[1-9]|[1-9])',self.header["date_Entry"].get()): # Check purchase date
       self.data=self.header["date_Entry"].get()
       self.header["date_Entry"].configure(highlightbackground="#565656") # Change Style
     else: # No entered name
