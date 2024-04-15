@@ -468,6 +468,7 @@ class ComfirmReceipt(tk.Frame):
     # No error
     if is_ok == True:
       self.all_item=[] # To save for csv file
+      self.store[1] = self.header["tax_Combobox"].get()
       for i in range(int(len(elements)/9)):
         row_elements = elements[i*9:i*9+8] # Get row elements
         one_line = {"store": self.store[0],"date": self.date,"purpose": self.header["purpose_Combobox"].get(),"item":  row_elements[1].get(),"registered_name":  row_elements[2].get(),"category":  row_elements[3].get(),"price": row_elements[4].get(),"amount": row_elements[5].get(),"discount": 0,"total": 0} # Do not inisialize "discount" and "total" now because the calculation formula changes depending on the type of discount.
