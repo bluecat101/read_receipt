@@ -5,7 +5,7 @@ import gui as ui
 import record_receipt as recordre
 from tkinter import filedialog
 
-exec_type = "develop_noreceipt" # select type of execution： production,develop_receipt,develop_noreceipt
+exec_type = "production" # select type of execution： production,develop_receipt,develop_noreceipt
 
 """
 # TODO
@@ -67,13 +67,11 @@ def main(image_name):
     # special discout does not belong to any product
     special_discount = receipt_info.special_discount
   # Make Gui object and display got data to comfirm whether tha data is correct
-  for x in item_line: print(x)
   gui=ui.ComfirmReceipt(item_line,date,store,special_discount)
   # to diplay gui until user click "決定(dicision)"
   gui.mainloop()
-  
   # Save receipt data to csv file
-  record_db=recordre.RecordReceipt(gui.all_item,gui.new_category)
+  record_db=recordre.RecordReceipt(gui.store[0],gui.store[1], gui.all_item, gui.new_category)
   
 
 
@@ -85,11 +83,12 @@ if __name__ == "__main__":
     main("develop")
   else:
     # Get file name that read receipt image file.
-    image_name = filedialog.askopenfilename(
+    image_names = filedialog.askopenfilenames(
       title = "レシートを選択してください。",
       filetypes = [("Image file", ".png .jpg "),("PNG", ".png"), ("JPEG", ".jpg")], # ファイルフィルタ
       initialdir = "./" # 自分自身のディレクトリ
     )
     # Call main method to read receipt
-    if image_name != "":
-      main(image_name)
+    for image_name in image_names:
+      if image_name != "":
+        main(image_name)
