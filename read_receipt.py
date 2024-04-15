@@ -69,6 +69,9 @@ class ReadReceipt:
     # Analyse receipt to get item, purchase store etc...
     line_text = self.analyse(exec_type,recognition_result)
     self.search_texts(line_text)
+    # print store name read by OCR
+    if self.store[0] == "":
+      print(line_text[:3])
   
   def do_OCR(self,image_path):
     """ 
@@ -276,7 +279,7 @@ class ReadReceipt:
       # Get purchase date, if it is not found yet
       if self.date=="":
         # Date type is yyyy/mm/dd, yyyy年mm月dd
-        searched_date = re.search('(20[0-9]{2})(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|[1-9])',text)
+        searched_date = re.search('(20[0-9]{2})(/|年)(1[0-2]|0[1-9]|[1-9])(/|月)([1-3][0-9]|0[1-9]|[1-9])',text)
         if searched_date:
           self.date = str(dt.date(int(searched_date.group(1)),int(searched_date.group(3)),int(searched_date.group(5))))
           # Delete item_list before date
@@ -284,7 +287,7 @@ class ReadReceipt:
           continue
 
         # Date type is mm/dd/yyyy, 日mm月dd年yyyy
-        searched_date = re.search('(日)([1-3][0-9]|[1-9])(月)(1[0-2]|0[1-9]|[1-9])(年)(20[0-9]{2})',text)
+        searched_date = re.search('(日)([1-3][0-9]|0[1-9]|[1-9])(月)(1[0-2]|0[1-9]|[1-9])(年)(20[0-9]{2})',text)
         if searched_date:
           self.date = str(dt.date(int(searched_date.group(6)),int(searched_date.group(4)),int(searched_date.group(2))))
           # Delete item_list before date
@@ -318,7 +321,7 @@ class ReadReceipt:
             searched_price = re.search('[0-9]+$',text) # Get discount rate
             # Add discount to previous item. Calcurate discount price because price is discount rate
             if(searched_price):
-              self.item_list[-1]["discount"] = int(self.item_list[-1]["price"]*(1-(int(searched_price.group())/100))) 
+              self.item_list[-1]["discount"] += int(self.item_list[-1]["price"]*(1-(int(searched_price.group())/100))) 
           else: # Last character is not "%"
             searched_price = re.search('[0-9]+$',text) # Get discount price
             # Add discount to previous item
