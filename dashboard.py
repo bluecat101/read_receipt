@@ -142,8 +142,8 @@ dbc.Row([
             max_date_allowed = d.today(),
             #  start_date = d(d.today().year,d.today().month,1),
             #  end_date= d.today()
-            start_date = d(d.today().year,d.today().month-1,1),
-            end_date = d(d.today().year,d.today().month-1,31),
+            start_date = d(d.today().year,d.today().month,1),
+            end_date = d.today(),
           )
          
       ]),
@@ -613,5 +613,5 @@ def update_item_table(_, genre, summary_value):
 
 
 if __name__=='__main__':
-    dashboard.run_server(debug=True)
+    dashboard.run_server(debug=True, dev_tools_ui=True)
 
