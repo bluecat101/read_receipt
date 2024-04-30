@@ -326,7 +326,7 @@ class ReadReceipt:
             searched_price = re.search('[0-9]+$',text) # Get discount price
             # Add discount to previous item
             if(searched_price):
-              self.item_list[-1]["discount"] = int(searched_price.group())
+              self.item_list[-1]["discount"] += int(searched_price.group())
         elif re.search('[0-9]+個',text): # Text line is not related discount but it is related quantity
           if len(self.item_list) != 0: # Previous line exist
             # Get quantity and set to previous line
@@ -335,7 +335,7 @@ class ReadReceipt:
             if self.item_list[-1]["price"] == -1: 
               searched_price = re.search("([0-9]+)(?!.*g$)?$",text)
               if searched_price:
-                self.item_list[-1]["price"] = int(searched_price.group(1))
+                self.item_list[-1]["price"] += int(searched_price.group(1))
             # Update price per one item
             self.item_list[-1]["price"] = int((self.item_list[-1]["price"])/int(self.item_list[-1]["amount"])) 
         elif(text != ""): # Other type may be item, so record the line
