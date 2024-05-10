@@ -33,10 +33,10 @@ def change_period(period):
       return f"{today.year}-{today.month-1}" # 2月 => 1月　月だけならtoday.month % 12 + 1 でも成り立つが1月の際に年も変える必要があるためifで分けている
   return period
 
-def get_month(df):
-  df_date = df[["年","月"]].drop_duplicates().sort_values(["年","月"])
-  # if start is not None:
-  #   df_date = df_date[(df_date["年"] > start.split("-")[0]) | ((df_date["年"] > start.split("-")[0]) & (df_date["月"] > start.split("-")[1]))]
+def get_month():
+  df_1 = df_output[["年","月"]].drop_duplicates().sort_values(["年","月"])
+  df_2 = df_untility_bill[["年","月"]].drop_duplicates().sort_values(["年","月"])
+  df_date = pd.concat([df_1,df_2]).sort_values(["年","月"])
   options = []
   pre_year = ""
   for _, (year,month) in df_date.iterrows():
@@ -158,7 +158,7 @@ def create_table_and_pie_at_year(year, purpose):
   return dbc.Row([dbc.Col(table,width=4),dbc.Col(html.Div(dcc.Graph(figure=fig_pie)),width = 8)],style={"height":"300px"})
 
 def get_default_start_end(start, end):
-  options_period = get_month(df_output)
+  options_period = get_month()
   if start is None:
     today = d.today()
     for x in options_period:
@@ -173,7 +173,7 @@ def get_default_start_end(start, end):
   return (start, end)
 
 def create_row_period_specification(start=None, end=None):
-  options_period = get_month(df_output)
+  options_period = get_month()
   start, end = get_default_start_end(start, end)
   options_end = list(filter(lambda x: x["value"] >= start, options_period))
   start_dropdown = dcc.Dropdown(options = options_period,
@@ -216,6 +216,7 @@ def create_fig_bar_rate_year_in_right_side(start=None, end=None, purpose=None):
   data = processing_data_for_fig_bar(start, end, purpose).reset_index()
   total_amounts = data.groupby('年-月')['金額'].sum()
   # 各グループ内の金額を合計で割って比率を計算し、新しい列として追加
+  # print(start,end)
   data['金額比率'] = data.apply(lambda row: row['金額'] / total_amounts[row['年-月']]*100, axis=1)
   data = data.sort_values(by=['年-月', '金額'], ascending=[True, False]).set_index("年-月")
   
@@ -248,7 +249,7 @@ dbc.Row([
       co.create_col_button_expense_purpose(page),
       dbc.Col([
         html.Br(),
-        dcc.Dropdown(options = [{"label": x, "value": x} for x in ["今月", "先月", "累計"]]+get_month(df_output),
+        dcc.Dropdown(options = [{"label": x, "value": x} for x in ["今月", "先月", "累計"]]+get_month(),
                      value = "今月",
                      id = co.set_id("dropdown_period", page))
       ]),
