@@ -15,6 +15,7 @@ import dash_defer_js_import as dji
 import random
 import regex as re
 import numpy as np
+import copy 
 
 import common as co
 page = "index"
@@ -48,6 +49,8 @@ def get_month():
   return options
 
 def processing_data():
+  df_ub = copy.copy(df_untility_bill)
+  df_ub.insert(2,"目的","家族")
   def change_category(genre):
     if genre in reverse_category:
       return reverse_category[genre]
@@ -66,13 +69,13 @@ def processing_data():
     "公共":["水道代","ガス代","電気代"],
     "その他":[],
   }
-  for genre_category in df_untility_bill.drop_duplicates(subset=['ジャンル'])[["ジャンル", "分類"]].values:
+  for genre_category in df_ub.drop_duplicates(subset=['ジャンル'])[["ジャンル", "分類"]].values:
     category[genre_category[1]] = genre_category[0]
   reverse_category = {value: key for key, values in category.items() for value in values}
   data = df_output.drop(columns=["場所", "日付", "取得した商品名", "商品名", "1個あたりの値段", "個数", "合計の割引", "日"])
   data["ジャンル"] = data["ジャンル"].apply(change_category)
   data = data.rename(columns={"ジャンル": "分類"}).reindex(columns=["年", "月", "目的", "分類", "金額"])
-  data = pd.concat([data,df_untility_bill.drop(columns="ジャンル")]).reset_index(drop=True)
+  data = pd.concat([data,df_ub.drop(columns="ジャンル")]).reset_index(drop=True)
   return data
   
 
