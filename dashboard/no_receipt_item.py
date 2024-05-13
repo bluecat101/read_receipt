@@ -1,38 +1,38 @@
 import dash
-from dash import Dash, ALL, Input, Output,State, ctx, html, dcc, callback,MATCH
-from dash import dash as ddash
-from dash._utils import AttributeDict
+from dash import Input, Output, html, dcc, callback
 import dash_bootstrap_components as dbc
-import dash_table
 import plotly.graph_objects as go
 import plotly.express as px
-import plotly.figure_factory as ff
 import pandas as pd
-from datetime import datetime as dt,date as d
-import calendar as cal
-from dateutil.relativedelta import relativedelta
-import dash_defer_js_import as dji
-import random
-import regex as re
-import numpy as np
+from datetime import date as d
 import common as co
 
 page = "no_receipt"
+no_data = html.Div(html.P("データがありません。"))
 
 dash.register_page(__name__)
 
+# utility_billには月による期間があるので(ex:2ヶ月で〇〇円)、1ヶ月ごとにして月も計算する。
+# 後に分解する前のデータを参照したいので、utility_bill.csvのindexを持たせておく。
 df_untility_bill = co.processing_df_untility_bill(pd.read_csv('utility_bill.csv'),has_index = True)
-# data = df_untility_bill
-# co.add_purpose_and_total_by_month(df_untility_bill)
-new_categories = []
-for _ in range(7):
-  new_categories.append(co.get_category(len(new_categories),df_untility_bill,page))
-
+# 左側のカテゴリーを作成する
+new_categories = co.create_new_category(df_untility_bill, page)
+# サイドバーを作成する
 sidebar = co.create_col_sidebar(new_categories, page)
-
+ 
 def create_row_period_specification():
+  """ 
+  ## Discription
+    期間を指定するための表示を行う。
+    期間は年、月を選ぶことができ、年はdataから指定できる年を取得する。
+  ## Returns:
+    `row (dbc.Row)`: 「年-月」の期間のRowを返す。
+  """
+  # dataから選択できる年を取得してセット
   options_year = [{"label":  year, "value": year} for year in df_untility_bill["年"].unique()]+[{"label":  d.today().year, "value": d.today().year}]
+  # 月は1~12月の選択と全ての月の選択を可能にしている。
   options_month = [{"label": "1~12","value": "1~12"}]+[{"label":  month, "value": month} for month in range(1,13)]
+  # styleのdirection:rtlはアラビア語を指定しており、右から左に要素が表示される設定にしている。
   year_dropdown = dcc.Dropdown(options = options_year,
                      value = d.today().year,
                      id = co.set_id("dropdown_year", page),
@@ -45,13 +45,28 @@ def create_row_period_specification():
   return row
 
 def create_row_table_pie(year, month):
+  """
+  ## Description
+    年と月からジャンルごとの金額を計算してtableで表示し、さらに円グラフでも表記する。
+
+  ## Args:
+    `year (int)`: 指定する年
+    `month (int, string)`: 指定する月(基本的にint型であるが、全月を選択する際にstring型になる)
+
+  ## Returns:
+    `div(html.Div)`: 年と月の指定の範囲内のデータをリストと円グラフにして返す。
+  """
+  # 全ての月が対象であるかによって月を考慮するかを決める
   if month == "1~12":
     data = df_untility_bill[(df_untility_bill["年"] == year)]
   else:
     data = df_untility_bill[(df_untility_bill["年"] == year) & (df_untility_bill["月"] == month)]
+  # 項目ごとの金額を取得する
   data = data.groupby("ジャンル")["金額"].sum().sort_values(ascending=False)
+  # 対象のデータが無いときは文章を出して抜ける
   if data.empty:
-    return
+    return no_data
+  # tableを作成する
   table = html.Table([
             html.Thead([
               html.Tr([html.Th('項目',style={"width": "50%",}), html.Th('金額')])
@@ -64,6 +79,7 @@ def create_row_table_pie(year, month):
               for genre, total in data.items()
             ])
           ], className='table table-hover table-striped table-sm sortable')
+  # 円グラフを作成する
   fig_pie = go.Figure(
       data=[go.Pie(labels=list(data.index),
         values=data.values,
@@ -79,22 +95,33 @@ def create_row_table_pie(year, month):
       paper_bgcolor='rgba(0,0,0,0)',
       uniformtext_minsize = 20,
       margin=dict(l=0, r=0, t=00, b=0),
-      # textinfo='none',  # ラベルを非表示にする
       uniformtext_mode='hide',
       showlegend=False,
   )
   return dbc.Row([dbc.Col(table,width=4),dbc.Col(html.Div(dcc.Graph(figure=fig_pie)),width = 8)],style={"height":"300px"})
 
 def create_table_for_fixed_costs(year, month):
+  """
+  ## Discription
+    固定費についてのテーブルを作成する。
+  ## Args:
+      `year (int)`: 指定する年
+      `month (int, string)`: 指定する月(基本的にint型であるが、全月を選択する際にstring型になる)
+
+  ## Returns:
+      `table(html.Table)`: 固定費に関するテーブルを返す
+  """
+  # 全ての月が対象であるかによって月を考慮するかを決める
   if month == "1~12":
     index = df_untility_bill[(df_untility_bill["年"] == year) & (df_untility_bill["分類"] == "固定")].index.unique()
   else:
     index = df_untility_bill[(df_untility_bill["年"] == year) & (df_untility_bill["月"] == month) & (df_untility_bill["分類"] == "固定")].index.unique()
-  # data = data.groupby("ジャンル")["金額"].sum().sort_values(ascending=False)
+  # df_untility_bill(期間_月によって分解したデータ)から元のcsvデータを取得するため
   df_untility_bill_origin = pd.read_csv('utility_bill.csv')
-  # return 
+  # データがないとき
   if index.empty:
-    return
+    return no_data
+  # tableを作成する
   table = html.Table([
             html.Thead([
               html.Tr([html.Th('項目'), html.Th('金額'),html.Th("１ヶ月あたり")])
@@ -110,55 +137,61 @@ def create_table_for_fixed_costs(year, month):
           ], className='table table-hover table-striped table-sm sortable')
   return table
 
+def create_fig_for_utility_bills(year):
+  """
+  ## Discription
+    各公共費をyear
+  ## Args:
+    ` year (int)`: 指定する年
 
+  ## Returns:
+    `figs(html.Div[])`: 各公共費を棒グラフにして配列としてまとめて返す。
+  """
+  # データの取得
+  data = df_untility_bill[(df_untility_bill["年"] == year) & (df_untility_bill["分類"] == "公共")]
+  # データがないとき
+  if data.empty:
+    return no_data
+  figs = []
+  # 公共費の種類だけ棒グラフを作成する
+  for genre in data["ジャンル"].unique():
+    data_genre = data[data["ジャンル"]==genre]
+    fig_bar = px.bar(data_genre, x=data_genre["月"], y="金額",height = 200)
+    fig_bar.update_layout(margin=dict(t=0))
+    fig_bar.update_xaxes(tickvals=data_genre["月"])
+    figs.append(html.Div([html.P(genre),dcc.Graph(figure=fig_bar)],style={}))
+  return figs
 
+# 表示を行う部分
 layout = dbc.Row([sidebar,dbc.Col(
+# 左側
 dbc.Row([
   dbc.Col([
     dbc.Row([
       dbc.Col(co.create_button_for_hidden_sidebar(page),width=4),
       dbc.Col(create_row_period_specification(),width=8)
     ],style={"height":"50px"}, className = "bg-danger"),
-    dbc.Row(id=co.set_id("table_pie_chart",page), style={"height":"350px"}),
-    dbc.Row(html.P("固定費"),id = co.set_id("fixed_costs", page)),
-    # dbc.Row([
-    #   html.Label([
-    #     dcc.Input(
-    #     id= co.set_id("input_year",page),
-    #     placeholder=d.today().year,
-    #     type="number",
-    #     value= d.today().year,
-    #     style={"width": "100px"}
-    #     ),
-    #     html.Span("年"),
-    #   ],htmlFor="input_year"),
-        # ]),
-    # dbc.Row(id = "fig_at_year",style={"height":"300px"}),
-    # dbc.Row(html.Div(dcc.Graph(figure=fig_pie)),style={"height":"300px"},className="bg-success")
+    dbc.Row(id=co.set_id("table_pie_chart",page), style={"height":"350px"}), # 表と円グラフ
+    dbc.Row(id = co.set_id("fixed_costs", page)), # 固定費
   ],width=6),
-  dbc.Col(dbc.Row(
-    [
-    # create_row_period_specification()[2],
-    # dbc.Row(dcc.Graph(figure = go.Figure(create_fig_bar_total_in_right_side())),style={"height":"300px"}),
-    # dbc.Row(dcc.Graph(figure = go.Figure(create_fig_bar_rate_year_in_right_side())),style={"height":"300px"}),
-    ],
-    id="period_and_fig_in_right_side"
-),width=6)
+  # 右側
+  dbc.Col([
+    html.P("公共費"),
+    html.Label([
+      dcc.Input(
+        id=co.set_id("input_year",page),
+        placeholder=d.today().year,
+        type="number",
+        value= d.today().year,
+        style={"width": "100px"}
+      ),
+      html.Span("年"),
+    ],htmlFor="input_year"), # 右側において指定する年
+    dbc.Row(id = co.set_id("figs_unility_bills",page) # 公共費の棒グラフ
+  )],width=6,style={"height":"600px",'overflowY': 'scroll'}) # 何個棒グラフが表示されるかわからないため、スクロールの導入
 ]),width=9, id = "main")])
 
 
-# @callback(
-#   Output({"id": "expense", "page": "food"},"children"),
-#   Input({"id": "dropdown_purpose", "page": "food"},"value"),
-#   Input({"id": "button_display_hide", "page": "food"}, "n_clicks"),
-#   State("hidden_score", "data"), 
-# )
-# def update_genre_chart_at_left_side(*_args): # 上のコールバックでselected_periodを更新しているため
-#   total = df_untility_bill["金額"].sum()
-#     # print(data["ジャンル"].unique())
-#   expense_html = html.Div(
-#             html.P("支出: "+str(total)),
-#           )
   
 @callback(
   Output({"id": "table_pie_chart", "page": "no_receipt"},"children"),
@@ -166,10 +199,16 @@ dbc.Row([
   Input({"id": "dropdown_month", "page": "no_receipt"},"value")
 )
 def update_chart_at_left_side(year, month):
-  row = create_row_table_pie(year, month)
-  if row is None:
-    return ddash.no_update
-  return row
+  """
+  ## Discription
+    年と月を取得してそれに基づいて表と円グラフを作成する
+  ## Args:
+    `year(int)`: ドロップダウンで指定された年
+    `month(int, string)`: ドロップダウンで指定された月(全月を選択した際にstring型になる)
+  ## Returns
+    `(dbc.Row)`: 全体の表と円グラフを含めたRowを返す
+  """
+  return create_row_table_pie(year, month)
 
 
 
@@ -179,9 +218,30 @@ def update_chart_at_left_side(year, month):
   Input({"id": "dropdown_month", "page": "no_receipt"},"value")
 )
 def update_chart_at_left_side(year, month):
-  table = create_table_for_fixed_costs(year, month)
-  if table is None:
-    return ddash.no_update
-  return [html.P("固定費"),table]
+  """
+  ## Discription
+    固定費の部分の表を作成する
+  ## Args:
+      `year (int)`: ドロップダウンで指定された年
+      `month (int, string)`: ドロップダウンで指定された月(全月を選択した際にstring型になる)
+
+  ## Returns:
+      `(html.P,html.Div)`: 固定費のタグと固定費の表を返す
+  """
+  return [html.P("固定費"),create_table_for_fixed_costs(year, month)]
 
 
+@callback(
+  Output({"id": "figs_unility_bills", "page": "no_receipt"},"children"),
+  Input({"id": "input_year", "page": "no_receipt"},"value"),
+)
+def update_chart_at_left_side(year):
+  """
+  ## Discription
+    年を受け取って公共費の棒グラフを作成する
+  ## Args:
+      `year (int)`: ドロップダウンで指定された年
+  ## Returns:
+      `([html.Div])`: 公共費のジャンルごとの棒グラフを返す。
+  """
+  return create_fig_for_utility_bills(year)
