@@ -1,50 +1,41 @@
 import dash
-# from dash import dash, Dash, ALL, Input, Output,State, ctx, html, dcc, callback
-from dash import Dash, ALL, Input, Output,State, ctx, html, dcc, callback
+from dash import ALL, Input, Output,State, ctx, html, dcc, callback
 from dash import dash as ddash
 from dash._utils import AttributeDict
-# import copy
-# import dash
-# import dash_core_components as dcc
 import dash_bootstrap_components as dbc
-# import dash_html_components as html
-import dash_table
 import plotly.graph_objects as go
 import plotly.express as px
-import plotly.figure_factory as ff
 import pandas as pd
 from datetime import datetime as dt,date as d
 import calendar as cal
 from dateutil.relativedelta import relativedelta
 import dash_defer_js_import as dji
-import random
 
 import common as co
-page = "food_"
+page = "food"
 
 
-# from dashboard import dashboard 
 dash.register_page(__name__)
 period  = ["今月", "先月", "今年", "昨年", "累計"]
-purpose = ["家族", "父", "全て"]
+period_options =[{"label": x,"value": x} for x in period]
 selected_period = period[0]
+self_categories = {} # 現在のカテゴリーを保持する用
 data = pd.DataFrame()
-self_categories = {}
-# 付け加え　色
-# colors = {
-#   'background': 'lightblue  ',
-#   'background1': 'limegreen  ',
-#   'text': '#FFFFFF'
-# }
-# from dashboard import df
 df = pd.read_csv('output.csv')
-# data = df
-df["年"] = df["日付"].str.split("-").apply(lambda row: int(row[0]))
-df["月"] = df["日付"].str.split("-").apply(lambda row: int(row[1]))
-df["日"] = df["日付"].str.split("-").apply(lambda row: int(row[2]))
+co.devide_date(df) # # 日付を年-月-日に変換
 
 
-def get_data_for_period(data = None,period = None,):
+def get_data_from_period(data = None, period = None):
+  """
+  ## Discription
+    期間からその期間のデータを取得する関数
+  ## Args:
+      data (DataFrame): 取得するデータ
+      period (string): 取得する期間。形式は期間を指す単語か"年-月-日"のどちらかである。
+
+  ## Returns:
+      data(DataFrame): 指定された期間のデータを返す
+  """
   today = d.today()
   if data is None:
     data = df
@@ -52,10 +43,8 @@ def get_data_for_period(data = None,period = None,):
      period = "今月"
   if period == "今月":
     return data[(data["年"] == today.year) & (data["月"] == today.month)]
-    # start_day = dt(today.year,today.month,1)
-    # end_day = dt(today.year,today.month,1)+relativedelta(months=1)
   elif period == "先月":
-    if today.month == 1:
+    if today.month == 1: # 先月によって去年の12月となるかで場合分け
       return data[(data["年"] == today.year-1) & (data["月"] == 12)] #1月 => 12月
     else:
       return data[(data["年"] == today.year) & (data["月"] == today.month - 1)] # 2月 => 1月　月だけならtoday.month % 12 + 1 でも成り立つが1月の際に年も変える必要があるためifで分けている
@@ -64,13 +53,21 @@ def get_data_for_period(data = None,period = None,):
   elif period == "昨年":
     return data[(data["年"] == today.year-1)]
   else:
-    # 配列で受け取る[start_day,end_day
     start_day = dt.strptime(period[0],"%Y-%m-%d")
     end_day = dt.strptime(period[1],"%Y-%m-%d")
   return data[(start_day <= pd.to_datetime(data["日付"])) & (pd.to_datetime(data["日付"]) <= end_day)]
 
-def get_data_for_purpose(data = None,purpose = None,):
-  today = d.today()
+def get_data_for_purpose(data = None, purpose = None):
+  """
+  ## Discription
+    目的に基づくデータを取得する関数
+  ## Args:
+      data (DataFrame):取得するデータ
+      purpose (String):取得するデータの目的
+
+  ## Returns:
+      data: 指定された目的のデータを返す
+  """
   if data is None:
     data = df
   if purpose is None:
@@ -82,99 +79,69 @@ def get_data_for_purpose(data = None,purpose = None,):
     return data
   
 
-period_options =[{"label": x,"value": x} for x in period]
-# purpose_options =[{"label": x,"value": x} for x in purpose]
-
-new_categories = []
-for _ in range(7):
-  new_categories.append(co.get_category(len(new_categories),df,page))
+# サイドバーのカテゴリー用
+new_categories = co.create_new_category(df, page)
 sidebar = co.create_col_sidebar(new_categories, page)
-# sidebar = dbc.Col(
-#   html.Div(
-#   [
-#             html.P("独自のカテゴリー"),
-#             dbc.Row(new_categories,id="new_categories",style={"height":"650px","display": "block"},className="overflow-auto"),
-#             dbc.Row(dbc.Button(html.I(className= "bi bi-plus-circle-dotted"),id = 'button_add_new_category')),
-#             dcc.Store(id='hidden_score', data={'hidden': False}),
-#             ],
-#             id="div_for_hidden_statue"),
-#             className="bg-info opacity-25",
-#             id="sidebar",
-#             width=3
-#           )
-layout = dbc.Container([
-  dbc.Row([sidebar,dbc.Col(
+layout = dbc.Row([sidebar,dbc.Col(
 dbc.Row([
-    dbc.Col([
-      dbc.Row([
-        co.create_col_button_expense_purpose(page),
-        dbc.Col([dcc.RadioItems(options=period_options,value=period_options[0]["value"],inline=True, id = "radio_period_standard"),
-          dcc.DatePickerRange(id='calender_period_custom',
-            max_date_allowed = d.today(),
-            #  start_date = d(d.today().year,d.today().month,1),
-            #  end_date= d.today()
-            start_date = d(d.today().year,d.today().month,1),
-            end_date = d.today(),
-          )
-         
-      ]),
-      ]),
-      html.Div(id="genre_pie_chart_and_ranking_table"),
-      dbc.Row([
+  dbc.Col([
+    dbc.Row([
+      co.create_col_button_expense_purpose(page),
+      dbc.Col([dcc.RadioItems(options=period_options,value=period_options[0]["value"],inline=True, id = co.set_id("radio_period_standard", page)),
+      dcc.DatePickerRange(id=co.set_id('calender_period_custom', page),
+        max_date_allowed = d.today(),
+        start_date = d(d.today().year,d.today().month,1),
+        end_date = d.today(),
+      )]),
+    ]),
+    html.Div(id=co.set_id("genre_pie_chart_and_ranking_table", page)),
+    dbc.Row([
       html.Label([
         dcc.Input(
-        id="input_year",
-        placeholder="2024",
-        type="number",
-        value= d.today().year,
-        style={"width": "100px"}
+          id=co.set_id("input_year", page),
+          placeholder="2024",
+          type="number",
+          value= d.today().year,
+          style={"width": "100px"}
         ),
         html.Span("年"),
       ],htmlFor="input_year"),
-        ]),
-      dcc.Graph(
-        id = "year_bar",
-        figure = go.Figure(layout=dict(template='plotly')) # 初期化しないと最初のcallでエラーが出る
-        ,style={"height": "370px"}
-      ),
-    ],width=6),
-    dbc.Col([ ## 右側
-      dbc.Row(dcc.RadioItems(options=[{"label":x,"value":x} for x in ["週","月"]],inline=True, id="type_of_x_axis")),
-      dbc.Row(dcc.Graph(
-        id = "genre_bar_chart"
-        ,style={"height": "370px"}
-      ),),
-      dbc.Row([
-          dbc.Col(html.Span("ジャンル: "),width="auto",class_name="py-atuo mx-0 px-0"),
-          dbc.Col(dcc.Dropdown(
-            id = 'dropdown_genre',
-            options =[{"label": genre, "value": genre } for genre in data["ジャンル"].unique()] if not(data.empty) else [],
-          style={"width": "150px"} 
-          ),width="auto",className="mx-0 px-2"),
-          dbc.Col(html.Span("まとめて表示する: "),width="auto",class_name="py-atuo mx-0 px-2"),
-          dbc.Col(dcc.Dropdown(
-            id = 'dropdown_summary',
-            options = [{"label":x,"value":x} for x in ["","日付", "場所", "商品名"]],
-            style={"width": "100px"}
-          ),width="auto",className="mx-0 px-0"),
-          dbc.Col(
-            html.Button("決定",id = 'button_decide',
-            style={"width": "100px","margin":"auto", 'display':'inline-block'},
-           
-          ), width="auto",className="mx-0 px-2")
-        ]),
-        html.Div(id="item_table")
-      # ])
-    ],
-    width=6)
-  ]),width=9
-
-
-  ,id="main")])
-  
-],style={"margin":"0"})
+    ]),
+    dcc.Graph(
+      id = co.set_id("year_bar", page),
+      # figure = go.Figure(layout=dict(template='plotly')), # 初期化しないと最初のcallでエラーが出る
+      style={"height": "370px"}
+    ),
+  ],width=6),
+  dbc.Col([ ## 右側
+    dbc.Row(dcc.RadioItems(options=[{"label":x,"value":x} for x in ["週","月"]],inline=True, id=co.set_id("type_of_x_axis", page))),
+    dbc.Row(dcc.Graph(id = co.set_id("genre_bar_chart", page), style={"height": "370px"})),
+    dbc.Row([
+      dbc.Col(html.Span("ジャンル: "),width="auto",class_name="py-atuo mx-0 px-0"),
+      dbc.Col(dcc.Dropdown(
+        id = co.set_id('dropdown_genre', page),
+        options =[{"label": genre, "value": genre } for genre in data["ジャンル"].unique()] if not(data.empty) else [],
+        style={"width": "150px"} 
+      ),width="auto",className="mx-0 px-2"),
+      dbc.Col(html.Span("まとめて表示する: "),width="auto",class_name="py-atuo mx-0 px-2"),
+      dbc.Col(dcc.Dropdown(id = 'dropdown_summary', options = [{"label":x,"value":x} for x in ["","日付", "場所", "商品名"]], style={"width": "100px"}),width="auto",className="mx-0 px-0"),
+      dbc.Col(html.Button("決定",id = 'button_decide', style={"width": "100px","margin":"auto", 'display':'inline-block'}), width="auto",className="mx-0 px-2")]),
+    html.Div(id=co.set_id("item_table", page))
+  ],
+  width=6)
+]),width=9,id="main")])
 
 def genre_pie_chart_at_left_side(data,is_hidden_sidebar):
+  """
+  ## Discription
+    左側の画面用のジャンルごとに分かれた円グラフを返す関数
+  ## Args:
+      data (DataFrame): 円グラフにするデータ
+      is_hidden_sidebar (bool): サイドバーが隠れているかどうか(隠れているかによって位置が異なるため)
+
+  ## Returns:
+     fig_pie (go.Figure) : 円グラフ
+  """
   fig_pie = go.Figure(
       data=[go.Pie(labels=list(data.index),
         values=data.values,
@@ -191,6 +158,7 @@ def genre_pie_chart_at_left_side(data,is_hidden_sidebar):
       uniformtext_mode='hide',
       showlegend=False,
   )
+  # 余白の調整
   if is_hidden_sidebar:
     fig_pie.update_layout(margin=dict(l=100, r=0, t=10, b=10),)    
   else:
@@ -200,10 +168,16 @@ def genre_pie_chart_at_left_side(data,is_hidden_sidebar):
 
 
 def genre_ranking_table_at_left_side(data):
+  """
+  ## Discription
+    左側の画面用のランキングテーブルを作成する関数
+  ## Args:
+      data (DataFrame): ランキングに使用するデータ
+  ## Returns:
+      table (html.Table): ランキング化されたテーブル 
+  """
   ranked_data = data.sort_values(ascending=False).reset_index()
   ranked_data.index += 1  # ランキングは1から始まる
-  ranked_data2 = data.sort_values(ascending=False).reset_index()
-  ranked_data2["順位"] = [i for i in range(1,len(ranked_data2)+1)]
   
   table = html.Table([
             html.Thead([
@@ -220,7 +194,15 @@ def genre_ranking_table_at_left_side(data):
           ]
           , className='table table-hover table-striped table-sm sortable')
   return table
-def get_period_from_word(period):
+def get_date_from_period(period):
+  """
+  ## Discription
+    期間から日にちを取得する関数
+  ## Args:
+    period (string): 指定する期間
+  ## Returns:
+    start_date, end_date(tabple(string, string)): 初めの日にちと終わりの日にちをタプルで返す。
+  """
   today = d.today()
   this_year  = today.year
   this_month = today.month
@@ -243,29 +225,42 @@ def get_period_from_word(period):
     end_date = str(today)
   return [start_date,end_date]
 
-# def get_triggered_element_for_period(*args):
-#   if ctx.triggered:
-#     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0] # "triggered_name.value"という形で格納されているのでtriggeredの部分を取得
-#     # print(ctx.triggered_id)
-#     if trigger_id == "radio_period_standard":
-#       # return get_period_from_word(args[0])
-#       return args[0]
-#   #   elif trigger_id == "calender_period_custom":
-#   #     return [args[1],args[2]]
-#   return selected_period # default値
 def set_data(start_date, end_date, purpose):
+  """
+  ## Discription
+    分けられたカテゴリーごとにジャンル名を変更する関数
+  ## Args:
+      start_date (string): 指定する開始日
+      end_date   (string): 指定する終了日
+      purpose    (string): 目的 
+  """
   def classify_category(genre):
+    """
+    ## Discription
+      指定されたカテゴリーごとに仕分けする関数
+    ## Args:
+        genre (string): 仕分け前のジャンル
+
+    ## Returns:
+        genre (string): 仕分け後のカテゴリー名 
+    """
     for label, category in self_categories.items():
       if genre in category:
         return label
     return genre # 見つからなかった場合、区分をジャンル名を同じにして返す
-  # print("self_categories",self_categories)
   global data
   data= df.copy()
   data["ジャンル"] = data["ジャンル"].apply(classify_category) # ジャンルの名前を変更
-  data = get_data_for_period(get_data_for_purpose(data = data, purpose = purpose), period = [start_date, end_date]) #dfから取得
+  data = get_data_from_period(get_data_for_purpose(data = data, purpose = purpose), period = [start_date, end_date]) #dfから取得
 
 def update_self_categories(labels, value):
+  """
+  ## Discription
+
+  ## Args:
+    labels ([string]): カテゴリーの新しい名前
+    value  ([string]): 各カテゴリーに含まれている各ジャンル
+  """
   labels = ["カテゴリー"+str(i+1) if x == "" else x for i,x in enumerate(labels)]# 未入力のlabelを変換(カテゴリーn)する
   value  = [x if x is not None else [] for x in value]
   global self_categories
@@ -273,32 +268,17 @@ def update_self_categories(labels, value):
   
 
 
-# @callback(
-#     # Output("sidebar", "width"),
-#           Output("div_for_hidden_statue", "hidden"),
-#           Output("hidden_score", "data"),
-#           Output("icon_display_hide", "className"),
-#           Output("sidebar", "width"),
-#           Output("main", "width"),
-#           # Output("genre_pie_chart", "style"),
-#           Input("button_display_hide", "n_clicks"),
-#           State("hidden_score", "data"), 
-#           )
-# def sidebar(n_clicks,data):
-#   # n_clicksはどんどん加算されていくので、起動時の実行かどうかしか判定できない
-#   # ctx.triggered_idには押されたinputが入るためこっちの方が確実かな
-#   if ctx.triggered_id != "button_display_hide":
-#     return ddash.no_update
-#   data["hidden"] = not data["hidden"]
-#   class_name= "bi bi-arrow-right-square-fill" if data["hidden"] else "bi bi-arrow-left-square-fill"
-#   width_sidebar = 0 if data["hidden"] else 3
-#   width_main = 12 if data["hidden"] else 9
-#   # update_genre_chart_at_left_side(data)
-#   return data["hidden"], data, class_name, width_sidebar,width_main
-
 def return_placeholder(num):
-  return ['カテゴリー'+str(i+1) for i in range(num)]
+  """
+  ## Discription
+    サイドバーのカテゴリ名のプレイスホルダーを返す関数
+  Args:
+      num (int): 何番目のプレイスホルダーか 
 
+  Returns:
+      placeholder (string): プレイスホルダー 
+  """
+  return ['カテゴリー'+str(i+1) for i in range(num)]
 
 
 @callback(
@@ -310,111 +290,136 @@ def return_placeholder(num):
     Input({'id':'selected_category', 'index':ALL,"page": "food"}, 'value'),
     Input({"id": "button_add_new_category", "page": "food"}, 'n_clicks'),
     Input({'id':'delete_category', 'index':ALL,"page": "food"}, 'n_clicks'),
-    State("calender_period_custom","start_date"),
-    State("calender_period_custom","end_date"),
+    State({'id':'calender_period_custom', "page": "food"},"start_date"),
+    State({'id':'calender_period_custom', "page": "food"},"end_date"),
     State({"id": "dropdown_purpose", "page": "food"},"value"),
     State({'id':'category_name', 'index':ALL,"page": "food"},"value"),
     State({'id':'category_name', 'index':ALL,"page": "food"},"id"), # 現在のidを取得するためにinput_idでなくても良いが1つ必要
     State({'id':'selected_category', 'index':ALL,"page": "food"}, 'options'), # 再読み込み時にplaceholderの値がid参照になっており、idは毎回連番に振り直さないので再読み込み時にplaceholderの値がおかしくなるため再読み込み時にplaceholerを振り直す用
-
 )
-def update_categories(value, add_click, delete_click, start_date, end_date, purpose, labels,input_id,options):
-    if ctx.triggered_id is None:
-      return ddash.no_update,value,options,return_placeholder(len(value))
-      # optionsを指定しないとdfから作成するためすでにカテゴリーに分類されている値を入れてしまう。
-      # そのため、何もない状態で生成し他のカテゴリーと一緒にoptionsが変更される
-  
-    elif isinstance(ctx.triggered_id, AttributeDict) and ctx.triggered_id["someattr"] == "delete category":
-      id = ctx.triggered_id["index"]
-      for i in range(len(input_id)):
-        if input_id[i]["index"] == id:
-          index = i
-          break
-      else:
-        index = -1
-        print("error")
-        return ddash.no_update
-      
-      global new_categories
-      del new_categories[index]
-      del labels[index]
-      del value[index]
-    # この時点で押されたnew_categoryに値が格納されているので、押されたindexを取得してそれだけ例外で押された要素等から生成する必要なし
+def update_categories(value, _add_click, _delete_click, start_date, end_date, purpose, labels,input_id,options):
+  """
+  ## Discription
+    カテゴリに追加、削除、内容の変更があった際にカテゴリを更新して反映させる関数
+  ## Args:
+    value (string[][]): 各カテゴリに含まれる要素
+    _add_click (int): 追加ボタンがクリックされたか
+    _delete_click (int): deleteボタンがクリックされたか
+    start_date (string): 開始日
+    end_date (string): 終了日
+    purpose (string): 目的
+    labels (string[]): カテゴリのラベル名
+    input_id ({"index","id","category_name"}[]): 各カテゴリのid
+    options ({"label","value"}[]): 各カテゴリで選択できる内容
 
-    genre_no_selected = df["ジャンル"].unique().tolist()
-    for i in range(len(new_categories)):
-      # Noneは値が挿入されていないことを意味するので、空の配列とみなす
-      if value[i] is None:
-        value[i] = []
-      genre_no_selected = [x for x in genre_no_selected if x not in value[i]]
-    options = [] # return用
-    for i in range(len(new_categories)):
-      # genre_no_selected + 各new_categoryの今の値をoprionsとする。もし今の値をoptionsに入れないと値が候補に無い扱いになり消される
-      # i番目の値が無い(None)の時にlist+Noneはエラーとなるので注意
-      options.append([{"label":x,"value":x} for x in genre_no_selected + value[i]])
-    update_self_categories(labels, value)
-    set_data(start_date, end_date, purpose)
-    if ctx.triggered_id == {"id": "button_add_new_category", "page": "food"}:
-      # new_categories.append(make_category(input_id[-1]["index"]+1 if len(input_id) > 0 else 0,options = [{"label":x,"value":x} for x in genre_no_selected ]))
-      # new_categories.append(make_category())
-      new_categories.append(co.get_category(input_id[-1]["index"]+1 if len(input_id) > 0 else 0,df,page, options = [{"label":x,"value":x} for x in genre_no_selected ]))
-      return new_categories, value, options, return_placeholder(len(value))
-    elif  isinstance(ctx.triggered_id, AttributeDict)and ctx.triggered_id["someattr"] == "delete category":
-      # 出力が元のnew_categoriesの数を求めているため数が合わないのでダミー要素を追加
-      placeholder = return_placeholder(len(value))
-      placeholder.insert(index,"")
-      value.insert(index, [])
-      options.insert(index, [])
-
-      # new_categoriesはchildrenで返しているため個数を気にしないのでlen(new_categories)ではエラーになる
-      return new_categories, value, options, placeholder
+  ## Returns:
+      new_categories, value, options, placeholder : 新しいカテゴリ、選択されているカテゴリ、選択できるカテゴリ、プレイスホルダー
+  """
+  print(ctx.triggered_id)
+  if ctx.triggered_id is None:
+    return ddash.no_update,value,options,return_placeholder(len(value))
+    # optionsを指定しないとdfから作成するためすでにカテゴリーに分類されている値を入れてしまう。
+    # そのため、何もない状態で生成し他のカテゴリーと一緒にoptionsが変更される
+  elif isinstance(ctx.triggered_id, AttributeDict) and ctx.triggered_id["id"] == "delete_category":
+    id = ctx.triggered_id["index"]
+    for i in range(len(input_id)):
+      if input_id[i]["index"] == id:
+        index = i
+        break
     else:
-      return ddash.no_update, value, options, return_placeholder(len(value))
+      index = -1
+      print("error")
+      return ddash.no_update
+    
+    global new_categories
+    del new_categories[index]
+    del labels[index]
+    del value[index]
+  # この時点で押されたnew_categoryに値が格納されているので、押されたindexを取得してそれだけ例外で押された要素等から生成する必要なし
+
+  genre_no_selected = df["ジャンル"].unique().tolist()
+  for i in range(len(new_categories)):
+    # Noneは値が挿入されていないことを意味するので、空の配列とみなす
+    if value[i] is None:
+      value[i] = []
+    genre_no_selected = [x for x in genre_no_selected if x not in value[i]]
+  options = [] # return用
+  for i in range(len(new_categories)):
+    # genre_no_selected + 各new_categoryの今の値をoprionsとする。もし今の値をoptionsに入れないと値が候補に無い扱いになり消される
+    # i番目の値が無い(None)の時にlist+Noneはエラーとなるので注意
+    options.append([{"label":x,"value":x} for x in genre_no_selected + value[i]])
+  update_self_categories(labels, value)
+  set_data(start_date, end_date, purpose)
+  if ctx.triggered_id == {"id": "button_add_new_category", "page": "food"}:
+    new_categories.append(co.get_category(input_id[-1]["index"]+1 if len(input_id) > 0 else 0,df,page, options = [{"label":x,"value":x} for x in genre_no_selected ]))
+    return new_categories, value, options, return_placeholder(len(value))
+  elif  isinstance(ctx.triggered_id, AttributeDict)and ctx.triggered_id["id"] == "delete_category":
+    # 出力が元のnew_categoriesの数を求めているため数が合わないのでダミー要素を追加
+    placeholder = return_placeholder(len(value))
+    placeholder.insert(index,"")
+    value.insert(index, [])
+    options.insert(index, [])
+
+    # new_categoriesはchildrenで返しているため個数を気にしないのでlen(new_categories)ではエラーになる
+    return new_categories, value, options, placeholder
+  else:
+    return ddash.no_update, value, options, return_placeholder(len(value))
    
 
 @callback(
-  [Output("calender_period_custom","start_date"),
-  Output("calender_period_custom","end_date")],
-  Input("radio_period_standard","value"),
-  Input("calender_period_custom","start_date"),
-  Input("calender_period_custom","end_date"),
+  [Output({'id':'calender_period_custom', "page": "food"},"start_date"),
+  Output({'id':'calender_period_custom', "page": "food"},"end_date")],
+  Input({'id':'radio_period_standard', "page": "food"},"value"),
+  Input({'id':'calender_period_custom', "page": "food"},"start_date"),
+  Input({'id':'calender_period_custom', "page": "food"},"end_date"),
   Input({"id": "dropdown_purpose", "page": "food"},"value"),
   Input({'id':'category_name', 'index':ALL, "page": "food"},"value"),
   Input({'id':'selected_category', 'index':ALL, "page": "food"}, 'value'),
 )
 def update_data(radio_period, start_date, end_date, purpose, labels, categories_name):
-  if ctx.triggered_id == "radio_period_standard":
-    start_date, end_date = get_period_from_word(radio_period)
+  """
+  ## Discription
+    データを日付と目的から更新する
+  ## Args:
+      radio_period (string): 「今月」等の言葉による期間
+      start_date   (string): 開始日
+      end_date     (string): 終了日
+      purpose      (string): 目的
+      labels     (string[]): カテゴリの種類
+      categories_name (string[]): 新しいカテゴリー名
+
+  ## Returns:
+      start_date, end_date: カレンダーになっている日付を更新する 
+  """
+  if ctx.triggered_id == {'id':'radio_period_standard', "page": "food"}:
+    start_date, end_date = get_date_from_period(radio_period)
   update_self_categories(labels,categories_name) # label,カテゴリーの内訳の更新を反映
   set_data(start_date, end_date, purpose)
-  return [start_date, end_date]
+  return (start_date, end_date)
   
 @callback(
-  Output("expense","children"),
-  Output("genre_pie_chart_and_ranking_table","children"),
-  Input("radio_period_standard","value"),
-  Input("calender_period_custom","start_date"),
-  Input("calender_period_custom","end_date"),
+  Output({"id": "expense", "page": "food"},"children"),
+  Output({'id':'genre_pie_chart_and_ranking_table', "page": "food"},"children"),
+  Input({'id':'radio_period_standard', "page": "food"},"value"),
+  Input({'id':'calender_period_custom', "page": "food"},"start_date"),
+  Input({'id':'calender_period_custom', "page": "food"},"end_date"),
   Input({"id": "dropdown_purpose", "page": "food"},"value"),
   Input({"id": "button_display_hide", "page": "food"}, "n_clicks"),
   State("hidden_score", "data"), 
 )
-def update_genre_chart_at_left_side(*_args): # 上のコールバックでselected_periodを更新しているため
-  # print("update_genre_chart_at_left_side",ctx.triggered_id)
+def update_genre_chart_at_left_side(*_args):
+  """
+  ## Discription
+    左上の支出等の情報更新
+  Returns:
+      expense_html, graph_html(html.Div, dbc.Row):更新するデータ 
+  """
   total = data["金額"].sum()
-    # print(data["ジャンル"].unique())
-  expense_html = html.Div(
-            html.P("支出: "+str(total)),
-            # style={"hight"}
-            # className="px-auto"
-          )
+  expense_html = html.Div(html.P("支出: "+str(total)))
   # data = だと　local変数と認識されて、total = data["金額"].sum()でdataがlocalとして扱われるため参照できないとなってしまう。
   data_by_genre = data.groupby("ジャンル")["金額"].sum()
   if data_by_genre.empty:
-    # return expense_html
     return expense_html, html.P("データがありません")
-  # return expense_html, html.Div(html.P("データがありません",className="border border-4 border-dark",style={"margin-top":"100px"}),style={"height":"250px"})
-  # print("fig",_args[-1]["hidden"])
   is_hidden_sidebar = not(_args[-1]["hidden"]) if ctx.triggered_id == {'id': 'button_display_hide', 'page': 'food'} else _args[-1]["hidden"]
     
   fig_pie = genre_pie_chart_at_left_side(data_by_genre,is_hidden_sidebar)
@@ -429,16 +434,24 @@ def update_genre_chart_at_left_side(*_args): # 上のコールバックでselect
             ],width = 5,className="offset-md-3 overflow-auto",style={"height": "250px"}),
             
           ] )
-  # return expense_html
-  # print()
   return expense_html, graph_html
 
 @callback(
-  Output("year_bar","figure"),
-  Input("input_year","value"),
+  Output({'id':'year_bar', "page": "food"},"figure"),
+  Input({'id':'input_year', "page": "food"},"value"),
   Input({"id": "dropdown_purpose", "page": "food"},"value"),
 )
 def update_year_bar_chart_at_left_side(year,purpose):
+  """
+  ## Discription
+    左側の年ごとの棒グラフの更新
+  ## Args:
+      year (int): 表示する年
+      purpose (string): 目的
+
+  ## Returns:
+      fig_bar (px.bar):棒グラフ 
+  """
   if year is None: # 未入力時
     return ddash.no_update
   # globalのdataとは期間が異なるので新しく生成している。
@@ -476,18 +489,31 @@ def update_year_bar_chart_at_left_side(year,purpose):
 
 
 @callback(
-  Output("type_of_x_axis","value"),
-  Output("genre_bar_chart","figure"),
-  Input("type_of_x_axis","value"),
-  Input("radio_period_standard","value"),
-  Input("calender_period_custom","start_date"),
-  Input("calender_period_custom","end_date"),
+  Output({'id':'type_of_x_axis', "page": "food"},"value"),
+  Output({'id':'genre_bar_chart', "page": "food"},"figure"),
+  Input({'id':'type_of_x_axis', "page": "food"},"value"),
+  Input({'id':'radio_period_standard', "page": "food"},"value"),
+  Input({'id':'calender_period_custom', "page": "food"},"start_date"),
+  Input({'id':'calender_period_custom', "page": "food"},"end_date"),
   Input({"id": "dropdown_purpose", "page": "food"},"value"),
 )
 def update_genre_bar_chart(unit, _radio_value, start_date, end_date, _purpose):
+  """
+  ## Discription 
+    右側のジャンル分けされた棒グラフの更新
+  Args:
+      unit         (string): 表示するグラフの単位(週ごとか月毎か)
+      _radio_value (string): 期間のラジオボタン 
+      start_date   (string): 開始日
+      end_date     (string): 終了日
+      _purpose     (string): 目的
+
+  Returns:
+      unit, fig_bar (string, px.bar): 表示するグラフの単位と棒グラフ
+  """
   triggered_id = ctx.triggered_id
   #起動時はcalender_period_customを受け取る(上のcallbackで値を変えるため)
-  if triggered_id != "type_of_x_axis":
+  if triggered_id != {'id':'type_of_x_axis', "page": "food"}:
     unit = ""
   def get_week_number(day, offset):
     return (day + offset) // 7 + 1
@@ -504,12 +530,6 @@ def update_genre_bar_chart(unit, _radio_value, start_date, end_date, _purpose):
     x_label = list(range(start_week_number,end_week_number+1))
     data_by_genre["週"] = data_by_genre["日"].apply(get_week_number,args=(first_day,))
     data_by_genre = data.groupby(["週","ジャンル"])["金額"].sum().reset_index(level="ジャンル")
-    #それぞれの第何週がm/d~m/dまでかを示す
-    # week_period = []
-    # for i in x_label:
-    #   sunday_date = (offset+1)+(i-2)*7 if (offset+1)+(i-2)*7 > 0 else 1 # 曜日から日にちを計算する際に0または負の値は1とする
-    #   saturday_date = offset+(i-1)*7
-    #   week_period.append([sunday_date, saturday_date]) # 日~土
     # データの加工
   else:
     unit= "月"
@@ -532,23 +552,40 @@ def update_genre_bar_chart(unit, _radio_value, start_date, end_date, _purpose):
 
 
 @callback(
-  Output("dropdown_genre","options"),
-  Input("radio_period_standard","value"),
-  Input("calender_period_custom","start_date"),
-  Input("calender_period_custom","end_date"),
+  Output({'id':'dropdown_genre', "page": "food"},"options"),
+  Input({'id':'radio_period_standard', "page": "food"},"value"),
+  Input({'id':'calender_period_custom', "page": "food"},"start_date"),
+  Input({'id':'calender_period_custom', "page": "food"},"end_date"),
   Input({"id": "dropdown_purpose", "page": "food"},"value"),
 )
 def update_dropdown_summry(*_args):
+  """
+  ## Discription
+    右下のジャンルのドロップダウンの内容を更新する
+  ## Returns:
+      {label:,value}[]: 表示する内容
+  """
   return [{"label": "全て", "value": "全て"}] + [{"label": genre, "value": genre} for genre in data["ジャンル"].unique()] if not data.empty else [{"label": "No results", "value": "",'disabled': True}]
 
 
 @callback(
-  Output("item_table","children"),
-  Input("button_decide","n_clicks"),
-  [State("dropdown_genre","value"),
-  State("dropdown_summary","value"),]
+  Output({'id':'item_table', "page": "food"},"children"),
+  Input({'id':'button_decide', "page": "food"},"n_clicks"),
+  [State({'id':'dropdown_genre', "page": "food"},"value"),
+  State({'id':'dropdown_summary', "page": "food"},"value"),]
 )
 def update_item_table(_, genre, summary_value):
+  """
+  ## Discription
+    右下に表示する表の更新
+  ## Args:
+      _                (int): 決定を押したか
+      genre         (string): 表示するジャンル名 
+      summary_value (string):どの部分をまとめて表示するか
+
+  ## Returns:
+      table (html.Div) : 表示するテーブル
+  """
   data_item = data
   if genre is None:
     return html.P("データがありません")
