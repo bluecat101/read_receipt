@@ -320,12 +320,12 @@ class ReadReceipt:
             text=text[:-1] # Delete "%"
             searched_price = re.search('[0-9]+$',text) # Get discount rate
             # Add discount to previous item. Calcurate discount price because price is discount rate
-            if(searched_price):
+            if searched_price and len(self.item_list) > 0:
               self.item_list[-1]["discount"] += int(self.item_list[-1]["price"]*(1-(int(searched_price.group())/100))) 
           else: # Last character is not "%"
             searched_price = re.search('[0-9]+$',text) # Get discount price
             # Add discount to previous item
-            if(searched_price):
+            if searched_price and len(self.item_list) > 0:
               self.item_list[-1]["discount"] += int(searched_price.group())
         elif re.search('[0-9]+個',text): # Text line is not related discount but it is related quantity
           if len(self.item_list) != 0: # Previous line exist

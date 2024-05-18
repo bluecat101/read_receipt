@@ -6,6 +6,29 @@ import pandas as pd
 purpose = ["家族", "父", "全て"]
 purpose_options =[{"label": x,"value": x} for x in purpose]
 
+changed_categories = ["その他", "例外", "日用品", "車"]
+def set_id(id, page):
+  return {"id": id, "page": page}
+
+
+def devide_date(df):
+  df["年"] = df["日付"].str.split("-").apply(lambda row: int(row[0]))
+  df["月"] = df["日付"].str.split("-").apply(lambda row: int(row[1]))
+  df["日"] = df["日付"].str.split("-").apply(lambda row: int(row[2]))
+
+def add_categories_from_data(df):
+  df_output = pd.read_csv("output.csv")
+  added_df = df_output[df_output["ジャンル"].isin(changed_categories)]
+  added_df = added_df[added_df["目的"] == "家族"]
+  devide_date(added_df)
+  added_df = added_df.drop(columns=["場所", "日付", "取得した商品名", "商品名", "1個あたりの値段", "個数", "合計の割引","日"])
+  added_df[["期間_月", "index","分類"]] = [1, -1, "変動費"]
+  added_df = added_df.reindex(columns = ["index", "年", "月", "目的", "ジャンル","分類","金額","期間_月"]).set_index("index") 
+  return pd.concat([df, added_df])
+
+def delete_categories_from_data(df):
+  return df[~df["ジャンル"].isin(changed_categories)] 
+
 def create_new_category(df, page):
   new_categories = []
   for _ in range(4):
@@ -42,8 +65,6 @@ def get_category(i, df, page, options=None):
               dbc.Col(dbc.Button(html.I(className= "bi bi-x-circle"),className="rounded-circle" ,id = id_for_delete_button,style={"margin":"10px 0 0 0"}),width=2)
              ],style={"padding": "10px 0 10px 5px"})
   return category
-def set_id(id, page):
-  return {"id": id, "page": page}
 
 def create_col_sidebar(categories, page):
   
@@ -78,11 +99,6 @@ def create_col_button_expense_purpose(page):
           ),],
         width = 6)
 
-
-def devide_date(df):
-  df["年"] = df["日付"].str.split("-").apply(lambda row: int(row[0]))
-  df["月"] = df["日付"].str.split("-").apply(lambda row: int(row[1]))
-  df["日"] = df["日付"].str.split("-").apply(lambda row: int(row[2]))
 
 def processing_df_untility_bill(df, has_index = None):
   if has_index is None:

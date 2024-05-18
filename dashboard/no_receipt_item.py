@@ -14,9 +14,10 @@ dash.register_page(__name__)
 
 # utility_billには月による期間があるので(ex:2ヶ月で〇〇円)、1ヶ月ごとにして月も計算する。
 # 後に分解する前のデータを参照したいので、utility_bill.csvのindexを持たせておく。
-df_untility_bill = co.processing_df_untility_bill(pd.read_csv('utility_bill.csv'),has_index = True)
+df = co.processing_df_untility_bill(pd.read_csv('utility_bill.csv'),has_index = True)
+df = co.add_categories_from_data(df)
 # 左側のカテゴリーを作成する
-new_categories = co.create_new_category(df_untility_bill, page)
+new_categories = co.create_new_category(df, page)
 # サイドバーを作成する
 sidebar = co.create_col_sidebar(new_categories, page)
  
@@ -29,7 +30,7 @@ def create_row_period_specification():
     `row (dbc.Row)`: 「年-月」の期間のRowを返す。
   """
   # dataから選択できる年を取得してセット
-  options_year = [{"label":  year, "value": year} for year in df_untility_bill["年"].unique()]+[{"label":  d.today().year, "value": d.today().year}]
+  options_year = [{"label":  year, "value": year} for year in df["年"].unique()]+[{"label":  d.today().year, "value": d.today().year}]
   # 月は1~12月の選択と全ての月の選択を可能にしている。
   options_month = [{"label": "1~12","value": "1~12"}]+[{"label":  month, "value": month} for month in range(1,13)]
   # styleのdirection:rtlはアラビア語を指定しており、右から左に要素が表示される設定にしている。
@@ -58,9 +59,9 @@ def create_row_table_pie(year, month):
   """
   # 全ての月が対象であるかによって月を考慮するかを決める
   if month == "1~12":
-    data = df_untility_bill[(df_untility_bill["年"] == year)]
+    data = df[(df["年"] == year)]
   else:
-    data = df_untility_bill[(df_untility_bill["年"] == year) & (df_untility_bill["月"] == month)]
+    data = df[(df["年"] == year) & (df["月"] == month)]
   # 項目ごとの金額を取得する
   data = data.groupby("ジャンル")["金額"].sum().sort_values(ascending=False)
   # 対象のデータが無いときは文章を出して抜ける
@@ -113,10 +114,10 @@ def create_table_for_fixed_costs(year, month):
   """
   # 全ての月が対象であるかによって月を考慮するかを決める
   if month == "1~12":
-    index = df_untility_bill[(df_untility_bill["年"] == year) & (df_untility_bill["分類"] == "固定")].index.unique()
+    index = df[(df["年"] == year) & (df["分類"] == "固定費")].index.unique()
   else:
-    index = df_untility_bill[(df_untility_bill["年"] == year) & (df_untility_bill["月"] == month) & (df_untility_bill["分類"] == "固定")].index.unique()
-  # df_untility_bill(期間_月によって分解したデータ)から元のcsvデータを取得するため
+    index = df[(df["年"] == year) & (df["月"] == month) & (df["分類"] == "固定費")].index.unique()
+  # df(期間_月によって分解したデータ)から元のcsvデータを取得するため
   df_untility_bill_origin = pd.read_csv('utility_bill.csv')
   # データがないとき
   if index.empty:
@@ -148,7 +149,7 @@ def create_fig_for_utility_bills(year):
     `figs(html.Div[])`: 各公共費を棒グラフにして配列としてまとめて返す。
   """
   # データの取得
-  data = df_untility_bill[(df_untility_bill["年"] == year) & (df_untility_bill["分類"] == "公共")]
+  data = df[(df["年"] == year) & ((df["分類"] == "公共費") | (df["分類"] == "変動費"))]
   # データがないとき
   if data.empty:
     return no_data

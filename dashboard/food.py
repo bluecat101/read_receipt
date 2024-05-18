@@ -21,9 +21,8 @@ period_options =[{"label": x,"value": x} for x in period]
 selected_period = period[0]
 self_categories = {} # 現在のカテゴリーを保持する用
 data = pd.DataFrame()
-df = pd.read_csv('output.csv')
+df = co.delete_categories_from_data(pd.read_csv('output.csv'))
 co.devide_date(df) # # 日付を年-月-日に変換
-
 
 def get_data_from_period(data = None, period = None):
   """
@@ -124,8 +123,8 @@ dbc.Row([
         style={"width": "150px"} 
       ),width="auto",className="mx-0 px-2"),
       dbc.Col(html.Span("まとめて表示する: "),width="auto",class_name="py-atuo mx-0 px-2"),
-      dbc.Col(dcc.Dropdown(id = 'dropdown_summary', options = [{"label":x,"value":x} for x in ["","日付", "場所", "商品名"]], style={"width": "100px"}),width="auto",className="mx-0 px-0"),
-      dbc.Col(html.Button("決定",id = 'button_decide', style={"width": "100px","margin":"auto", 'display':'inline-block'}), width="auto",className="mx-0 px-2")]),
+      dbc.Col(dcc.Dropdown(id = co.set_id('dropdown_summary', page), options = [{"label":x,"value":x} for x in ["","日付", "場所", "商品名"]], style={"width": "100px"}),width="auto",className="mx-0 px-0"),
+      dbc.Col(html.Button("決定",id = co.set_id('button_decide', page), style={"width": "100px","margin":"auto", 'display':'inline-block'}), width="auto",className="mx-0 px-2")]),
     html.Div(id=co.set_id("item_table", page))
   ],
   width=6)
