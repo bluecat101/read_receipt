@@ -170,7 +170,7 @@ dbc.Row([
     dbc.Row([
       dbc.Col(co.create_button_for_hidden_sidebar(page),width=4),
       dbc.Col(create_row_period_specification(),width=8)
-    ],style={"height":"50px"}, className = "bg-danger"),
+    ],style={"height":"50px"}),
     dbc.Row(id=co.set_id("table_pie_chart",page), style={"height":"350px"}), # 表と円グラフ
     dbc.Row(id = co.set_id("fixed_costs", page)), # 固定費
   ],width=6),
